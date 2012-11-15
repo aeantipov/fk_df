@@ -10,8 +10,12 @@
 
 #include<memory>
 #include<utility>
+#include<functional>
 
 #include<Eigen/Core>
+#include<Eigen/StdVector>
+
+#include "EigenIterator.h"
 
 #define REALTYPE_DOUBLE
 
@@ -20,9 +24,13 @@ namespace FK {
 typedef double RealType;
 typedef std::complex<RealType> ComplexType;
 
+template <typename T>
+using VectorType = Eigen::Matrix<T,Eigen::Dynamic, 1>;
+
 /** A short name for imaginary unit. */
 static const ComplexType I = ComplexType(0.0,1.0);    // 'static' to prevent linking problems
 
+const RealType PI = std::atan(1.0)*4;
 /** Dense complex matrix. */
 typedef Eigen::Matrix<ComplexType,Eigen::Dynamic,Eigen::Dynamic,Eigen::AutoAlign|Eigen::RowMajor> MatrixType;
 /** Dense real matrix. */
