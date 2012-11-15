@@ -22,17 +22,17 @@ endif ()
 #set(DOXYFILE_SOURCE_DIR "./src")
 #include(UseDoxygen)
 
-find_package (Boost COMPONENTS python)
+#find_package (Boost COMPONENTS python)
 #find_package (HDF5 COMPONENTS CXX)
 find_package (Eigen3 3.1)
 
-message(STATUS "Boost includes: " ${Boost_INCLUDE_DIRS} )
+#message(STATUS "Boost includes: " ${Boost_INCLUDE_DIRS} )
 message(STATUS "Eigen3 includes: " ${EIGEN3_INCLUDE_DIR} )
-message(STATUS "Boost libs: " ${Boost_LIBRARIES} )
+#message(STATUS "Boost libs: " ${Boost_LIBRARIES} )
 #message(STATUS "HDF5 libs: " ${HDF5_LIBRARIES} )
 
 include_directories(
-    ${Boost_INCLUDE_DIRS}
+#    ${Boost_INCLUDE_DIRS}
 #    ${HDF5_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
 #    ${PYTHON_INCLUDE_DIRS}

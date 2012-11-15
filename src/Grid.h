@@ -6,14 +6,11 @@
 
 namespace FK { 
 
-/** A representatin of a one-dimensional grid, which stores an array of ValuType
- * values. Provides fast access to elements and a fast search. */
+/** A representatin of a one-dimensional grid, which stores an array of ValuType values. */
 template <typename ValueType, class Derived>
 class Grid1d {
 protected:
     VectorType<ValueType> _vals;
-//    std::map<ValueType, unsigned int> _back_map;
-//    void defineMap();
 public:
     /** Empty constructor. */
     Grid1d();
@@ -28,11 +25,10 @@ public:
     /** Returns all values. */
     const VectorType<ValueType> & getVals() const;
 
+    /** A CRTP reference to one of the inherited objects. */
     template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0])) { return static_cast<Derived*>(this)->integrate(in); };
     /** Make the object printable. */
     template <typename ValType, class Derived2> friend std::ostream& operator<<(std::ostream& lhs, const Grid1d<ValType,Derived2> &gr);
-    /** Virtual desctructor for polymorphism. */
-    virtual ~Grid1d();
 
     class exWrongIndex : public std::exception { virtual const char* what() const throw(); }; 
 };
@@ -49,6 +45,7 @@ public:
     template <class Obj> auto integrate(const Obj &in) -> decltype(in(_vals[0]));
 };
 
+/** A grid of real frequencies. */
 class RealGrid1d : public Grid1d<RealType, RealGrid1d>
 {
     public:
@@ -69,19 +66,15 @@ Grid1d<ValueType,Derived>::Grid1d()
 template <typename ValueType, class Derived>
 Grid1d<ValueType,Derived>::Grid1d(const VectorType<ValueType> &vals):_vals(vals)
 {
-//    defineMap();
 };
 
 template <typename ValueType, class Derived>
 Grid1d<ValueType,Derived>::Grid1d(int min, int max, std::function<ValueType (const int&)> f)
 {
-    DEBUG(min << " " << max);
     if (max<min) std::swap(min,max);
     unsigned int n_points = max-min;
     _vals.resize(n_points); 
     for (int i=0; i<n_points; ++i) _vals[i]=f(min+i); 
-    //std::generate(_vals.begin(), _vals.end(), std::bind(f, std::placeholders::_1));
-    //defineMap();
 }
 
 template <typename ValueType, class Derived>
@@ -98,25 +91,6 @@ void Grid1d<ValueType,Derived>::defineMap()
     for (unsigned int i=0; i<_vals.size(); ++i) _back_map[_vals[i]]=i;
 }
 */
-
-/*
-template <typename ValueType, class Derived>
-template <class Obj> 
-ReturnType Grid1d<ValueType,Derived>::integrate(const Obj &in)
-{
-    ReturnType R;
-    for (int i=0; i<_vals.size()-1; ++i) {
-        R+=0.5*(in(_vals[i])+in(_vals[i+1]))*(_vals[i+1]-_vals[i]);
-        }
-    return R;
-}
-*/
-
-template <typename ValueType, class Derived>
-Grid1d<ValueType,Derived>::~Grid1d()
-{
-    _vals.resize(0);
-};
 
 template <typename ValueType, class Derived>
 std::ostream& operator<<(std::ostream& lhs, const Grid1d<ValueType,Derived> &gr)
