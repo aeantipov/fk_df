@@ -27,6 +27,9 @@ public:
     /** Returns size of grid. */
     unsigned int getSize() const;
 
+    /** Returns a tuple of left closest index, weight, right closest index and weight, which are the closest to input value. */
+    std::tuple <bool, unsigned int, RealType> findSmaller (ValueType in) { return static_cast<Derived*>(this)->findSmaller(in); };
+
     /** A CRTP reference to one of the inherited objects. */
     template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0])) { return static_cast<Derived*>(this)->integrate(in); };
     /** Make the object printable. */
@@ -38,12 +41,15 @@ public:
 /** A particular Grid for Matsubara frequencies. */
 class FMatsubaraGrid1d : public Grid1d<ComplexType, FMatsubaraGrid1d>
 {
-public:
     /** Inverse temperature. */
     const RealType _beta;
     /** Spacing between values. */
-    const ComplexType _spacing;
+    const RealType _spacing;
+    /** Min and max numbers of freq. - useful for searching. */
+    int _w_min, _w_max;
+public:
     FMatsubaraGrid1d(int min, int max, RealType beta);
+    std::tuple <bool, unsigned int, RealType> findSmaller (ComplexType in);
     template <class Obj> auto integrate(const Obj &in) -> decltype(in(_vals[0]));
 };
 
@@ -52,6 +58,7 @@ class RealGrid1d : public Grid1d<RealType, RealGrid1d>
 {
     public:
     template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0]));
+    //std::tuple <unsigned int, RealType, unsigned int, RealType> find (ValueType in);
 };
 
 
@@ -122,8 +129,8 @@ const char* Grid1d<ValueType,Derived>::exWrongIndex::what() const throw(){
 //
 
 inline FMatsubaraGrid1d::FMatsubaraGrid1d(int min, int max, RealType beta):
-    Grid1d(min,max,[&](const int & n) {return PI*I/beta*ComplexType(2*n+1);}),
-    _beta(beta), _spacing(PI*I/beta)
+    Grid1d(min,max,std::bind(FMatsubara, std::placeholders::_1, beta)),
+    _beta(beta), _spacing(PI/beta), _w_min(min), _w_max(max)
 {
 }
 
@@ -135,6 +142,16 @@ auto FMatsubaraGrid1d::integrate(const Obj &in) -> decltype(in(_vals[0]))
         R+=in(_vals[i]);
         }
     return R/_beta;
+}
+
+
+inline std::tuple <bool, unsigned int, RealType> FMatsubaraGrid1d::findSmaller (ComplexType in)
+{
+    assert (std::abs(real(in))<std::numeric_limits<RealType>::epsilon());
+    int n=(imag(in)/_spacing-1)/2;
+    if (n<_w_min) return std::make_tuple(0,0,0);
+    if (n>_w_max) return std::make_tuple(0,_vals.size(),0);
+    else return std::make_tuple (1,n,1);
 }
 
 //

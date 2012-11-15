@@ -46,6 +46,8 @@ typedef Eigen::Matrix<RealType,Eigen::Dynamic,1,Eigen::AutoAlign> RealVectorType
 /** Dense vector of integers. */
 typedef Eigen::Matrix<int,Eigen::Dynamic,1,Eigen::AutoAlign> IntVectorType;
 
+ComplexType FMatsubara(int n, RealType beta){return PI*I/beta*ComplexType(2*n+1);};
+ComplexType BMatsubara(int n, RealType beta){return PI*I/beta*ComplexType(2*n);};
 
 } // end namespace FK
 

@@ -24,6 +24,8 @@ int main()
     ComplexType out = n2.integrate<std::function<ComplexType(ComplexType)> > (F2);
     INFO(out);
     
+    INFO(std::get<1>(n2.findSmaller(FMatsubara(5,7))));
+
     Grid1dObject<ComplexType,FMatsubaraGrid1d> D1(n2, F2);
     INFO(D1);
 }

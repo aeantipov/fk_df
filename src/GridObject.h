@@ -25,6 +25,7 @@ template<typename ValueType, class GridType>
 Grid1dObject<ValueType,GridType>::Grid1dObject(const GridType& grid,  std::function<ValueType (decltype(grid[0]))> f):_grid(grid)
 {
     _vals.resize(grid.getSize());
+    this->set(f);
 }
 
 template<typename ValueType, class GridType>
