@@ -24,6 +24,8 @@ public:
     ValueType operator[](unsigned int in) const;
     /** Returns all values. */
     const VectorType<ValueType> & getVals() const;
+    /** Returns size of grid. */
+    unsigned int getSize() const;
 
     /** A CRTP reference to one of the inherited objects. */
     template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0])) { return static_cast<Derived*>(this)->integrate(in); };
@@ -84,6 +86,17 @@ ValueType Grid1d<ValueType,Derived>::operator[](unsigned int index) const
     return _vals[index];
 }
 
+template <typename ValueType, class Derived>
+const VectorType<ValueType> & Grid1d<ValueType,Derived>::getVals() const
+{
+    return _vals;
+}
+
+template <typename ValueType, class Derived>
+unsigned int Grid1d<ValueType,Derived>::getSize() const
+{
+    return _vals.size();
+}
 /*
 template <typename ValueType, class Derived>
 void Grid1d<ValueType,Derived>::defineMap()

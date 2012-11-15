@@ -27,12 +27,15 @@ typedef std::complex<RealType> ComplexType;
 template <typename T>
 using VectorType = Eigen::Matrix<T,Eigen::Dynamic, 1>;
 
+template <typename T>
+using MatrixType = Eigen::Matrix<T,Eigen::Dynamic, Eigen::Dynamic>;
+
 /** A short name for imaginary unit. */
 static const ComplexType I = ComplexType(0.0,1.0);    // 'static' to prevent linking problems
 
 const RealType PI = std::atan(1.0)*4;
 /** Dense complex matrix. */
-typedef Eigen::Matrix<ComplexType,Eigen::Dynamic,Eigen::Dynamic,Eigen::AutoAlign|Eigen::RowMajor> MatrixType;
+typedef Eigen::Matrix<ComplexType,Eigen::Dynamic,Eigen::Dynamic,Eigen::AutoAlign|Eigen::RowMajor> ComplexMatrixType;
 /** Dense real matrix. */
 typedef Eigen::Matrix<RealType,Eigen::Dynamic,Eigen::Dynamic,Eigen::AutoAlign|Eigen::RowMajor> RealMatrixType;
 

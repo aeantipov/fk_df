@@ -5,9 +5,10 @@ set (fk_src
     FKCommon.h
     Logger.h Logger.cpp
     Grid.h 
+    GridObject.h
     GFWrap.h 
     )
-add_library(fk STATIC ${fk_src})
+add_library(fk SHARED ${fk_src})
 set_target_properties(fk PROPERTIES LINKER_LANGUAGE CXX)
 
 #target_link_libraries(fk
@@ -16,9 +17,9 @@ set_target_properties(fk PROPERTIES LINKER_LANGUAGE CXX)
 #    ${HDF5_LIBRARIES}
 #)
 
-#install(TARGETS fk
-#    LIBRARY DESTINATION lib
-#    )
+install(TARGETS fk
+    LIBRARY DESTINATION lib
+    )
 
 install(DIRECTORY . DESTINATION include/fk
           FILES_MATCHING PATTERN "*.h")

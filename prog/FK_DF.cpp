@@ -1,7 +1,7 @@
 
 #include "FKCommon.h"
 #include "Grid.h"
-#include "GfWrap.h"
+#include "GridObject.h"
 
 #include <iostream>
 
@@ -23,4 +23,7 @@ int main()
     //INFO(F2(3));
     ComplexType out = n2.integrate<std::function<ComplexType(ComplexType)> > (F2);
     INFO(out);
+    
+    Grid1dObject<ComplexType,FMatsubaraGrid1d> D1(n2, F2);
+    INFO(D1);
 }
