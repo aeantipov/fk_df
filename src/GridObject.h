@@ -7,13 +7,13 @@
 
 namespace FK { 
 
-template<unsigned int N, typename ValueType, typename GridTypeN, typename ...GridType> 
-class GridObject : public GridObject<N-1,ValueType,GridType...>
+template< typename ValueType, typename GridTypeN, typename ...GridType> 
+class GridObject : public GridObject<ValueType,GridType...>
 {
-static_assert(N>1, "N=1 has a specialized variant");
+static_assert(sizeof...(GridType)>0, "N=1 has a specialized variant");
 protected:
     std::shared_ptr<GridTypeN> _grid;
-    std::shared_ptr<VectorType<GridObject<N-1,ValueType,GridType...> > > _vals;
+    std::shared_ptr<VectorType<GridObject<ValueType,GridType...> > > _vals;
 public:
     /** Default constructor. Required by Eigen::Vector. Does nothing. */
     GridObject(); 
@@ -28,7 +28,7 @@ public:
 };
 
 template <typename ValueType, class GridType>
-class GridObject<1,ValueType, GridType> 
+class GridObject<ValueType, GridType> 
 {
 protected:
     std::shared_ptr<GridType> _grid;
@@ -48,13 +48,13 @@ public:
 //
 
 template<typename ValueType, class GridType>
-GridObject<1,ValueType,GridType>::GridObject()
+GridObject<ValueType,GridType>::GridObject()
 {
-    DEBUG("N=1");
+    DEBUG("Default, N=1");
 }
 
 template<typename ValueType, class GridType>
-GridObject<1,ValueType,GridType>::GridObject(const GridType &grid):
+GridObject<ValueType,GridType>::GridObject(const GridType &grid):
     _grid(std::make_shared<GridType>(grid)),
     _vals(std::make_shared<VectorType<ValueType> > (grid.getSize()))
 {
@@ -63,12 +63,12 @@ GridObject<1,ValueType,GridType>::GridObject(const GridType &grid):
 
 template<typename ValueType, class GridType>
 template <class ...T> 
-GridObject<1,ValueType,GridType>::GridObject(const std::tuple<T...> &in):GridObject(std::get<std::tuple_size<std::tuple<T...> >::value-1>(in))
+GridObject<ValueType,GridType>::GridObject(const std::tuple<T...> &in):GridObject(std::get<std::tuple_size<std::tuple<T...> >::value-1>(in))
 {
 }
 
 template<typename ValueType, class GridType>
-const GridType & GridObject<1,ValueType,GridType>::getGrid() const
+const GridType & GridObject<ValueType,GridType>::getGrid() const
 {
     return (*_grid);
 } 
@@ -76,48 +76,49 @@ const GridType & GridObject<1,ValueType,GridType>::getGrid() const
 // N!=1
 //
 
-template<unsigned int N,typename ValueType, typename GridTypeN, typename ...GridType> 
-GridObject<N,ValueType,GridTypeN, GridType...>::GridObject()
+template<typename ValueType, typename GridTypeN, typename ...GridType> 
+GridObject<ValueType,GridTypeN, GridType...>::GridObject()
 {
+    DEBUG("Default, N=" << sizeof...(GridType)+1);
 }
 
-template<unsigned int N,typename ValueType, typename GridTypeN, typename ...GridType> 
+template<typename ValueType, typename GridTypeN, typename ...GridType> 
 template <class ...T>
-GridObject<N,ValueType,GridTypeN, GridType...>::GridObject( const std::tuple<T...> &in):
+GridObject<ValueType,GridTypeN, GridType...>::GridObject( const std::tuple<T...> &in):
     _grid(std::make_shared<GridTypeN>(std::get<0>(in))),
-    _vals(std::make_shared<VectorType<GridObject<N-1,ValueType,GridType...> > >( 
-          VectorType<GridObject<N-1,ValueType,GridType...> >(
-            VectorType< GridObject<N-1,ValueType,GridType...> >::Constant(std::get<0>(in).getSize(),GridObject<N-1,ValueType,GridType...>(in) ) 
+    _vals(std::make_shared<VectorType<GridObject<ValueType,GridType...> > >( 
+          VectorType<GridObject<ValueType,GridType...> >(
+            VectorType< GridObject<ValueType,GridType...> >::Constant(std::get<0>(in).getSize(),GridObject<ValueType,GridType...>(in) ) 
             )
           )
          )
 {
-    static_assert(std::tuple_size<std::tuple<T...> >::value >= N,"Too small elements in the tuple");
+    static_assert(std::tuple_size<std::tuple<T...> >::value >= sizeof...(GridType)+1,"Too small elements in the tuple");
     DEBUG("Grid constructor N = " << sizeof...(GridType)+1);
 }
 
-template<unsigned int N, typename ValueType, typename GridTypeN, typename ...GridType>
-auto GridObject<N,ValueType,GridTypeN, GridType...>::operator[](unsigned int i)->decltype((*_vals)[0])
+template< typename ValueType, typename GridTypeN, typename ...GridType>
+auto GridObject<ValueType,GridTypeN, GridType...>::operator[](unsigned int i)->decltype((*_vals)[0])
 {
     return (*_vals)[i];
 }
 
-template<unsigned int N, typename ValueType, typename GridTypeN, typename ...GridType>
+template< typename ValueType, typename GridTypeN, typename ...GridType>
 
-const GridTypeN & GridObject<N,ValueType,GridTypeN, GridType...>::getGrid() const
+const GridTypeN & GridObject<ValueType,GridTypeN, GridType...>::getGrid() const
 {
     return (*_grid);
 }
 
 /*
-template<unsigned int N, typename ValueType, class GridType>
-GridObject<N,ValueType,GridType>::GridObject(std::shared_ptr<GridType> grid,  std::function<ValueType (decltype((*grid)[0]))> f):GridObject<N,ValueType,GridType>(grid)
+template< typename ValueType, class GridType>
+GridObject<ValueType,GridType>::GridObject(std::shared_ptr<GridType> grid,  std::function<ValueType (decltype((*grid)[0]))> f):GridObject<ValueType,GridType>(grid)
 {
     this->set(f);
 }
 
-template<unsigned int N, typename ValueType, class GridType>
-void GridObject<N,ValueType,GridType>::set(std::function<ValueType (decltype((*_grid)[0]))> f)
+template< typename ValueType, class GridType>
+void GridObject<ValueType,GridType>::set(std::function<ValueType (decltype((*_grid)[0]))> f)
 {
     assert(_vals->size() == (*_grid).getSize());
     for (unsigned int i=0; i<_vals->size(); ++i) (*_vals)[i]=f((*_grid)[i]);

@@ -11,13 +11,14 @@ int main()
 {
     Log.setDebugging(true);
     std::cout << "Hi!" << std::endl;
-    typedef GridObject<1,ComplexType,FMatsubaraGrid> GF;
+    typedef GridObject<ComplexType,FMatsubaraGrid> GF;
     //Grid<RealType> a1;
     //std::function<RealType(const int &)> F1=[&](const int & n) {return PI/10*(2*n+1);};
     //std::cout<<F1(-100) << std::endl;
     //Grid<RealType> n1(-100,100,F1);
     //INFO(n1);
-    FMatsubaraGrid n2(-10,10,10);
+    int b1;
+    FMatsubaraGrid n2(-100,100,10);
     FMatsubaraGrid n1(-3,3,20);
     std::shared_ptr<FMatsubaraGrid> a = std::make_shared<FMatsubaraGrid>(n2);
     //INFO(n2);
@@ -36,8 +37,11 @@ int main()
    //GF D1(n2);
    // INFO(D1);
    // INFO(D1[4]);
-    GridObject<2,ComplexType,FMatsubaraGrid,FMatsubaraGrid> D2(std::make_tuple(n1,n2));
+    std::cin >> b1;
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> D2(std::make_tuple(n2,n2));
+    std::cin >> b1;
     DEBUG(D2.getGrid().getSize());
-    DEBUG(D2[0].getGrid().getSize());
+    DEBUG(D2[1].getGrid().getSize());
     //D2[0].set(F2);
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid,FMatsubaraGrid,FMatsubaraGrid> D4(std::make_tuple(n2,n2,n2,n2));
 }
