@@ -8,18 +8,18 @@ namespace FK {
 
 /** A representatin of a one-dimensional grid, which stores an array of ValuType values. */
 template <typename ValueType, class Derived>
-class Grid1d {
+class Grid {
 protected:
     VectorType<ValueType> _vals;
 public:
     /** Empty constructor. */
-    Grid1d();
+    Grid();
     /** Copy from vector. */
-    Grid1d(const VectorType<ValueType> & vals);
+    Grid(const VectorType<ValueType> & vals);
     /** Initialize the values from a given function, that maps the integer values
      * to the ValueType values. 
      */
-    Grid1d(int min, int max, std::function<ValueType (const int&)> f);
+    Grid(int min, int max, std::function<ValueType (const int&)> f);
     /** Returns a value at given index. */
     ValueType operator[](unsigned int in) const;
     /** Returns all values. */
@@ -33,13 +33,13 @@ public:
     /** A CRTP reference to one of the inherited objects. */
     template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0])) { return static_cast<Derived*>(this)->integrate(in); };
     /** Make the object printable. */
-    template <typename ValType, class Derived2> friend std::ostream& operator<<(std::ostream& lhs, const Grid1d<ValType,Derived2> &gr);
+    template <typename ValType, class Derived2> friend std::ostream& operator<<(std::ostream& lhs, const Grid<ValType,Derived2> &gr);
 
     class exWrongIndex : public std::exception { virtual const char* what() const throw(); }; 
 };
 
 /** A particular Grid for Matsubara frequencies. */
-class FMatsubaraGrid1d : public Grid1d<ComplexType, FMatsubaraGrid1d>
+class FMatsubaraGrid : public Grid<ComplexType, FMatsubaraGrid>
 {
     /** Inverse temperature. */
     const RealType _beta;
@@ -48,13 +48,13 @@ class FMatsubaraGrid1d : public Grid1d<ComplexType, FMatsubaraGrid1d>
     /** Min and max numbers of freq. - useful for searching. */
     int _w_min, _w_max;
 public:
-    FMatsubaraGrid1d(int min, int max, RealType beta);
+    FMatsubaraGrid(int min, int max, RealType beta);
     std::tuple <bool, unsigned int, RealType> findSmaller (ComplexType in);
     template <class Obj> auto integrate(const Obj &in) -> decltype(in(_vals[0]));
 };
 
 /** A grid of real frequencies. */
-class RealGrid1d : public Grid1d<RealType, RealGrid1d>
+class RealGrid : public Grid<RealType, RealGrid>
 {
     public:
     template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0]));
@@ -65,20 +65,20 @@ class RealGrid1d : public Grid1d<RealType, RealGrid1d>
 /* ===========================================================================*/
 
 //
-// Grid1d
+// Grid
 //
 
 template <typename ValueType, class Derived>
-Grid1d<ValueType,Derived>::Grid1d()
+Grid<ValueType,Derived>::Grid()
 {};
 
 template <typename ValueType, class Derived>
-Grid1d<ValueType,Derived>::Grid1d(const VectorType<ValueType> &vals):_vals(vals)
+Grid<ValueType,Derived>::Grid(const VectorType<ValueType> &vals):_vals(vals)
 {
 };
 
 template <typename ValueType, class Derived>
-Grid1d<ValueType,Derived>::Grid1d(int min, int max, std::function<ValueType (const int&)> f)
+Grid<ValueType,Derived>::Grid(int min, int max, std::function<ValueType (const int&)> f)
 {
     if (max<min) std::swap(min,max);
     unsigned int n_points = max-min;
@@ -87,40 +87,40 @@ Grid1d<ValueType,Derived>::Grid1d(int min, int max, std::function<ValueType (con
 }
 
 template <typename ValueType, class Derived>
-ValueType Grid1d<ValueType,Derived>::operator[](unsigned int index) const
+ValueType Grid<ValueType,Derived>::operator[](unsigned int index) const
 {
     if (index>_vals.size()) throw exWrongIndex();
     return _vals[index];
 }
 
 template <typename ValueType, class Derived>
-const VectorType<ValueType> & Grid1d<ValueType,Derived>::getVals() const
+const VectorType<ValueType> & Grid<ValueType,Derived>::getVals() const
 {
     return _vals;
 }
 
 template <typename ValueType, class Derived>
-unsigned int Grid1d<ValueType,Derived>::getSize() const
+unsigned int Grid<ValueType,Derived>::getSize() const
 {
     return _vals.size();
 }
 /*
 template <typename ValueType, class Derived>
-void Grid1d<ValueType,Derived>::defineMap()
+void Grid<ValueType,Derived>::defineMap()
 {
     for (unsigned int i=0; i<_vals.size(); ++i) _back_map[_vals[i]]=i;
 }
 */
 
 template <typename ValueType, class Derived>
-std::ostream& operator<<(std::ostream& lhs, const Grid1d<ValueType,Derived> &gr)
+std::ostream& operator<<(std::ostream& lhs, const Grid<ValueType,Derived> &gr)
 { 
     lhs << gr._vals;
     return lhs;
 }
 
 template <typename ValueType, class Derived>
-const char* Grid1d<ValueType,Derived>::exWrongIndex::what() const throw(){
+const char* Grid<ValueType,Derived>::exWrongIndex::what() const throw(){
      return "Index out of bounds";
 };
 
@@ -128,14 +128,14 @@ const char* Grid1d<ValueType,Derived>::exWrongIndex::what() const throw(){
 // MatsubaraGrid
 //
 
-inline FMatsubaraGrid1d::FMatsubaraGrid1d(int min, int max, RealType beta):
-    Grid1d(min,max,std::bind(FMatsubara, std::placeholders::_1, beta)),
+inline FMatsubaraGrid::FMatsubaraGrid(int min, int max, RealType beta):
+    Grid(min,max,std::bind(FMatsubara, std::placeholders::_1, beta)),
     _beta(beta), _spacing(PI/beta), _w_min(min), _w_max(max)
 {
 }
 
 template <class Obj> 
-auto FMatsubaraGrid1d::integrate(const Obj &in) -> decltype(in(_vals[0]))
+auto FMatsubaraGrid::integrate(const Obj &in) -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R;
     for (int i=0; i<_vals.size(); ++i) {
@@ -145,7 +145,7 @@ auto FMatsubaraGrid1d::integrate(const Obj &in) -> decltype(in(_vals[0]))
 }
 
 
-inline std::tuple <bool, unsigned int, RealType> FMatsubaraGrid1d::findSmaller (ComplexType in)
+inline std::tuple <bool, unsigned int, RealType> FMatsubaraGrid::findSmaller (ComplexType in)
 {
     assert (std::abs(real(in))<std::numeric_limits<RealType>::epsilon());
     int n=(imag(in)/_spacing-1)/2;
@@ -160,7 +160,7 @@ inline std::tuple <bool, unsigned int, RealType> FMatsubaraGrid1d::findSmaller (
 
 
 template <class Obj> 
-auto RealGrid1d::integrate(const Obj &in) -> decltype(in(_vals[0]))
+auto RealGrid::integrate(const Obj &in) -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R;
     for (int i=0; i<_vals.size()-1; ++i) {
