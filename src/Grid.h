@@ -10,12 +10,12 @@ namespace FK {
 template <typename ValueType, class Derived>
 class Grid {
 protected:
-    VectorType<ValueType> _vals;
+    std::vector<ValueType> _vals;
 public:
     /** Empty constructor. */
     Grid();
     /** Copy from vector. */
-    Grid(const VectorType<ValueType> & vals);
+    Grid(const std::vector<ValueType> & vals);
     /** Initialize the values from a given function, that maps the integer values
      * to the ValueType values. 
      */
@@ -23,15 +23,15 @@ public:
     /** Returns a value at given index. */
     ValueType operator[](unsigned int in) const;
     /** Returns all values. */
-    const VectorType<ValueType> & getVals() const;
+    const std::vector<ValueType> & getVals() const;
     /** Returns size of grid. */
     unsigned int getSize() const;
 
     /** Returns a tuple of left closest index, weight, right closest index and weight, which are the closest to input value. */
-    std::tuple <bool, unsigned int, RealType> findSmaller (ValueType in) { return static_cast<Derived*>(this)->findSmaller(in); };
+    std::tuple <bool, unsigned int, RealType> find (ValueType in) { return static_cast<Derived*>(this)->find(in); };
 
     /** A CRTP reference to one of the inherited objects. */
-    template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0])) { return static_cast<Derived*>(this)->integrate(in); };
+    template <class Obj> auto integrate(const Obj &in)->decltype(in[_vals[0]]) { return static_cast<Derived*>(this)->integrate(in); };
     /** Make the object printable. */
     template <typename ValType, class Derived2> friend std::ostream& operator<<(std::ostream& lhs, const Grid<ValType,Derived2> &gr);
 
@@ -49,8 +49,9 @@ class FMatsubaraGrid : public Grid<ComplexType, FMatsubaraGrid>
     int _w_min, _w_max;
 public:
     FMatsubaraGrid(int min, int max, RealType beta);
-    std::tuple <bool, unsigned int, RealType> findSmaller (ComplexType in);
+    std::tuple <bool, unsigned int, RealType> find (ComplexType in);
     template <class Obj> auto integrate(const Obj &in) -> decltype(in(_vals[0]));
+    template <class Obj> auto gridIntegrate(std::vector<Obj> &in) -> Obj;
 };
 
 /** A grid of real frequencies. */
@@ -58,6 +59,7 @@ class RealGrid : public Grid<RealType, RealGrid>
 {
     public:
     template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0]));
+    template <class Obj> auto gridIntegrate(std::vector<Obj> &in) -> Obj;
     //std::tuple <unsigned int, RealType, unsigned int, RealType> find (ValueType in);
 };
 
@@ -73,7 +75,7 @@ Grid<ValueType,Derived>::Grid()
 {};
 
 template <typename ValueType, class Derived>
-Grid<ValueType,Derived>::Grid(const VectorType<ValueType> &vals):_vals(vals)
+Grid<ValueType,Derived>::Grid(const std::vector<ValueType> &vals):_vals(vals)
 {
 };
 
@@ -94,7 +96,7 @@ ValueType Grid<ValueType,Derived>::operator[](unsigned int index) const
 }
 
 template <typename ValueType, class Derived>
-const VectorType<ValueType> & Grid<ValueType,Derived>::getVals() const
+const std::vector<ValueType> & Grid<ValueType,Derived>::getVals() const
 {
     return _vals;
 }
@@ -137,15 +139,22 @@ inline FMatsubaraGrid::FMatsubaraGrid(int min, int max, RealType beta):
 template <class Obj> 
 auto FMatsubaraGrid::integrate(const Obj &in) -> decltype(in(_vals[0]))
 {
-    decltype(in(_vals[0])) R;
-    for (int i=0; i<_vals.size(); ++i) {
-        R+=in(_vals[i]);
-        }
+    decltype(in(_vals[0])) R = in(_vals[0]);
+    R=std::accumulate(_vals.begin()+1, _vals.end(),R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x);}); 
     return R/_beta;
 }
 
+template <class Obj> 
+auto FMatsubaraGrid::gridIntegrate(std::vector<Obj> &in) -> Obj
+{
+    //decltype(in[0]) R = in[0];
+    //R=std::accumulate(_vals.begin()+1, _vals.end(),R,[&](decltype(in[0])& y, decltype(_vals[0]) &x) {return y+in(x);}); 
+    //return R/_beta;
+}
 
-inline std::tuple <bool, unsigned int, RealType> FMatsubaraGrid::findSmaller (ComplexType in)
+
+
+inline std::tuple <bool, unsigned int, RealType> FMatsubaraGrid::find (ComplexType in)
 {
     assert (std::abs(real(in))<std::numeric_limits<RealType>::epsilon());
     int n=(imag(in)/_spacing-1)/2;

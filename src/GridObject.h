@@ -7,100 +7,134 @@
 
 namespace FK { 
 
-template< typename ValueType, typename GridTypeN, typename ...GridType> 
-class GridObject : public GridObject<ValueType,GridType...>
-{
-static_assert(sizeof...(GridType)>0, "N=1 has a specialized variant");
+template <unsigned int N, typename ValueType>
+class Container {
+static_assert(N>1, "N=1 has a specialized variant");
 protected:
-    std::shared_ptr<GridTypeN> _grid;
-    std::shared_ptr<VectorType<GridObject<ValueType,GridType...> > > _vals;
+    std::vector<Container<N-1, ValueType> >  _vals;
 public:
-    /** Default constructor. Required by Eigen::Vector. Does nothing. */
-    GridObject(); 
-    /** Constructs a grid object out of a tuple containing various grids. */
-    template <class ...T> GridObject( const std::tuple<T...> &in);
-    /** Returns element number i, which corresponds to (*_grid)[i]. */
-    auto operator[](unsigned int i)->decltype((*_vals)[0]);
-    const GridTypeN & getGrid() const; 
-//    void set(std::function<ValueType (decltype((*_grid)[0]))> f);
-//    ValueType operator()(decltype((*_grid)[0]) in ) const;
-//    template <unsigned int M, typename ValType, class GridType2> friend std::ostream& operator<<(std::ostream& lhs, const GridObject<M,ValType,GridType2> &in);
+    /** Default constructor. Required by std::Vector. Does nothing. */
+    Container(){};
+    template <class ...T> //, typename = typename std::enable_if<std::is_function<std::tuple_element<0, std::tuple<T...> >.getGrid()>::value> 
+    Container ( const std::tuple<T...> &in) : 
+        _vals(std::vector<Container<N-1, ValueType>>( 
+            std::get<std::tuple_size<std::tuple<T...> >::value-N>(in), Container<N-1, ValueType>(in)
+            )){};
 };
 
-template <typename ValueType, class GridType>
-class GridObject<ValueType, GridType> 
+template <typename ValueType>
+class Container<1,ValueType> {
+protected:
+    std::vector<ValueType>  _vals;
+public:
+    /** Default constructor. Required by std::Vector. Does nothing. */
+    Container(){};
+    template <class ...T> Container ( const std::tuple<T...> &in) : 
+        _vals(std::vector<ValueType>( std::get<std::tuple_size<std::tuple<T...> >::value-1>(in))){};
+};
+
+
+/** A GridObject is a heterogeneous container class, that stores data, 
+ * defined on multiple different grids, which can be of different types.
+ */
+template< typename ValueType, typename ...GridType> 
+class GridObject 
 {
 protected:
-    std::shared_ptr<GridType> _grid;
-    std::shared_ptr<VectorType<ValueType> > _vals;
+    std::tuple<GridType...> _grids;
+    Container<std::tuple_size<std::tuple<GridType...> >::value, ValueType> _data;
 public:
-    /** Default constructor. Required by Eigen::Vector. Does nothing. Couldn't find how to make it protected. 
-     * A link - http://accu.org/index.php/journals/296. */
-    GridObject(); 
-    /** Generate an object from a grid. */
-    GridObject(const GridType& grid);
-    template <class ...T> GridObject(const std::tuple<T...> &in);
-    const GridType & getGrid() const; 
-}; 
+    /** Constructs a grid object out of a tuple containing various grids. */
+    GridObject( const std::tuple<GridType...> &in);
+
+    /** Returns element number i, which corresponds to (*_grid)[i]. */
+//    auto operator[](unsigned int i)->decltype((_vals)[0]);
+    /** Returns the associated grid. */
+//    const GridTypeN & getGrid() const; 
+//    ValueType operator()(decltype((*_grid)[0]) in ) const;
+//    template <typename ValType, class ...GridType2> 
+//    friend
+//        std::ostream& operator<<(std::ostream& lhs, const GridObject<ValType,GridType2...> &in);
+};
 
 //
 // N=1
 //
 
+/*
 template<typename ValueType, class GridType>
+inline
 GridObject<ValueType,GridType>::GridObject()
 {
-    DEBUG("Default, N=1");
+//    DEBUG("Default, N=1");
 }
 
 template<typename ValueType, class GridType>
+inline
 GridObject<ValueType,GridType>::GridObject(const GridType &grid):
     _grid(std::make_shared<GridType>(grid)),
-    _vals(std::make_shared<VectorType<ValueType> > (grid.getSize()))
+    _vals(std::vector<ValueType>  (grid.getSize()))
 {
-    DEBUG("Initializing from grid, N=1");
+//    DEBUG("Initializing from grid, N=1");
 }
 
 template<typename ValueType, class GridType>
 template <class ...T> 
+inline
 GridObject<ValueType,GridType>::GridObject(const std::tuple<T...> &in):GridObject(std::get<std::tuple_size<std::tuple<T...> >::value-1>(in))
 {
 }
 
 template<typename ValueType, class GridType>
+inline
 const GridType & GridObject<ValueType,GridType>::getGrid() const
 {
     return (*_grid);
 } 
+
+template< typename ValueType, class GridType>
+inline
+void GridObject<ValueType,GridType>::set(std::function<ValueType (decltype((*_grid)[0]))> f)
+{
+    assert(_vals.size() == (*_grid).getSize());
+    for (unsigned int i=0; i<_vals.size(); ++i) (_vals)[i]=f((*_grid)[i]);
+}
+
 //
 // N!=1
 //
 
 template<typename ValueType, typename GridTypeN, typename ...GridType> 
+inline
 GridObject<ValueType,GridTypeN, GridType...>::GridObject()
 {
-    DEBUG("Default, N=" << sizeof...(GridType)+1);
+//    DEBUG("Default, N=" << sizeof...(GridType)+1);
 }
 
 template<typename ValueType, typename GridTypeN, typename ...GridType> 
 template <class ...T>
+inline
 GridObject<ValueType,GridTypeN, GridType...>::GridObject( const std::tuple<T...> &in):
     _grid(std::make_shared<GridTypeN>(std::get<0>(in))),
-    _vals(std::make_shared<VectorType<GridObject<ValueType,GridType...> > >( 
-          VectorType<GridObject<ValueType,GridType...> >(
-            VectorType< GridObject<ValueType,GridType...> >::Constant(std::get<0>(in).getSize(),GridObject<ValueType,GridType...>(in) ) 
-            )
-          )
-         )
+    //_vals(std::vector<GridObject<ValueType,GridType...> > (std::get<0>(in).getSize())) 
+    _vals(std::vector<GridObject<ValueType,GridType...> >(std::get<0>(in).getSize(), std::move(GridObject<ValueType,GridType...>(in)))) 
 {
+
     static_assert(std::tuple_size<std::tuple<T...> >::value >= sizeof...(GridType)+1,"Too small elements in the tuple");
-    DEBUG("Grid constructor N = " << sizeof...(GridType)+1);
+//    for (int i=0; i<_vals.size(); ++i) {
+//            (_vals)[i]=std::move(GridObject<ValueType,GridType...>(in));
+//        }
+//    std::fill(index_begin<GridObject<ValueType,GridType...>>(_vals),index_end<GridObject<ValueType,GridType...>>(_vals),std::move(GridObject<ValueType,GridType...>(in)));
+//    DEBUG("Grid constructor N = " << sizeof...(GridType)+1);
+//
+          //std::vector<GridObject<ValueType,GridType...> >(
+           // std::vector< GridObject<ValueType,GridType...> >::Constant(std::get<0>(in).getSize(),std::move(GridObject<ValueType,GridType...>(in)) ) 
 }
 
 template< typename ValueType, typename GridTypeN, typename ...GridType>
-auto GridObject<ValueType,GridTypeN, GridType...>::operator[](unsigned int i)->decltype((*_vals)[0])
+auto GridObject<ValueType,GridTypeN, GridType...>::operator[](unsigned int i)->decltype((_vals)[0])
 {
-    return (*_vals)[i];
+    return (_vals)[i];
 }
 
 template< typename ValueType, typename GridTypeN, typename ...GridType>
@@ -110,27 +144,22 @@ const GridTypeN & GridObject<ValueType,GridTypeN, GridType...>::getGrid() const
     return (*_grid);
 }
 
-/*
-template< typename ValueType, class GridType>
-GridObject<ValueType,GridType>::GridObject(std::shared_ptr<GridType> grid,  std::function<ValueType (decltype((*grid)[0]))> f):GridObject<ValueType,GridType>(grid)
-{
-    this->set(f);
-}
 
-template< typename ValueType, class GridType>
-void GridObject<ValueType,GridType>::set(std::function<ValueType (decltype((*_grid)[0]))> f)
+template <typename ValType, class GridType1, class ...GridType2> 
+std::ostream& operator<<(std::ostream& lhs, const GridObject<ValType,GridType1, GridType2...> &in)
 {
-    assert(_vals->size() == (*_grid).getSize());
-    for (unsigned int i=0; i<_vals->size(); ++i) (*_vals)[i]=f((*_grid)[i]);
-}
-
-template <unsigned int M, typename ValType, class GridType2> 
-std::ostream& operator<<(std::ostream& lhs, const GridObject<M,ValType,GridType2> &in)
-{
-    lhs << *(in._vals); 
+    if (sizeof...(GridType2)>0) {
+        std::ostream_iterator<GridObject<ValType,GridType2...> > out_it (lhs,", ");
+        std::copy(in._vals.begin(), in._vals.end(), out_it);
+        }
+    else {
+        std::ostream_iterator<ValType> out_it (lhs,", ");
+        std::copy(in._vals.begin(), in._vals.end(), out_it);
+         }
     return lhs;
 }
+
 */
-}
+} // end of namespace FK
 #endif // endif::ifndef ___FK_GRID_OBJECT_H___
 

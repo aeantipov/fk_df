@@ -19,8 +19,8 @@ else ()
 endif ()
 #end :: C++11 check
 
-#set(DOXYFILE_SOURCE_DIR "./src")
-#include(UseDoxygen)
+set(DOXYFILE_SOURCE_DIR "./src")
+include(UseDoxygen)
 
 #find_package (Boost COMPONENTS python)
 #find_package (HDF5 COMPONENTS CXX)
