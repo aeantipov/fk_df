@@ -10,12 +10,12 @@ namespace FK {
 template <typename ValueType, class Derived>
 class Grid {
 protected:
-    std::vector<ValueType> _vals;
+    VectorType<ValueType> _vals;
 public:
     /** Empty constructor. */
     Grid();
     /** Copy from vector. */
-    Grid(const std::vector<ValueType> & vals);
+    Grid(const VectorType<ValueType> & vals);
     /** Initialize the values from a given function, that maps the integer values
      * to the ValueType values. 
      */
@@ -23,7 +23,7 @@ public:
     /** Returns a value at given index. */
     ValueType operator[](unsigned int in) const;
     /** Returns all values. */
-    const std::vector<ValueType> & getVals() const;
+    const VectorType<ValueType> & getVals() const;
     /** Returns size of grid. */
     unsigned int getSize() const;
 
@@ -51,7 +51,7 @@ public:
     FMatsubaraGrid(int min, int max, RealType beta);
     std::tuple <bool, unsigned int, RealType> find (ComplexType in);
     template <class Obj> auto integrate(const Obj &in) -> decltype(in(_vals[0]));
-    template <class Obj> auto gridIntegrate(std::vector<Obj> &in) -> Obj;
+    template <class Obj> auto gridIntegrate(VectorType<Obj> &in) -> Obj;
 };
 
 /** A grid of real frequencies. */
@@ -59,7 +59,7 @@ class RealGrid : public Grid<RealType, RealGrid>
 {
     public:
     template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0]));
-    template <class Obj> auto gridIntegrate(std::vector<Obj> &in) -> Obj;
+    template <class Obj> auto gridIntegrate(VectorType<Obj> &in) -> Obj;
     //std::tuple <unsigned int, RealType, unsigned int, RealType> find (ValueType in);
 };
 
@@ -75,7 +75,7 @@ Grid<ValueType,Derived>::Grid()
 {};
 
 template <typename ValueType, class Derived>
-Grid<ValueType,Derived>::Grid(const std::vector<ValueType> &vals):_vals(vals)
+Grid<ValueType,Derived>::Grid(const VectorType<ValueType> &vals):_vals(vals)
 {
 };
 
@@ -96,7 +96,7 @@ ValueType Grid<ValueType,Derived>::operator[](unsigned int index) const
 }
 
 template <typename ValueType, class Derived>
-const std::vector<ValueType> & Grid<ValueType,Derived>::getVals() const
+const VectorType<ValueType> & Grid<ValueType,Derived>::getVals() const
 {
     return _vals;
 }
@@ -117,7 +117,9 @@ void Grid<ValueType,Derived>::defineMap()
 template <typename ValueType, class Derived>
 std::ostream& operator<<(std::ostream& lhs, const Grid<ValueType,Derived> &gr)
 { 
-    lhs << gr._vals;
+    //lhs << gr._vals;
+    std::ostream_iterator<ValueType> out_it (lhs,", ");
+    std::copy(index_begin<ValueType>(gr._vals),index_end<ValueType>(gr._vals) , out_it);
     return lhs;
 }
 
@@ -140,13 +142,16 @@ template <class Obj>
 auto FMatsubaraGrid::integrate(const Obj &in) -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R = in(_vals[0]);
-    R=std::accumulate(_vals.begin()+1, _vals.end(),R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x);}); 
+    R=std::accumulate(++(index_begin<ComplexType>(_vals)), index_end<ComplexType>(_vals),R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x);}); 
     return R/_beta;
 }
 
 template <class Obj> 
-auto FMatsubaraGrid::gridIntegrate(std::vector<Obj> &in) -> Obj
+auto FMatsubaraGrid::gridIntegrate(VectorType<Obj> &in) -> Obj
 {
+    decltype(in[0]) R = in[0];
+    R=std::accumulate(++(index_begin<ComplexType>(_vals)), index_end<ComplexType>(_vals),R,[&](decltype(in[0])& y, decltype(in[0]) &x) {return y+x;}); 
+    return R/_beta;
     //decltype(in[0]) R = in[0];
     //R=std::accumulate(_vals.begin()+1, _vals.end(),R,[&](decltype(in[0])& y, decltype(_vals[0]) &x) {return y+in(x);}); 
     //return R/_beta;
