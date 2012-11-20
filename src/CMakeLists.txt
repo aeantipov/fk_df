@@ -5,7 +5,8 @@ set (fk_src
     FKCommon.h
     Logger.h Logger.cpp
     Grid.h 
-    GridObject.h
+    Container.h Container.hpp
+    GridObject.h GridObject.hpp
     GFWrap.h 
     )
 add_library(fk SHARED ${fk_src})
