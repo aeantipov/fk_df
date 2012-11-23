@@ -15,19 +15,18 @@ template< typename ValueType, typename ...GridType>
 class GridObject 
 {
 protected:
-    static const int _N = sizeof...(GridType);
-    static void _fill_dims(const std::tuple<GridType...>& in, std::array<size_t,_N> &out); 
+    static const size_t N = sizeof...(GridType);
     std::tuple<GridType...> _grids;
-    std::unique_ptr<Container<_N, ValueType> > _data;
+    std::array<size_t, N> _dims;
+    std::unique_ptr<Container<N, ValueType>> _data;
 public:
+
     /** Constructs a grid object out of a tuple containing various grids. */
     GridObject( const std::tuple<GridType...> &in);
 
     /** Returns element number i, which corresponds to (*_grid)[i]. */
     auto operator[](unsigned int i)->decltype((*_data)[0]);
-    /** Returns the associated grid. */
-    //auto getGrid()->decltype(std::get<0>(_grids)) const; 
-//    ValueType operator()(decltype((*_grid)[0]) in ) const;
+    template <int M> ValueType operator()(const std::array<size_t,M> in) const;
     template <typename ValType, class ...GridType2> friend std::ostream& operator<<(std::ostream& lhs, const GridObject<ValType,GridType2...> &in);
 };
 

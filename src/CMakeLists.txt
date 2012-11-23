@@ -4,7 +4,7 @@ set (fk_src
     EigenIterator.h
     FKCommon.h
     Logger.h Logger.cpp
-    Grid.h 
+    Grid.h Grid.hpp 
     Container.h Container.hpp
     GridObject.h GridObject.hpp
     GFWrap.h 

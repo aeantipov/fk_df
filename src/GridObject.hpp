@@ -8,12 +8,13 @@ namespace FK {
 // GridObject
 //
 
+
 template <typename ValueType, class ...GridType> 
 GridObject<ValueType,GridType...>::GridObject( const std::tuple<GridType...> &in):
     _grids(in)
-//    _data(Container<sizeof...(GridType),ValueType>(in)) 
 {
-    //_dims = std::array<unsigned int, 3>({1,2,3});
+    GetGridSizes<N>::TupleSizeToArray(_grids,_dims);   
+    _data.reset(new Container<sizeof...(GridType),ValueType>(_dims));
 }
 
 template <typename ValueType, class ...GridType> 
