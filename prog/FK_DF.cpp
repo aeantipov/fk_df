@@ -29,32 +29,27 @@ int main()
     auto a1 = std::make_tuple(n1,n2);
 
     std::array<size_t,2> Ar1 {{1,3}};
-    std::array<size_t,3> Ar2 {{1,1,2}};
+    std::array<size_t,3> Ar2 {{1,1,3}};
     Container<2,ComplexType> B(Ar1);
-    B[0][2]=3.0;
     Container<2,ComplexType> C(Ar1);
+    Container<3,ComplexType> D(Ar2);
+    Container<3,ComplexType> E(D);
+    B[0][2]=3.0;
     C[0][2]=-2.0;
-    DEBUG(B);
+    DEBUG(B+C*2);
     DEBUG(B[0]+C[0]);
     DEBUG((B+C)[0]);
     DEBUG((B[0]*3.0));
-  //  DEBUG((B-C)[0]);
-
-    Container<3,ComplexType> D(Ar2);
+    DEBUG((B-C)[0]);
     D[0][0][0]=-1.0;
     D[0][0][1]=1.0;
-    Container<3,ComplexType> E(D);
     E*=(-1);
     DEBUG(D);
     DEBUG(E);
     DEBUG(D+E);
     DEBUG(D*5+2.0);
-
-    
-    std::pair<FMatsubaraGrid, FMatsubaraGrid> ap(n1,n2);
-    DEBUG(std::boolalpha << std::is_member_pointer<decltype(ap.first)>::value);
-
-
+    DEBUG(D[0]+B);
+/*    
     GF D1(n2);
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> D2(std::make_tuple(n1,n1));
 
@@ -64,7 +59,7 @@ int main()
     auto d3_it = index_begin<ComplexType>(d3);
     auto d3_it_end = index_end<ComplexType>(d3);
     //std::for_each(d3_it,d3_it_end,[](ComplexType &x){std::cout << x << " " << std::endl;});
-    
+  */  
 /*
     //INFO(D1);
    // INFO(D1[4]);
