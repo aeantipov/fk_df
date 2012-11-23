@@ -41,7 +41,7 @@ include_directories(
 )
 
 add_subdirectory(src)
-#add_subdirectory(tests)
 add_subdirectory(prog)
-#enable_testing()
+add_subdirectory(tests)
+enable_testing()
 
