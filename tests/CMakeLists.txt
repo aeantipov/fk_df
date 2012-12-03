@@ -10,6 +10,7 @@ enable_testing()
 set (tests 
 GridTest
 ContainerTest
+GridObjectTest
 )
 
 foreach (test ${tests})

@@ -22,6 +22,9 @@ int main()
     auto a1 = std::make_tuple(n1,n2);
 
     GF D1(n2);
+    D1.getData()[3]=3.4;
+    DEBUG(D1);
+    DEBUG(D1(FMatsubara(3,20)));
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> D2(std::make_tuple(n1,n2));
     
     D2.getData()[0][1]=4.0;

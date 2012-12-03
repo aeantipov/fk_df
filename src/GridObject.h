@@ -18,21 +18,15 @@ protected:
     static const size_t N = sizeof...(GridType);
     std::tuple<GridType...> _grids;
     std::array<size_t, N> _dims;
+    std::function<ValueType(GridType...)> _f;
     template <size_t Nc, typename ArgType1, typename ...ArgTypes> struct ContainerExtractor {
-        static ValueType& get(Container<Nc, ValueType> &data, const std::tuple<GridType...> &grids, const ArgType1& arg1, const ArgTypes&... args) {
-            const auto & grid=std::get<N-Nc>(grids);
-            auto &tmp = grid.getValue(data, arg1);
-            return ContainerExtractor<Nc-1,ArgTypes...>::get(tmp,grids,args...);
-            }
-        };
+        static ValueType& get(Container<Nc, ValueType> &data, const std::tuple<GridType...> &grids, const ArgType1& arg1, const ArgTypes&... args);
+        static void set(Container<Nc, ValueType> &data, const std::tuple<GridType...> &grids, const std::function<ValueType(ArgType1, ArgTypes...)> &f);
+             };
     template <typename ArgType1> struct ContainerExtractor<1,ArgType1> {
-        static ValueType& get(Container<1, ValueType> &data, const std::tuple<GridType...> &grids, const ArgType1& arg1) {
-            const auto & grid=std::get<N-1>(grids);
-            auto &tmp = grid.getValue(data, arg1);
-            return tmp;
-            } 
+        static ValueType& get(Container<1, ValueType> &data, const std::tuple<GridType...> &grids, const ArgType1& arg1); 
+        static void set(Container<1, ValueType> &data, const std::tuple<GridType...> &grids, const std::function<ValueType(ArgType1)> &f);
         };
-
 
     std::shared_ptr<Container<N, ValueType>> _data;
 public:
@@ -43,10 +37,11 @@ public:
     /** Returns element number i, which corresponds to (*_grid)[i]. */
     //auto operator[](unsigned int i)->decltype((*_data)[0]);
     Container<sizeof...(GridType), ValueType>& getData(){return *_data;};
-    //template <typename ...ArgTypes> ValueType& operator()(const std::tuple<ArgTypes...>& in);
-    template <typename ...ArgTypes> ValueType& operator()(const ArgTypes&... in);
+    template <typename ...ArgTypes> 
+    ValueType& operator()(const ArgTypes&... in);
     template <int M> ValueType operator[](const std::array<size_t,M>& in) const;
     template <typename ValType, class ...GridType2> friend std::ostream& operator<<(std::ostream& lhs, const GridObject<ValType,GridType2...> &in);
+    void fill(const std::function<ValueType(GridType...)> &);
 };
 
 } // end of namespace FK

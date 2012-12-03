@@ -5,9 +5,33 @@
 
 namespace FK {
 //
-// GridObject
+// GridObject::ContainerExtractor
 //
 
+template< typename ValueType, typename ...GridType> 
+template <size_t Nc, typename ArgType1, typename ...ArgTypes>
+inline ValueType& GridObject<ValueType,GridType...>::ContainerExtractor<Nc,ArgType1,ArgTypes...>::get(
+    Container<Nc, ValueType> &data, const std::tuple<GridType...> &grids, 
+    const ArgType1& arg1, const ArgTypes&... args) 
+{
+    const auto & grid=std::get<N-Nc>(grids);
+    auto &tmp = grid.getValue(data, arg1);
+    return ContainerExtractor<Nc-1,ArgTypes...>::get(tmp,grids,args...);
+};
+
+template< typename ValueType, typename ...GridType>
+template <typename ArgType1> 
+inline ValueType& GridObject<ValueType,GridType...>::ContainerExtractor<1,ArgType1>::get(
+    Container<1, ValueType> &data, const std::tuple<GridType...> &grids, const ArgType1& arg1)
+{
+    const auto & grid=std::get<N-1>(grids);
+    auto &tmp = grid.getValue(data, arg1);
+    return tmp;
+}
+
+//
+// GridObject
+//
 
 template <typename ValueType, typename ...GridType> 
 GridObject<ValueType,GridType...>::GridObject( const std::tuple<GridType...> &in):
@@ -23,42 +47,20 @@ inline ValueType& GridObject<ValueType,GridType...>::operator()(const ArgTypes&.
 {
     static_assert(sizeof...(ArgTypes) == sizeof...(GridType), "GridObject call number of input parameters mismatch."); 
     return ContainerExtractor<sizeof...(GridType), ArgTypes...>::get(*_data,_grids,in...);
-    //return _get_value_from_container(*_data, in);
 }
 
-
-/*
-template <typename ValueType, typename ...GridType> 
-template <typename ...ArgTypes> 
-inline ValueType& GridObject<ValueType,GridType...>::operator()(const std::tuple<ArgTypes...>& in)
-{
-    static_assert(sizeof...(ArgTypes) == sizeof...(GridType), "GridObject call number of input parameters mismatch."); 
-    return _get_value_from_container(*_data, in);
-}
-
-template <typename ValueType, typename ...GridType> 
-template <size_t Nc, typename ...ArgTypes> 
-inline ValueType& GridObject<ValueType, GridType...>::_get_value_from_container(
-    Container<Nc, ValueType> &data, 
-    const std::tuple<ArgTypes...>& args)
-{
-    static_assert(Nc>1,"");
-    auto & grid=std::get<N-Nc>(_grids);
-    auto & x = std::get<N-Nc>(args);
-    //return _get_value_from_container(grid.getValue(data, x), args); 
-    auto &tmp = grid.getValue(data, x);
-    DEBUG("!" << Nc);
-    _get_value_from_container(tmp, args);
-    //if (Nc>1) return _get_value_from_container(tmp, args); 
-    //else return tmp;
-}
-
-*/
 template <typename ValueType, typename ...GridType> 
 std::ostream& operator<<(std::ostream& lhs, const GridObject<ValueType,GridType...> &in)
 {
     lhs << *(in._data);
     return lhs;
+}
+
+
+template <typename ValueType, typename ...GridType> 
+inline void GridObject<ValueType,GridType...>::fill(const std::function<ValueType(GridType...)> & in)
+{
+    _f = in;
 }
 
 } // end of namespace FK
