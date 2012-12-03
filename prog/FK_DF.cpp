@@ -16,50 +16,32 @@ int main()
 {
     Log.setDebugging(true);
     std::cout << "Hi!" << std::endl;
-
     typedef GridObject<ComplexType,FMatsubaraGrid> GF;
-    FMatsubaraGrid n1(-100,100,10);
-    FMatsubaraGrid n2(0,32,20);
-
-    std::function<ComplexType(ComplexType)> F2=[](ComplexType x) {return x;};
-    ComplexType out = n1.integrate<std::function<ComplexType(ComplexType)> > (F2);
-    INFO(out);
-    DEBUG(n2);
-
+    FMatsubaraGrid n1(0,2,10);
+    FMatsubaraGrid n2(0,5,20);
     auto a1 = std::make_tuple(n1,n2);
 
-    std::array<size_t,2> Ar1 {{1,3}};
-    std::array<size_t,3> Ar2 {{1,1,3}};
-    Container<2,ComplexType> B(Ar1);
-    Container<2,ComplexType> C(Ar1);
-    Container<3,ComplexType> D(Ar2);
-    Container<3,ComplexType> E(D);
-    B[0][2]=3.0;
-    C[0][2]=-2.0;
-    DEBUG(B+C*2);
-    DEBUG(B[0]+C[0]);
-    DEBUG((B+C)[0]);
-    DEBUG((B[0]*3.0));
-    DEBUG((B-C)[0]);
-    D[0][0][0]=-1.0;
-    D[0][0][1]=1.0;
-    E*=(-1);
-    DEBUG(D);
-    DEBUG(E);
-    DEBUG(D+E);
-    DEBUG(D*5+2.0);
-    DEBUG(D[0]+B);
-/*    
     GF D1(n2);
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> D2(std::make_tuple(n1,n1));
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> D2(std::make_tuple(n1,n2));
+    
+    D2.getData()[0][1]=4.0;
+    D2.getData()[1][2]=3.1;
+    DEBUG(D2);
 
-    MatrixType<ComplexType> d3(3,3);
-    MatrixType<ComplexType>::InnerIterator d3_it2(d3,0);
-    //VectorType<ComplexType> d3(3);
-    auto d3_it = index_begin<ComplexType>(d3);
-    auto d3_it_end = index_end<ComplexType>(d3);
-    //std::for_each(d3_it,d3_it_end,[](ComplexType &x){std::cout << x << " " << std::endl;});
-  */  
+    auto C1 = D2.getData();
+    DEBUG(C1[0]);
+    //decltype (C1[0]) x(std::make_tuple(3));
+    const std::array<size_t, 1> arr{{5}};
+    Container<1,ComplexType> C2(C1[0]);
+    DEBUG(C2[1]);
+    decltype (C1[0])& C2_2 = decltype(C1[0])(arr);
+    DEBUG(n2.getValue(C2, FMatsubara(1,20)));
+    DEBUG(n1.getValue(C1, FMatsubara(1,10)));
+    auto C22 = n1.getValue(C1, FMatsubara(0,10));
+    DEBUG(C22+C2-C22*2.0);
+    DEBUG(n2.getValue(n1.getValue(C1, FMatsubara(1,10)), FMatsubara(1,20)));
+
+    DEBUG(D2(FMatsubara(1,10),FMatsubara(2,20)));
 /*
     //INFO(D1);
    // INFO(D1[4]);

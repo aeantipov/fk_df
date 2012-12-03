@@ -28,10 +28,10 @@ public:
     unsigned int getSize() const;
 
     /** Returns a tuple of left closest index, weight, right closest index and weight, which are the closest to input value. */
-    std::tuple <bool, unsigned int, RealType> find (ValueType in) { return static_cast<Derived*>(this)->find(in); };
+    std::tuple <bool, unsigned int, RealType> find (ValueType in) const { return static_cast<Derived*>(this)->find(in); };
     /** A CRTP reference to one of the inherited objects. */
     template <class Obj> auto integrate(const Obj &in)->decltype(in[_vals[0]]) { return static_cast<Derived*>(this)->integrate(in); };
-    template <class Obj> auto getValue(const Obj &in, ComplexType x)->decltype(in[_vals[0]]) { return static_cast<Derived*>(this)->get_val(in); };
+    template <class Obj> auto getValue(const Obj &in, ComplexType x)->decltype(in[0]) const { return static_cast<Derived*>(this)->get_val(in); };
     /** Make the object printable. */
     template <typename ValType, class Derived2> friend std::ostream& operator<<(std::ostream& lhs, const Grid<ValType,Derived2> &gr);
 
@@ -49,10 +49,10 @@ class FMatsubaraGrid : public Grid<ComplexType, FMatsubaraGrid>
     int _w_min, _w_max;
 public:
     FMatsubaraGrid(int min, int max, RealType beta);
-    std::tuple <bool, unsigned int, RealType> find (ComplexType in);
-    template <class Obj> auto integrate(const Obj &in) -> decltype(in(_vals[0]));
-    template <class Obj> auto gridIntegrate(std::vector<Obj> &in) -> Obj;
-    template <class Obj> auto getValue(const Obj &in, ComplexType x)->decltype(in[_vals[0]]);
+    std::tuple <bool, unsigned int, RealType> find (ComplexType in) const ;
+    template <class Obj> auto integrate(const Obj &in) const -> decltype(in(_vals[0]));
+    template <class Obj> auto gridIntegrate(const std::vector<Obj> &in) const -> Obj;
+    template <class Obj> auto getValue(Obj &in, ComplexType x) const ->decltype(in[0]);
 };
 
 /** A grid of real values. */

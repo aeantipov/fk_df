@@ -20,7 +20,7 @@ public:
     typedef typename std::vector<Container<N-1, ValueType>>::const_iterator const_iterator;
     /** Constructor from the std::array of size_t. */
     template <size_t M> Container ( const std::array<size_t, M> &in);
-    Container(){};
+    //Container(){};
     /** Returns the value at point i. */
     auto operator[](size_t i)->decltype(_vals[0]);
     /** Begin iterator. */
@@ -49,7 +49,7 @@ protected:
 public:
     typedef typename std::vector<ValueType>::iterator iterator;
     typedef typename std::vector<ValueType>::const_iterator const_iterator;
-    Container(){};
+    //Container(){};
     /** Constructor from the std::array of size_t. The last value is used. */
     template <size_t M> Container ( const std::array<size_t, M> &in);
     /** Returns the value at index i. */

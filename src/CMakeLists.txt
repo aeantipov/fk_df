@@ -1,7 +1,6 @@
 include_directories (.)
 
 set (fk_src 
-    EigenIterator.h
     FKCommon.h
     Logger.h Logger.cpp
     Grid.h Grid.hpp 

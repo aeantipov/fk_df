@@ -18,15 +18,34 @@ protected:
     static const size_t N = sizeof...(GridType);
     std::tuple<GridType...> _grids;
     std::array<size_t, N> _dims;
-    std::unique_ptr<Container<N, ValueType>> _data;
+    template <size_t Nc, typename ArgType1, typename ...ArgTypes> struct ContainerExtractor {
+        static ValueType& get(Container<Nc, ValueType> &data, const std::tuple<GridType...> &grids, const ArgType1& arg1, const ArgTypes&... args) {
+            const auto & grid=std::get<N-Nc>(grids);
+            auto &tmp = grid.getValue(data, arg1);
+            return ContainerExtractor<Nc-1,ArgTypes...>::get(tmp,grids,args...);
+            }
+        };
+    template <typename ArgType1> struct ContainerExtractor<1,ArgType1> {
+        static ValueType& get(Container<1, ValueType> &data, const std::tuple<GridType...> &grids, const ArgType1& arg1) {
+            const auto & grid=std::get<N-1>(grids);
+            auto &tmp = grid.getValue(data, arg1);
+            return tmp;
+            } 
+        };
+
+
+    std::shared_ptr<Container<N, ValueType>> _data;
 public:
 
     /** Constructs a grid object out of a tuple containing various grids. */
     GridObject( const std::tuple<GridType...> &in);
 
     /** Returns element number i, which corresponds to (*_grid)[i]. */
-    auto operator[](unsigned int i)->decltype((*_data)[0]);
-    template <int M> ValueType operator()(const std::array<size_t,M> in) const;
+    //auto operator[](unsigned int i)->decltype((*_data)[0]);
+    Container<sizeof...(GridType), ValueType>& getData(){return *_data;};
+    //template <typename ...ArgTypes> ValueType& operator()(const std::tuple<ArgTypes...>& in);
+    template <typename ...ArgTypes> ValueType& operator()(const ArgTypes&... in);
+    template <int M> ValueType operator[](const std::array<size_t,M>& in) const;
     template <typename ValType, class ...GridType2> friend std::ostream& operator<<(std::ostream& lhs, const GridObject<ValType,GridType2...> &in);
 };
 
