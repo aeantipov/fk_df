@@ -16,8 +16,14 @@ int main()
     FMatsubaraGrid n1(-100,100,10);
     FMatsubaraGrid n2(0,32,20);
 
+    KMesh k1(32);
+    std::function<RealType(RealType)> F1=[](RealType x) {return cos(x);};
+    RealType outF1 = k1.integrate (F1);
+    INFO(outF1);
+    if (std::abs(outF1)>1e-8) return EXIT_FAILURE;
+
     std::function<ComplexType(ComplexType)> F2=[](ComplexType x) {return x;};
-    ComplexType out = n1.integrate<std::function<ComplexType(ComplexType)> > (F2);
+    ComplexType out = n1.integrate(F2);
     if (std::abs(out)>1e-8) return EXIT_FAILURE;
     INFO(out);
     DEBUG(n2);

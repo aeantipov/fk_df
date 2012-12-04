@@ -82,6 +82,19 @@ GridObject<ValueType,GridTypes...>::GridObject( GridObject<ValueType,GridTypes..
 }
 
 template <typename ValueType, typename ...GridTypes> 
+auto GridObject<ValueType,GridTypes...>::operator[](size_t i)->decltype((*_data)[0])
+{
+    return (*_data)[i];
+}
+
+/*
+template <typename ValueType, typename ...GridTypes> 
+template <int M> 
+ValueType& GridObject<ValueType,GridTypes...>::operator[](const std::array<size_t,M>& in)
+{
+}*/
+
+template <typename ValueType, typename ...GridTypes> 
 template <typename ...ArgTypes> 
 inline ValueType& GridObject<ValueType,GridTypes...>::operator()(const ArgTypes&... in)
 {

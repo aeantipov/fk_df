@@ -42,11 +42,11 @@ public:
     GridObject( GridObject<ValueType, GridTypes...>&& rhs);
 
     /** Returns element number i, which corresponds to (*_grid)[i]. */
-    //auto operator[](unsigned int i)->decltype((*_data)[0]);
+    auto operator[](size_t i)->decltype((*_data)[0]);
+    template <int M> ValueType& operator[](const std::array<size_t,M>& in);
     Container<sizeof...(GridTypes), ValueType>& getData(){return *_data;};
     template <typename ...ArgTypes> void fill(const std::function<ValueType(ArgTypes...)> &);
 
-    template <int M> ValueType operator[](const std::array<size_t,M>& in) const;
     template <typename ...ArgTypes> ValueType& operator()(const ArgTypes&... in);
     template <typename ...ArgTypes> GridObject& operator= (const std::function<ValueType(ArgTypes...)> &);
     GridObject& operator= (const GridObject & rhs);

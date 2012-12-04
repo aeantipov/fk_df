@@ -20,6 +20,7 @@ inline Container<N,ValueType>::Container ( const std::array<size_t, M> &in):
 template <size_t N, typename ValueType>
 inline auto Container<N,ValueType>::operator[](size_t i)->decltype(_vals[0])
 {
+    assert(i<_vals.size());
     return _vals[i];
 }
 
@@ -160,7 +161,7 @@ inline Container<N,ValueType>& Container<N,ValueType>::operator*=(const RhsArg &
 template <size_t N, typename ValueType> 
 inline Container<N,ValueType>& Container<N,ValueType>::operator*=(const Container<N,ValueType> &rhs)
 {
-    assert(this->vals.size() == rhs.vals._size());
+    assert(this->_vals.size() == rhs._vals.size());
     for (int i=0; i<_vals.size(); ++i) _vals[i]*=rhs._vals[i];
     return *this;
 }
@@ -176,7 +177,7 @@ inline Container<1,ValueType>& Container<1,ValueType>::operator*=(const RhsArg &
 template <typename ValueType> 
 inline Container<1,ValueType>& Container<1,ValueType>::operator*=(const Container<1,ValueType> &rhs)
 {
-    assert(this->vals.size() == rhs.vals.size());
+    assert(this->_vals.size() == rhs._vals.size());
     std::transform(_vals.begin(), _vals.end(), rhs._vals.begin(), _vals.begin(), std::multiplies<ValueType>());
     return *this;
 }
