@@ -20,6 +20,10 @@ public:
      * to the ValueType values. 
      */
     Grid(int min, int max, std::function<ValueType (const int&)> f);
+    /** Copy constructor. */
+    Grid(const Grid& rhs):_vals(rhs._vals){};
+    /** Move constructor. */
+    Grid(Grid&& rhs){_vals.swap(rhs._vals);};
     /** Returns a value at given index. */
     ValueType operator[](unsigned int in) const;
     /** Returns all values. */
@@ -49,6 +53,8 @@ class FMatsubaraGrid : public Grid<ComplexType, FMatsubaraGrid>
     int _w_min, _w_max;
 public:
     FMatsubaraGrid(int min, int max, RealType beta);
+    FMatsubaraGrid(const FMatsubaraGrid &rhs);
+    FMatsubaraGrid(FMatsubaraGrid&& rhs);
     std::tuple <bool, unsigned int, RealType> find (ComplexType in) const ;
     template <class Obj> auto integrate(const Obj &in) const -> decltype(in(_vals[0]));
     template <class Obj> auto gridIntegrate(const std::vector<Obj> &in) const -> Obj;

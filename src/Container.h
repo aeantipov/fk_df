@@ -20,7 +20,10 @@ public:
     typedef typename std::vector<Container<N-1, ValueType>>::const_iterator const_iterator;
     /** Constructor from the std::array of size_t. */
     template <size_t M> Container ( const std::array<size_t, M> &in);
-    //Container(){};
+    /** Copy constructor. */
+    Container(const Container<N,ValueType> &rhs):_vals(rhs._vals){};
+    /** Move constructor. */
+    Container(Container<N,ValueType> &&rhs){std::swap(_vals, rhs._vals);};
     /** Returns the value at point i. */
     auto operator[](size_t i)->decltype(_vals[0]);
     /** Begin iterator. */
@@ -50,6 +53,10 @@ public:
     typedef typename std::vector<ValueType>::iterator iterator;
     typedef typename std::vector<ValueType>::const_iterator const_iterator;
     //Container(){};
+    /** Copy constructor. */
+    Container(const Container<1,ValueType> &rhs):_vals(rhs._vals){};
+    /** Move constructor. */
+    Container(Container<1,ValueType> &&rhs){std::swap(_vals, rhs._vals);};
     /** Constructor from the std::array of size_t. The last value is used. */
     template <size_t M> Container ( const std::array<size_t, M> &in);
     /** Returns the value at index i. */

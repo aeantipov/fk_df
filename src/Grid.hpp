@@ -72,6 +72,17 @@ inline FMatsubaraGrid::FMatsubaraGrid(int min, int max, RealType beta):
 {
 }
 
+inline FMatsubaraGrid::FMatsubaraGrid(const FMatsubaraGrid &rhs) : 
+    Grid<ComplexType, FMatsubaraGrid>(rhs._vals),
+    _beta(rhs._beta), _spacing(rhs._spacing), _w_min(rhs._w_min), _w_max(rhs._w_max)
+{
+}
+
+inline FMatsubaraGrid::FMatsubaraGrid(FMatsubaraGrid&& rhs):_beta(rhs._beta), _spacing(rhs._spacing), _w_min(rhs._w_min), _w_max(rhs._w_max)
+{
+    _vals.swap(rhs._vals);
+}
+
 template <class Obj> 
 auto FMatsubaraGrid::integrate(const Obj &in) const -> decltype(in(_vals[0]))
 {
