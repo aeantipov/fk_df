@@ -41,9 +41,11 @@ public:
     /** Move constructor. */
     GridObject( GridObject<ValueType, GridTypes...>&& rhs);
 
+    template<size_t M> auto getGrid() -> decltype(std::get<M>(_grids));
+    auto getGrid() -> decltype(std::get<0>(_grids));
     /** Returns element number i, which corresponds to (*_grid)[i]. */
     auto operator[](size_t i)->decltype((*_data)[0]);
-    template <int M> ValueType& operator[](const std::array<size_t,M>& in);
+    //template <size_t M> ValueType& operator[](const std::array<size_t,M>& in);
     Container<sizeof...(GridTypes), ValueType>& getData(){return *_data;};
     template <typename ...ArgTypes> void fill(const std::function<ValueType(ArgTypes...)> &);
 

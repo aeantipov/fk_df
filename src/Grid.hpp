@@ -90,6 +90,15 @@ auto FMatsubaraGrid::integrate(const Obj &in) const -> decltype(in(_vals[0]))
     return R/_beta;
 }
 
+template <class Obj> 
+auto FMatsubaraGrid::prod(const Obj &in) const -> decltype(in(_vals[0]))
+{
+    decltype(in(_vals[0])) R = in(_vals[0]);
+    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y*in(x);}); 
+    return R;
+}
+
+
 /*
 template <class Obj> 
 auto FMatsubaraGrid::gridIntegrate(const std::vector<Obj> &in) const -> Obj

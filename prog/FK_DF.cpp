@@ -12,75 +12,81 @@
 
 using namespace FK;
 
+typedef GridObject<ComplexType,FMatsubaraGrid> GF;
+typedef GridObject<ComplexType,KMesh,FMatsubaraGrid> GF1d;
+typedef GridObject<ComplexType,KMesh,KMesh,FMatsubaraGrid> GF2d;
+typedef GridObject<ComplexType,KMesh,KMesh,KMesh,FMatsubaraGrid> GF3d;
+
+template <class GFType>
+struct FK_ImpuritySolver
+{
+    const FMatsubaraGrid w_grid;
+    const RealType beta;
+    GFType& Delta;
+    GFType gw; 
+    GFType K0;
+    GFType K1;
+    GFType Sigma;
+    RealType U;
+    RealType mu;
+    RealType e_d;
+    ComplexType w_0;
+    ComplexType w_1;
+    FK_ImpuritySolver(GF& Delta);
+    void run();
+};
+
+template <class GFType>
+FK_ImpuritySolver<GFType>::FK_ImpuritySolver(GF& Delta): 
+    w_grid(Delta.getGrid()), 
+    beta(w_grid._beta), 
+    Delta(Delta), 
+    gw(GF(w_grid)), K0(GF(w_grid)), K1(GF(w_grid)), Sigma(GF(w_grid))
+{
+};
+
+template <class GFType>
+void FK_ImpuritySolver<GFType>::run()
+{
+    INFO("Running FK Solver, beta = " << beta << ", U = " << U << ", mu = " << mu << ", e_d = " << e_d);
+    std::function<ComplexType(ComplexType)> K0f, K1f;
+    K0f = [this](ComplexType w){return 1.0/(w+mu-Delta(w));};
+    K1f = [this](ComplexType w){return 1.0/(w+mu-Delta(w)-U);};
+    K0 = K0f;
+    K1 = K1f;
+    auto Zf1 = [this](ComplexType w, RealType mu1){return 1.0+I*(Delta(w)-mu1)/w;};
+    std::function<ComplexType(RealType)> Zfprod = [this,Zf1](RealType mu1){return w_grid.prod(std::bind(Zf1, std::placeholders::_1, mu1));};
+
+    ComplexType Z0 = Zfprod(mu);
+    ComplexType Z1 = Zfprod(mu-U)*std::exp(beta*(mu-e_d-U/2));
+    ComplexType Z=Z0+Z1;
+
+    DEBUG("Z0 = " << Z0 << ", Z1 = " << Z1);
+    w_0 = Z0/Z;
+    w_1 = Z1/Z;
+    
+    INFO("w_0 = " << w_0 << "; w_1 = " << w_1 );
+    
+    
+    //ComplexType Z0 = 
+}
+
 int main()
 {
+    RealType beta = 10;
+    size_t n_freq = 5;
     Log.setDebugging(true);
-    std::cout << "Hi!" << std::endl;
-    typedef GridObject<ComplexType,FMatsubaraGrid> GF;
-    DEBUG("!");
-    FMatsubaraGrid n1(0,2,10);
-    FMatsubaraGrid n2(0,5,20);
-    auto a1 = std::make_tuple(n1,n2);
+    FMatsubaraGrid grid(-n_freq, n_freq, beta);
+    GF Delta(grid);
+    std::function<ComplexType(ComplexType)> f1;
+    f1 = [](ComplexType w) -> ComplexType {return 1.0/w;};
+    Delta = f1;
+    
+    FK_ImpuritySolver<GF> Solver(Delta);
+    Solver.U = 1.0;
+    Solver.mu = 0.5;
+    Solver.e_d = 0.0;
 
-    GF D1(n2);
-    D1.getData()[3]=3.4;
-    DEBUG("!!");
-    DEBUG(D1);
-    DEBUG(D1(FMatsubara(3,20)));
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> D2(std::make_tuple(n1,n2));
-    
-    D2.getData()[0][1]=4.0;
-    D2.getData()[1][2]=3.1;
-    DEBUG(D2);
-
-    auto& C1 = D2.getData();
-    DEBUG(C1[0]);
-    //decltype (C1[0]) x(std::make_tuple(3));
-    const std::array<size_t, 1> arr{{5}};
-    Container<1,ComplexType> C2(C1[0]);
-    DEBUG(C2[1]);
-    decltype (C1[0])& C2_2 = decltype(C1[0])(arr);
-    DEBUG(n2.getValue(C2, FMatsubara(1,20)));
-    DEBUG(n1.getValue(C1, FMatsubara(1,10)));
-    auto C22 = n1.getValue(C1, FMatsubara(0,10));
-    DEBUG(C22+C2-C22*2.0);
-    DEBUG(n2.getValue(n1.getValue(C1, FMatsubara(1,10)), FMatsubara(1,20)));
-
-    DEBUG(D2(FMatsubara(1,10),FMatsubara(2,20)));
-
-    std::function<ComplexType(ComplexType, ComplexType)> f1 = [](const ComplexType &a1, const ComplexType &a2){return 1.0/(a1+a2);};
-    DEBUG(f1(1.0,2.0));
-    
-    
-    D2.fill(f1);
-    DEBUG(D2);
-    
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid, FMatsubaraGrid> D3(std::make_tuple(n1,n2,n2));
-    std::function<ComplexType(ComplexType, ComplexType, ComplexType)>  f2 = [](const ComplexType &a1, const ComplexType &a2, const ComplexType &a3){return a3/(a1+a2);};
-    std::function<ComplexType(ComplexType, ComplexType, ComplexType)>  f3 = [](const ComplexType &a1, const ComplexType &a2, const ComplexType &a3){return a3*a2/(a1);};
-    D3 = f2;
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid, FMatsubaraGrid> D4(std::make_tuple(n1,n2,n2));
-    D4 = f3;
-    DEBUG(D4);
-    DEBUG(D3);
-    DEBUG(D3+D4);
-    
-    DEBUG((D3*D4)[0]);
-/*
-    //INFO(D1);
-   // INFO(D1[4]);
-    INFO_NONEWLINE("Count: " << b1_c << ". "); std::cin >> b1; b1_c++;
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> D2(std::make_tuple(n1,n1));
-    INFO_NONEWLINE("Count: " << b1_c << ". "); std::cin >> b1; b1_c++;
-    DEBUG(D2.getGrid().getSize());
-    DEBUG(D2[1].getGrid().getSize());
-    D2[0].set(F2);
-//    INFO(D2[0]);
-//    INFO(D2[5]);
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid,FMatsubaraGrid> D3(std::make_tuple(n1,n1,n2));
-    INFO_NONEWLINE("Count: " << b1_c << ". "); std::cin >> b1; b1_c++;
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid,FMatsubaraGrid,FMatsubaraGrid> D4(std::make_tuple(n1,n1,n2,n2));
-    INFO_NONEWLINE("Count: " << b1_c << ". "); std::cin >> b1; b1_c++;
-    //DEBUG(D2.getGrid().getSize());
-*/
+    INFO("Delta = " << Delta);
+    Solver.run();
 }

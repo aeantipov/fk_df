@@ -45,18 +45,19 @@ public:
 /** A Grid of Matsubara frequencies. */
 class FMatsubaraGrid : public Grid<ComplexType, FMatsubaraGrid>
 {
+public:
     /** Inverse temperature. */
     const RealType _beta;
     /** Spacing between values. */
     const RealType _spacing;
     /** Min and max numbers of freq. - useful for searching. */
-    int _w_min, _w_max;
-public:
+    const int _w_min, _w_max;
     FMatsubaraGrid(int min, int max, RealType beta);
     FMatsubaraGrid(const FMatsubaraGrid &rhs);
     FMatsubaraGrid(FMatsubaraGrid&& rhs);
     std::tuple <bool, size_t, RealType> find (ComplexType in) const ;
     template <class Obj> auto integrate(const Obj &in) const -> decltype(in(_vals[0]));
+    template <class Obj> auto prod(const Obj &in) const -> decltype(in(_vals[0]));
     //template <class Obj> auto gridIntegrate(const std::vector<Obj> &in) const -> Obj;
     template <class Obj> auto getValue(Obj &in, ComplexType x) const ->decltype(in[0]);
 };

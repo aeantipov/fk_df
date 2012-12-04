@@ -109,6 +109,21 @@ std::ostream& operator<<(std::ostream& lhs, const GridObject<ValueType,GridTypes
     return lhs;
 }
 
+template <typename ValueType, typename ...GridTypes> 
+template <size_t M>
+inline auto GridObject<ValueType,GridTypes...>::getGrid() -> decltype(std::get<M>(_grids))
+{
+    return std::get<M>(_grids);
+}
+
+
+
+template <typename ValueType, typename ...GridTypes> 
+inline auto GridObject<ValueType,GridTypes...>::getGrid() -> decltype(std::get<0>(_grids))
+{
+    return std::get<0>(_grids);
+}
+
 
 template <typename ValueType, typename ...GridTypes> 
 template <typename ...ArgTypes> 
