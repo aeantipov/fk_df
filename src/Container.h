@@ -5,6 +5,7 @@
 #include "Logger.h"
 #include "Grid.h"
 
+#include <type_traits>
 namespace FK { 
 
 /** This class is a N-dimensional container to store the data of
@@ -45,6 +46,8 @@ public:
     Container<N,ValueType>& operator*=(const Container<N,ValueType> &rhs); 
     Container<N,ValueType>& operator/=(const Container<N,ValueType> &rhs); 
  
+    /** Conjugate. */
+    template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type=0> void conj(){DEBUG("Conjugating!!!");};
     /** Make the object streamable. */
     template <size_t M, typename ValType> friend std::ostream& operator<<(std::ostream& lhs, const Container<M,ValType> &in);
 };
@@ -85,6 +88,8 @@ public:
     Container<1,ValueType>& operator*=(const Container<1,ValueType> &rhs); 
     Container<1,ValueType>& operator/=(const Container<1,ValueType> &rhs); 
 
+    /** Conjugate. */
+    template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type=0> void conj(){DEBUG("Conjugating!!!");};
     /** Make the object streamable. */
     template <typename ValType> friend std::ostream& operator<<(std::ostream& lhs, const Container<1,ValType> &in);
 };
