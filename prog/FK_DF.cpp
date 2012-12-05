@@ -9,7 +9,6 @@
 #include <iostream>
 #include <ctime>
 #include <array>
-#include<Eigen/Sparse>
 
 using namespace FK;
 

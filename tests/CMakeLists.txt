@@ -11,6 +11,7 @@ set (tests
 GridTest
 ContainerTest
 GridObjectTest
+SolverTest
 )
 
 foreach (test ${tests})
