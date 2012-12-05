@@ -38,10 +38,10 @@ void FKImpuritySolver::run()
     _v_mult = beta*U*U*w_0*w_1;
     INFO("w_0 = " << w_0 << "; w_1 = " << w_1 );
     gw = K0*w_0 + K1*w_1;
-    DEBUG("gw = " << gw);
+    //DEBUG("gw = " << gw);
     std::function<ComplexType(ComplexType)> Sigmaf = [this,K0finv](ComplexType w){return U*U*w_1*w_0/(K0finv(w)+w_1*U) + w_1*U;};
     Sigma = Sigmaf;
-    DEBUG("Sigma = " << Sigma);
+    //DEBUG("Sigma = " << Sigma);
     }
 
 } // end of namespace FK

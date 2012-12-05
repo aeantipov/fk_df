@@ -34,14 +34,11 @@ int main()
     FKImpuritySolver Solver(U,mu,e_d,Delta);
        //DEBUG("Delta = " << Delta);
     Solver.run();
-    auto G1 = Solver.gw;
-    Solver.Delta = G1;
-    Solver.run();
  //std::function<ComplexType(ComplexType,ComplexType)> f1 = std::bind(g4, std::placeholders::_1, std::placeholders::_2);
     std::function<ComplexType(ComplexType,ComplexType)> f2 = std::bind(&FKImpuritySolver::getVertex4, Solver, std::placeholders::_1, std::placeholders::_2);
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> g44(std::make_tuple(grid,grid));
     g44.fill(f2);
-    //DEBUG(g44);
+    DEBUG(g44);
 
 
 }
