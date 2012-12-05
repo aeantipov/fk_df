@@ -1,6 +1,7 @@
 #ifndef ___FK_GRID_HPP___
 #define ___FK_GRID_HPP___
 
+#include <numeric>
 #include "Grid.h"
 
 namespace FK { 
@@ -95,6 +96,9 @@ auto FMatsubaraGrid::prod(const Obj &in) const -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R = in(_vals[0]);
     R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y*in(x);}); 
+    //decltype(in(_vals[0])) R = in(_vals[_vals.size()/2]);
+    //R=std::accumulate(_vals.begin()+1+_vals.size()/2, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {DEBUG(x << "|" << in(x) << "|" << y << "->" << y*in(x)); return y*in(x);}); 
+    //R=std::accumulate(_vals.begin(), _vals.begin()+_vals.size()/2, R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {DEBUG(x << "|" << in(x) << "|" << y << "->" << y*in(x)); return y*in(x);}); 
     return R;
 }
 
@@ -115,7 +119,7 @@ inline std::tuple <bool, size_t, RealType> FMatsubaraGrid::find (ComplexType in)
     int n=(imag(in)/_spacing-1)/2;
     if (n<_w_min) { ERROR("Frequency to find is out of bounds, " << in << "<" << FMatsubara(_w_min,_beta)); return std::make_tuple(0,0,0); };
     if (n>_w_max) { ERROR("Frequency to find is out of bounds, " << in << ">" << FMatsubara(_w_max,_beta)); return std::make_tuple(0,_vals.size(),0); };
-    return std::make_tuple (1,n,1);
+    return std::make_tuple (1,n-_w_min,1);
 }
 
 

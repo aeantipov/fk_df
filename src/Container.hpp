@@ -91,6 +91,23 @@ typename Container<1,ValueType>::iterator Container<1,ValueType>::end()
 // Algebraic operators
 //
 
+// Operator=
+
+template <size_t N, typename ValueType> 
+Container<N,ValueType>& Container<N,ValueType>::operator=(const Container<N,ValueType> &rhs)
+{
+    _vals = rhs._vals; 
+    return (*this);
+}
+
+
+template <typename ValueType> 
+Container<1,ValueType>& Container<1,ValueType>::operator=(const Container<1,ValueType> &rhs)
+{
+    _vals = rhs._vals; 
+    return (*this);
+}
+
 // Operator+=
 template <size_t N, typename ValueType> 
 template <typename RhsArg>
@@ -246,6 +263,66 @@ inline Container<1,ValueType> Container<1,ValueType>::operator-(const RhsArg &rh
     out-=rhs;
     return out;
 }
+
+//
+// Operator/=
+//
+
+template <size_t N, typename ValueType> 
+template <typename RhsArg>
+inline Container<N,ValueType>& Container<N,ValueType>::operator/=(const RhsArg &rhs)
+{
+    std::for_each(_vals.begin(), _vals.end(), [&](Container<N-1,ValueType> &x){x/=rhs;});
+    return *this;
+}
+
+template <size_t N, typename ValueType> 
+inline Container<N,ValueType>& Container<N,ValueType>::operator/=(const Container<N,ValueType> &rhs)
+{
+    assert(this->_vals.size() == rhs._vals.size());
+    for (int i=0; i<_vals.size(); ++i) _vals[i]/=rhs._vals[i];
+    return *this;
+}
+
+template <typename ValueType> 
+template <typename RhsArg>
+inline Container<1,ValueType>& Container<1,ValueType>::operator/=(const RhsArg &rhs)
+{
+    std::for_each(_vals.begin(), _vals.end(), [&](ValueType &x){x/=rhs;});
+    return *this;
+}
+
+template <typename ValueType> 
+inline Container<1,ValueType>& Container<1,ValueType>::operator/=(const Container<1,ValueType> &rhs)
+{
+    assert(this->_vals.size() == rhs._vals.size());
+    std::transform(_vals.begin(), _vals.end(), rhs._vals.begin(), _vals.begin(), std::divides<ValueType>());
+    return *this;
+}
+
+//
+// Operator /
+//
+
+template <typename ValueType> 
+template <typename RhsArg>
+inline Container<1,ValueType> Container<1,ValueType>::operator/(const RhsArg &rhs) const
+{
+    Container<1,ValueType> out(*this);
+    out/=rhs;
+    return out;
+}
+
+template <size_t N, typename ValueType> 
+template <typename RhsArg>
+inline Container<N,ValueType> Container<N,ValueType>::operator/(const RhsArg &rhs) const
+{
+    Container<N,ValueType> out(*this);
+    out/=rhs;
+    return out;
+}
+
+
 
 
 } // end of namespace FK

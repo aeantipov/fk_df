@@ -26,19 +26,24 @@ public:
     Container(Container<N,ValueType> &&rhs){std::swap(_vals, rhs._vals);};
     /** Returns the value at point i. */
     auto operator[](size_t i)->decltype(_vals[0]);
+    auto operator[](size_t i) const ->decltype(_vals[0]) const;
     /** Begin iterator. */
     typename Container<N,ValueType>::iterator begin();
     /** End iterator. */
     typename Container<N,ValueType>::iterator end();
     /** Algebraic operators. */
+    Container<N,ValueType>& operator=(const Container<N,ValueType> &rhs);
     template <typename RhsArg> Container<N,ValueType>& operator+=(const RhsArg &rhs); 
     template <typename RhsArg> Container<N,ValueType> operator+(const RhsArg &rhs) const; 
     template <typename RhsArg> Container<N,ValueType>& operator*=(const RhsArg &rhs); 
     template <typename RhsArg> Container<N,ValueType> operator*(const RhsArg &rhs) const; 
+    template <typename RhsArg> Container<N,ValueType>& operator/=(const RhsArg &rhs); 
+    template <typename RhsArg> Container<N,ValueType> operator/(const RhsArg &rhs) const; 
     template <typename RhsArg> Container<N,ValueType>& operator-=(const RhsArg &rhs); 
     template <typename RhsArg> Container<N,ValueType> operator-(const RhsArg &rhs) const; 
     Container<N,ValueType>& operator+=(const Container<N,ValueType> &rhs); 
     Container<N,ValueType>& operator*=(const Container<N,ValueType> &rhs); 
+    Container<N,ValueType>& operator/=(const Container<N,ValueType> &rhs); 
  
     /** Make the object streamable. */
     template <size_t M, typename ValType> friend std::ostream& operator<<(std::ostream& lhs, const Container<M,ValType> &in);
@@ -67,14 +72,18 @@ public:
     typename Container<1,ValueType>::iterator end();
 
     /** Algebraic operators. */
+    Container<1,ValueType>& operator=(const Container<1,ValueType> &rhs);
     template <typename RhsArg> Container<1,ValueType>& operator+=(const RhsArg &rhs); 
     template <typename RhsArg> Container<1,ValueType> operator+(const RhsArg &rhs) const; 
     template <typename RhsArg> Container<1,ValueType>& operator*=(const RhsArg &rhs); 
     template <typename RhsArg> Container<1,ValueType> operator*(const RhsArg &rhs) const; 
+    template <typename RhsArg> Container<1,ValueType>& operator/=(const RhsArg &rhs); 
+    template <typename RhsArg> Container<1,ValueType> operator/(const RhsArg &rhs) const; 
     template <typename RhsArg> Container<1,ValueType>& operator-=(const RhsArg &rhs); 
     template <typename RhsArg> Container<1,ValueType> operator-(const RhsArg &rhs) const; 
     Container<1,ValueType>& operator+=(const Container<1,ValueType> &rhs); 
     Container<1,ValueType>& operator*=(const Container<1,ValueType> &rhs); 
+    Container<1,ValueType>& operator/=(const Container<1,ValueType> &rhs); 
 
     /** Make the object streamable. */
     template <typename ValType> friend std::ostream& operator<<(std::ostream& lhs, const Container<1,ValType> &in);

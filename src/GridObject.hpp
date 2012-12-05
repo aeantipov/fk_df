@@ -82,7 +82,7 @@ GridObject<ValueType,GridTypes...>::GridObject( GridObject<ValueType,GridTypes..
 }
 
 template <typename ValueType, typename ...GridTypes> 
-auto GridObject<ValueType,GridTypes...>::operator[](size_t i)->decltype((*_data)[0])
+auto GridObject<ValueType,GridTypes...>::operator[](size_t i)->decltype((*_data)[i])
 {
     return (*_data)[i];
 }
@@ -101,6 +101,15 @@ inline ValueType& GridObject<ValueType,GridTypes...>::operator()(const ArgTypes&
     static_assert(sizeof...(ArgTypes) == sizeof...(GridTypes), "GridObject call, number of input parameters mismatch."); 
     return ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::get(*_data,_grids,in...);
 }
+
+template <typename ValueType, typename ...GridTypes> 
+template <typename ...ArgTypes> 
+inline ValueType GridObject<ValueType,GridTypes...>::operator()(const ArgTypes&... in) const
+{
+    static_assert(sizeof...(ArgTypes) == sizeof...(GridTypes), "GridObject call, number of input parameters mismatch."); 
+    return ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::get(*_data,_grids,in...);
+}
+
 
 template <typename ValueType, typename ...GridTypes> 
 std::ostream& operator<<(std::ostream& lhs, const GridObject<ValueType,GridTypes...> &in)
@@ -165,6 +174,15 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
 }
 
 template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator+= (
+    const ValueType & rhs)
+{
+    *_data+=rhs;
+    return *this;
+}
+
+
+template <typename ValueType, typename ...GridTypes> 
 inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator*= (
     const GridObject<ValueType,GridTypes...>& rhs)
 {
@@ -172,6 +190,33 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
     *_data*=*(rhs._data);
     return *this;
 }
+
+template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator*= (
+    const ValueType & rhs)
+{
+    *_data*=rhs;
+    return *this;
+}
+
+
+template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator/= (
+    const GridObject<ValueType,GridTypes...>& rhs)
+{
+    //static_assert(rhs._grids == _grids, "Grid mismatch");
+    *_data/=*(rhs._data);
+    return *this;
+}
+
+template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator/= (
+    const ValueType & rhs)
+{
+    *_data/=rhs;
+    return *this;
+}
+
 
 template <typename ValueType, typename ...GridTypes> 
 inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator-= (
@@ -183,6 +228,15 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
 }
 
 template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator-= (
+    const ValueType & rhs)
+{
+    *_data-=rhs;
+    return *this;
+}
+
+
+template <typename ValueType, typename ...GridTypes> 
 inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::operator+ (
     const GridObject<ValueType,GridTypes...>& rhs) const
 {
@@ -190,6 +244,16 @@ inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::op
     out+=rhs;
     return out;
 }
+
+template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::operator+ (
+    const ValueType & rhs) const
+{
+    GridObject out(*this);
+    out+=rhs;
+    return out;
+}
+
 
 template <typename ValueType, typename ...GridTypes> 
 inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::operator* (
@@ -201,6 +265,34 @@ inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::op
 }
 
 template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::operator* (
+    const ValueType & rhs) const
+{
+    GridObject out(*this);
+    out*=rhs;
+    return out;
+}
+
+template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::operator/ (
+    const GridObject<ValueType,GridTypes...>& rhs) const
+{
+    GridObject out(*this);
+    out/=rhs;
+    return out;
+}
+
+template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::operator/ (
+    const ValueType & rhs) const
+{
+    GridObject out(*this);
+    out/=rhs;
+    return out;
+}
+
+
+template <typename ValueType, typename ...GridTypes> 
 inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::operator- (
     const GridObject<ValueType,GridTypes...>& rhs) const
 {
@@ -208,6 +300,16 @@ inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::op
     out-=rhs;
     return out;
 }
+
+template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::operator- (
+    const ValueType & rhs) const
+{
+    GridObject out(*this);
+    out*=rhs;
+    return out;
+}
+
 
 } // end of namespace FK
 #endif

@@ -6,6 +6,7 @@ set (fk_src
     Grid.h Grid.hpp 
     Container.h Container.hpp
     GridObject.h GridObject.hpp
+    Solver.h Solver.cpp
     GFWrap.h 
     )
 add_library(fk SHARED ${fk_src})
