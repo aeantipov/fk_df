@@ -142,6 +142,23 @@ inline void GridObject<ValueType,GridTypes...>::fill(const std::function<ValueTy
     ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::set(*_data,_grids,in);
 }
 
+template <typename ValueType, typename ...GridTypes> 
+template <template <typename, class> class Filler, typename ...ArgTypes> 
+inline void GridObject<ValueType,GridTypes...>::fill(const Filler<ValueType, ArgTypes...> &in)
+{
+    static_assert(sizeof...(ArgTypes) == sizeof...(GridTypes), "GridObject fill, number of input parameters mismatch."); 
+    ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::set(*_data,_grids,in);
+}
+
+
+template <typename ValueType, typename ...GridTypes> 
+template <typename U, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type>
+inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::conj()
+{
+    GridObject<ValueType,GridTypes...> out(*this);
+    *(out._data) = out._data->conj();
+    return out;
+}
 //
 // Operators
 //

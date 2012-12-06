@@ -46,6 +46,18 @@ typename Container<N,ValueType>::iterator Container<N,ValueType>::end()
     return _vals.end();
 }
 
+template <size_t N, typename ValueType> 
+template <typename U, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type>
+Container <N,ValueType> Container<N,ValueType>::conj()
+{
+    Container <N,ValueType> out(*this);
+    for (iterator it1 = this->begin(); it1!=this->end(); it1++) {  
+        *it1=it1->conj();
+    }
+    return out;
+}
+
+
 //
 // Container, N=1
 //
@@ -86,6 +98,14 @@ typename Container<1,ValueType>::iterator Container<1,ValueType>::end()
 }
 
 
+template <typename ValueType> 
+template <typename U, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type>
+Container <1,ValueType> Container<1,ValueType>::conj()
+{
+    Container <1,ValueType> out(*this);
+    for_each(out._vals.begin(), out._vals.end(), [&](ComplexType &x){x=std::conj(x);});
+    return out;
+}
 
 //
 // Algebraic operators
