@@ -17,7 +17,7 @@ class GridObject
 protected:
     static const size_t N = sizeof...(GridTypes);
     /** Grids on which the data is defined. */
-    std::tuple<GridTypes...> _grids;
+    const std::tuple<GridTypes...> _grids;
     /** The dimensions of the Container - deduced from grids. */
     std::array<size_t, N> _dims;
     /** A pointer to the Container. A pointer is used as there exist no default 
@@ -55,9 +55,9 @@ public:
     GridObject( GridObject<ValueType, GridTypes...>&& rhs);
 
     /** Returns an Mth grid in _grids. */
-    template<size_t M> auto getGrid() -> decltype(std::get<M>(_grids));
+    template<size_t M> auto getGrid() const -> const decltype(std::get<M>(_grids));
     /** Returns the top level grid. */
-    auto getGrid() -> decltype(std::get<0>(_grids));
+    auto getGrid() const -> const decltype(std::get<0>(_grids));
     /** Returns element number i, which corresponds to (*_grid)[i]. */
     auto operator[](size_t i)->decltype((*_data)[i]);
     /** Const operator[]. */
