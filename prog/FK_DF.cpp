@@ -5,6 +5,7 @@
 #include "Container.h"
 #include "GridObject.h"
 #include "Solver.h"
+#include "SelfConsistency.h"
 
 #include <iostream>
 #include <ctime>
@@ -19,6 +20,7 @@ typedef GridObject<ComplexType,KMesh,KMesh,KMesh,FMatsubaraGrid> GF3d;
 
 int main()
 {
+    INFO("Hi! Doing Falicov-Kimball. ");
     RealType U = 4.0;
     RealType mu = 0.5;
     RealType e_d = 0.01;
@@ -33,9 +35,13 @@ int main()
     std::function<ComplexType(ComplexType)> f1;
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
     Delta = f1;
-    DEBUG(Delta);
+    //DEBUG(Delta);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
+    CubicDMFTSC<3> SC(t,32);
+    DEBUG(SC.dispersion(0.0,PI,PI/2.0));
+    
+    exit(0);
     for (int i=0; i<maxit && diff>1e-8; ++i) {
         INFO("Iteration " << i);
         Solver.run();

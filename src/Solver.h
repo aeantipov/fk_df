@@ -47,7 +47,5 @@ public:
     }
 };
 
-
-
 } // end of namespace FK
 #endif // endif :: #ifndef ___FK_SOLVER_H___
