@@ -78,6 +78,7 @@ public:
     template <typename ...ArgTypes> GridObject& operator= (const std::function<ValueType(ArgTypes...)> &);
     /** Algebraic operators. */
     GridObject& operator= (const GridObject & rhs);
+    GridObject& operator= (const ValueType & rhs);
     GridObject& operator*= (const GridObject & rhs);
     GridObject& operator*= (const ValueType& rhs);
     GridObject operator* (const GridObject & rhs) const;

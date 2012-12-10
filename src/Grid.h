@@ -35,6 +35,8 @@ public:
     std::tuple <bool, size_t, RealType> find (ValueType in) const { return static_cast<Derived*>(this)->find(in); };
     /** A CRTP reference to one of the inherited objects. */
     template <class Obj> auto integrate(const Obj &in)->decltype(in[_vals[0]]) { return static_cast<Derived*>(this)->integrate(in); };
+    template <class Obj, typename ...OtherArgTypes> auto integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...))
+        { return static_cast<Derived*>(this)->integrate(in, Args...); };
     template <class Obj> auto getValue(const Obj &in, ComplexType x)->decltype(in[0]) const { return static_cast<Derived*>(this)->get_val(in); };
     /** Make the object printable. */
     template <typename ValType, class Derived2> friend std::ostream& operator<<(std::ostream& lhs, const Grid<ValType,Derived2> &gr);
@@ -57,6 +59,7 @@ public:
     FMatsubaraGrid(FMatsubaraGrid&& rhs);
     std::tuple <bool, size_t, RealType> find (ComplexType in) const ;
     template <class Obj> auto integrate(const Obj &in) const -> decltype(in(_vals[0]));
+    template <class Obj, typename ...OtherArgTypes> auto integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...));
     template <class Obj> auto prod(const Obj &in) const -> decltype(in(_vals[0]));
     //template <class Obj> auto gridIntegrate(const std::vector<Obj> &in) const -> Obj;
     template <class Obj> auto getValue(Obj &in, ComplexType x) const ->decltype(in[0]);
@@ -67,6 +70,7 @@ class RealGrid : public Grid<RealType, RealGrid>
 {
 public:
     template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0]));
+    template <class Obj, typename ...OtherArgTypes> auto integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...));
     //template <class Obj> auto gridIntegrate(std::vector<Obj> &in) -> Obj;
     //std::tuple <size_t, RealType, size_t, RealType> find (ValueType in);
 };
@@ -80,6 +84,7 @@ public:
     KMesh(KMesh &&rhs);
     std::tuple <bool, size_t, RealType> find (RealType in) const ;
     template <class Obj> auto integrate(const Obj &in) const ->decltype(in(_vals[0]));
+    template <class Obj, typename ...OtherArgTypes> auto integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...));
     //template <class Obj> auto gridIntegrate(std::vector<Obj> &in) const -> Obj;
     template <class Obj> auto getValue(Obj &in, RealType x) const ->decltype(in[0]);
 };

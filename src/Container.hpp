@@ -120,13 +120,28 @@ Container<N,ValueType>& Container<N,ValueType>::operator=(const Container<N,Valu
     return (*this);
 }
 
-
 template <typename ValueType> 
 Container<1,ValueType>& Container<1,ValueType>::operator=(const Container<1,ValueType> &rhs)
 {
     _vals = rhs._vals; 
     return (*this);
 }
+
+template <size_t N, typename ValueType> 
+Container<N,ValueType>& Container<N,ValueType>::operator=(const ValueType &rhs)
+{
+    std::for_each(_vals.begin(), _vals.end(), [&](Container<N-1,ValueType> &x){x=rhs;});
+    return (*this);
+}
+
+template <typename ValueType> 
+Container<1,ValueType>& Container<1,ValueType>::operator=(const ValueType &rhs)
+{
+    std::for_each(_vals.begin(), _vals.end(), [&](ValueType &x){x=rhs;});
+    return (*this);
+}
+
+
 
 // Operator+=
 template <size_t N, typename ValueType> 

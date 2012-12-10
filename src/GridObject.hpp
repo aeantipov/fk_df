@@ -171,6 +171,7 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
     this->fill(in);
     return *this;
 }
+
 template <typename ValueType, typename ...GridTypes> 
 inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator= (
     const GridObject<ValueType,GridTypes...>& rhs)
@@ -179,6 +180,16 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
     *_data=*(rhs._data);
     return *this;
 }
+
+template <typename ValueType, typename ...GridTypes> 
+inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator= (
+    const ValueType& rhs)
+{
+    //static_assert(rhs._grids == _grids, "Grid mismatch");
+    *_data=rhs;
+    return *this;
+}
+
 
 
 template <typename ValueType, typename ...GridTypes> 

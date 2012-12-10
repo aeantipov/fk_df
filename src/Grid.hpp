@@ -84,15 +84,24 @@ inline FMatsubaraGrid::FMatsubaraGrid(FMatsubaraGrid&& rhs):Grid<ComplexType, FM
 }
 
 template <class Obj> 
-auto FMatsubaraGrid::integrate(const Obj &in) const -> decltype(in(_vals[0]))
+inline auto FMatsubaraGrid::integrate(const Obj &in) const -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R = in(_vals[0]);
     R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x);}); 
     return R/_beta;
 }
 
+
+template <class Obj, typename ...OtherArgTypes> 
+inline auto FMatsubaraGrid::integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...))
+{
+    decltype(in(_vals[0],Args...)) R = in(_vals[0],Args...);
+    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x,Args...);}); 
+    return R/_beta;
+}
+
 template <class Obj> 
-auto FMatsubaraGrid::prod(const Obj &in) const -> decltype(in(_vals[0]))
+inline auto FMatsubaraGrid::prod(const Obj &in) const -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R = in(_vals[0]);
     R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y*in(x);}); 
@@ -138,12 +147,24 @@ inline auto FMatsubaraGrid::getValue(Obj &in, ComplexType x) const ->decltype(in
 template <class Obj> 
 auto RealGrid::integrate(const Obj &in) -> decltype(in(_vals[0]))
 {
-    decltype(in(_vals[0])) R;
+    decltype(in(_vals[0])) R=0.0;
     for (int i=0; i<_vals.size()-1; ++i) {
         R+=0.5*(in(_vals[i])+in(_vals[i+1]))*(_vals[i+1]-_vals[i]);
         }
     return R;
 }
+
+template <class Obj, typename ...OtherArgTypes> 
+inline auto RealGrid::integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...))
+{
+    decltype(in(_vals[0],Args...)) R=0.0;
+
+    for (int i=0; i<_vals.size()-1; ++i) {
+        R+=0.5*(in(_vals[i],Args...)+in(_vals[i+1],Args...))*(_vals[i+1]-_vals[i]);
+        }
+    return R;
+}
+
 
 //
 // KMesh
@@ -174,10 +195,18 @@ inline std::tuple <bool, size_t, RealType> KMesh::find (RealType in) const
 }
 
 template <class Obj> 
-auto KMesh::integrate(const Obj &in) const -> decltype(in(_vals[0]))
+inline auto KMesh::integrate(const Obj &in) const -> decltype(in(_vals[0]))
 {
-    decltype(in(_vals[0])) R = in(_vals[0]);
+    decltype(in(_vals[0])) R = in(RealType(_vals[0]));
     R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x);}); 
+    return R/_points;
+}
+
+template <class Obj, typename ...OtherArgTypes> 
+inline auto KMesh::integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...))
+{
+    decltype(in(_vals[0],Args...)) R = in(_vals[0],Args...);
+    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x,Args...);}); 
     return R/_points;
 }
 

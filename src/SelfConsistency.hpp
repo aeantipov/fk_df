@@ -4,10 +4,13 @@
 namespace FK {
 
 template <size_t D>
-inline CubicDMFTSC<D>::CubicDMFTSC ( RealType t, size_t npoints) : 
+inline CubicDMFTSC<D>::CubicDMFTSC ( RealType t, size_t npoints):
+//    SelfConsistency(gw),
     _t(t),
     _npoints(npoints), 
-    _kgrid(KMesh(npoints)) 
+    _kgrid(KMesh(npoints))
+//    _wgrid(gw.getGrid()),
+//    _Delta_old(Delta_old)
 {
 }
 
@@ -29,6 +32,22 @@ inline RealType CubicDMFTSC<D>::ek(const ArgType1& kpoint1)
     return -2*_t*cos(kpoint1);
 }
  
+
+/*
+template <size_t D>
+template <typename ArgType1, typename ...ArgTypes> 
+inline auto CubicDMFTSC<D>::getSC(const ArgType1& kpoint1, const ArgTypes&... kpoints, const GFType& gw, const GFType& Delta) const 
+    -> decltype(this->getSC(kpoints...,gw,Delta)) 
+{
+}
+
+template <size_t D>
+template <> 
+inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::getSC<1>(const GFType& gw, const GFType &Delta)
+{
+}
+*/
+
 template <size_t D>
 template <typename ...ArgTypes>
 inline RealType CubicDMFTSC<D>::dispersion(const ArgTypes&... kpoints)
@@ -39,15 +58,21 @@ inline RealType CubicDMFTSC<D>::dispersion(const ArgTypes&... kpoints)
 
 template <size_t D>
 template <typename ...ArgTypes>
-inline ComplexType CubicDMFTSC<D>::glat(const CubicDMFTSC<D>::GFType &gw, const CubicDMFTSC<D>::GFType &Delta, const ArgTypes&... kpoints)
+inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::glat(const GFType& gw, const GFType& Delta, const ArgTypes&... kpoints)
 {
+    assert(Delta.getGrid().getVals() == gw.getGrid().getVals());
+    GFType out(Delta.getGrid()); 
+    RealType ek_ = this->ek(kpoints...);
+    std::function<ComplexType(ComplexType)> f1 = [&gw,&Delta,&ek_](ComplexType w){return 1.0/(1.0/gw(w)+Delta(w)-ek_);};
+    out.fill(f1);
+    return out;
 }
 
 template <size_t D>
-inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::operator()(const CubicDMFTSC<D>::GFType &gw)
+inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::operator()(const GFType& gw, const GFType& Delta)
 {
-    GFType Delta(gw.getGrid());
-    Delta*=0.0;
+    assert(Delta.getGrid().getVals() == gw.getGrid().getVals());
+    //return k_grid.integrate(
     return Delta;
 }
 
