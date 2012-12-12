@@ -67,6 +67,41 @@ inline void GetGridSizes<1>::TupleSizeToArray( const std::tuple<GridType...>& in
     std::get<0>(out) = std::get<0>(in).getSize();
 }
 
+template<typename T> 
+struct function_traits;  
+
+template<typename R, typename ...Args> 
+struct function_traits<std::function<R(Args...)>>
+{
+    static const size_t nargs = sizeof...(Args);
+
+    typedef R result_type;
+
+    template <size_t i>
+    struct arg
+    {
+        typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
+    };
+};
+
+/** A tool to generate a type for an object T of D Args. */
+    template <size_t N, typename ...> struct ArgGenerator;
+    template <size_t N, typename ArgType1, template <typename ...> class T, typename ...ArgTypes>  
+        struct ArgGenerator<N,ArgType1,T<ArgTypes...>,ArgTypes...>:
+            ArgGenerator<N-1,ArgType1,T<ArgTypes...>,ArgTypes...,ArgType1 >{static_assert(N>1,"");};
+
+    template <typename ArgType1, template <typename ...> class T, typename ...ArgTypes> 
+        struct ArgGenerator<1, ArgType1, T<ArgTypes...>, ArgTypes...> 
+        { typedef T<ArgType1, ArgTypes...> type; };
+
+/** A tool to generate a type for a function of N Args. */
+    //template <size_t N, typename ...> struct ArgGenerator;
+    template <size_t N, typename ValueType, typename ArgType1, typename ...ArgTypes>  
+        struct ArgFunGenerator : ArgFunGenerator<N-1,ValueType,ArgType1, ArgTypes...,ArgType1 >{static_assert(N>1,"");};
+
+    template <typename ValueType, typename ArgType1, typename ...ArgTypes> struct ArgFunGenerator<1, ValueType, ArgType1, ArgTypes...> 
+        { typedef std::function<ValueType(ArgTypes..., ArgType1)> type; };
+
 } // end namespace FK
 
 #endif // endif::ifndef ___FK_FK_H___
