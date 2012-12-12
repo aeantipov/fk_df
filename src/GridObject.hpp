@@ -159,6 +159,19 @@ inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::co
     *(out._data) = out._data->conj();
     return out;
 }
+
+template <typename ValueType, typename ...GridTypes> 
+inline ValueType GridObject<ValueType,GridTypes...>::sum()
+{
+    return _data->sum();
+}
+
+template <typename ValueType, typename ...GridTypes> 
+inline void GridObject<ValueType,GridTypes...>::savetxt(const std::string& in)
+{
+    _data->savetxt(in);
+}
+
 //
 // Operators
 //

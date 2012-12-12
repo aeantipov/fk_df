@@ -95,10 +95,18 @@ public:
     GridObject& operator/= (const ValueType& rhs);
     GridObject operator/ (const GridObject & rhs) const;
     GridObject operator/ (const ValueType & rhs) const;
+    friend GridObject operator* (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out*rhs;};
+    friend GridObject operator+ (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out+rhs;};
+    friend GridObject operator- (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out-rhs;};
+    friend GridObject operator/ (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out/rhs;};
 
     /** Returns the complex conjugate of this object, if it's complex valued. */
     template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type=0>
         GridObject conj();
+    /** Returns the sum of all elements in the container. */
+    ValueType sum();
+    /** Save the data to the txt file. */
+    void savetxt(const std::string& fname);
     /** Dumps the object to the stream. */
     template <typename ValType, class ...GridTypes2> friend std::ostream& operator<<(std::ostream& lhs, const GridObject<ValType,GridTypes2...> &in);
 };

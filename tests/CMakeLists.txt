@@ -12,6 +12,7 @@ GridTest
 ContainerTest
 GridObjectTest
 SolverTest
+CubicDMFTTest
 )
 
 foreach (test ${tests})
