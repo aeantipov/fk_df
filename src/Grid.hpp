@@ -15,8 +15,15 @@ Grid<ValueType,Derived>::Grid()
 {};
 
 template <typename ValueType, class Derived>
+Grid<ValueType,Derived>::Grid(const std::vector<point> &vals):_vals(vals)
+{
+};
+
+
+template <typename ValueType, class Derived>
 Grid<ValueType,Derived>::Grid(const std::vector<ValueType> &vals):_vals(vals)
 {
+    for (size_t i=0; i<_vals.size(); ++i) _vals[i]._index = i;
 };
 
 template <typename ValueType, class Derived>
@@ -25,7 +32,7 @@ Grid<ValueType,Derived>::Grid(int min, int max, std::function<ValueType (const i
     if (max<min) std::swap(min,max);
     size_t n_points = max-min;
     _vals.resize(n_points); 
-    for (int i=0; i<n_points; ++i) _vals[i]=f(min+i); 
+    for (int i=0; i<n_points; ++i) _vals[i]= point(f(min+i), i) ; 
 }
 
 template <typename ValueType, class Derived>
@@ -36,7 +43,7 @@ ValueType Grid<ValueType,Derived>::operator[](size_t index) const
 }
 
 template <typename ValueType, class Derived>
-const std::vector<ValueType> & Grid<ValueType,Derived>::getVals() const
+const std::vector<typename Grid<ValueType,Derived>::point> & Grid<ValueType,Derived>::getVals() const
 {
     return _vals;
 }
@@ -53,7 +60,7 @@ std::ostream& operator<<(std::ostream& lhs, const Grid<ValueType,Derived> &gr)
     lhs << "{";
     //lhs << gr._vals;
     std::ostream_iterator<ValueType> out_it (lhs,", ");
-    std::copy(index_begin<ValueType>(gr._vals),index_end<ValueType>(gr._vals) , out_it);
+    std::transform(gr._vals.begin(),gr._vals.end(), out_it, [](const typename Grid<ValueType,Derived>::point &x){return ValueType(x);});
     lhs << "}";
     return lhs;
 }
@@ -139,13 +146,25 @@ inline auto FMatsubaraGrid::getValue(Obj &in, ComplexType x) const ->decltype(in
     if (!std::get<0>(find_result)) throw (exWrongIndex()); 
     return in[std::get<1>(find_result)];
 }
+
+template <class Obj>
+inline auto FMatsubaraGrid::getValue(Obj &in, FMatsubaraGrid::point x) const ->decltype(in[0]) 
+{
+    return in[x._index];
+}
+
 //
 // RealGrid
 //
-
+inline RealGrid::RealGrid(RealType min, RealType max, size_t n_points):
+    Grid(0,n_points,[n_points,max,min](size_t in){return (max-min)/n_points*in;}),
+    _min(min),
+    _max(max)
+{
+}
 
 template <class Obj> 
-auto RealGrid::integrate(const Obj &in) -> decltype(in(_vals[0]))
+inline auto RealGrid::integrate(const Obj &in) -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R=0.0;
     for (int i=0; i<_vals.size()-1; ++i) {
