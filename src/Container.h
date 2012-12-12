@@ -51,6 +51,8 @@ public:
     /** Conjugate. */
     template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type=0> 
         Container<N, ValueType> conj();
+    /** Recursively iterates and sums all values in the container. */
+    ValueType sum();
     /** Make the object streamable. */
     template <size_t M, typename ValType> friend std::ostream& operator<<(std::ostream& lhs, const Container<M,ValType> &in);
 };
@@ -95,6 +97,10 @@ public:
     /** Conjugate. */
     template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type=0>
         Container<1,ValueType> conj();
+    /** Returns the sum of all values in the container. */
+    ValueType sum();
+    /** Saves the data to a plain text file */
+    void savetxt(const std::string& fname);
     /** Make the object streamable. */
     template <typename ValType> friend std::ostream& operator<<(std::ostream& lhs, const Container<1,ValType> &in);
 };

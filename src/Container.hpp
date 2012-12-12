@@ -2,6 +2,7 @@
 #define ___FK_CONTAINER_HPP___
 
 #include "Container.h"
+#include <fstream>
 
 namespace FK {
 
@@ -57,6 +58,14 @@ Container <N,ValueType> Container<N,ValueType>::conj()
     return out;
 }
 
+template <size_t N, typename ValueType> 
+ValueType Container<N,ValueType>::sum()
+{
+    ValueType out=0.0;
+    out = std::accumulate(_vals.begin(), _vals.end(), out, [](ValueType x, Container<N-1,ValueType> &in){return x+in.sum();});
+    return out;
+}
+
 
 //
 // Container, N=1
@@ -106,6 +115,25 @@ Container <1,ValueType> Container<1,ValueType>::conj()
     for_each(out._vals.begin(), out._vals.end(), [&](ComplexType &x){x=std::conj(x);});
     return out;
 }
+
+template <typename ValueType> 
+ValueType Container<1,ValueType>::sum()
+{
+    ValueType out=0.0;
+    out = std::accumulate(_vals.begin(), _vals.end(), out, std::plus<ValueType>());
+    return out;
+}
+
+template <typename ValueType> 
+void Container<1,ValueType>::savetxt(const std::string& fname)
+{
+    std::ofstream out;
+    out.open(fname.c_str());
+    std::ostream_iterator<ValueType> out_it (out,"\n");
+    std::copy(_vals.begin(),_vals.end(), out_it);
+    out.close();
+}
+
 
 //
 // Algebraic operators
