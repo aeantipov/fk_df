@@ -94,7 +94,7 @@ template <class Obj>
 inline auto FMatsubaraGrid::integrate(const Obj &in) const -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R = in(_vals[0]);
-    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x);}); 
+    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,const decltype(_vals[0]) &x) {return y+in(x);}); 
     return R/_beta;
 }
 
@@ -103,7 +103,7 @@ template <class Obj, typename ...OtherArgTypes>
 inline auto FMatsubaraGrid::integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...))
 {
     decltype(in(_vals[0],Args...)) R = in(_vals[0],Args...);
-    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x,Args...);}); 
+    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,const decltype(_vals[0]) &x) {return y+in(x,Args...);}); 
     return R/_beta;
 }
 
@@ -111,7 +111,7 @@ template <class Obj>
 inline auto FMatsubaraGrid::prod(const Obj &in) const -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R = in(_vals[0]);
-    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y*in(x);}); 
+    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,const decltype(_vals[0]) &x) {return y*in(x);}); 
     //decltype(in(_vals[0])) R = in(_vals[_vals.size()/2]);
     //R=std::accumulate(_vals.begin()+1+_vals.size()/2, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {DEBUG(x << "|" << in(x) << "|" << y << "->" << y*in(x)); return y*in(x);}); 
     //R=std::accumulate(_vals.begin(), _vals.begin()+_vals.size()/2, R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {DEBUG(x << "|" << in(x) << "|" << y << "->" << y*in(x)); return y*in(x);}); 
@@ -150,6 +150,7 @@ inline auto FMatsubaraGrid::getValue(Obj &in, ComplexType x) const ->decltype(in
 template <class Obj>
 inline auto FMatsubaraGrid::getValue(Obj &in, FMatsubaraGrid::point x) const ->decltype(in[0]) 
 {
+    assert (x._index < _vals.size() && x == _vals[x._index]);
     return in[x._index];
 }
 
@@ -217,7 +218,7 @@ template <class Obj>
 inline auto KMesh::integrate(const Obj &in) const -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R = in(RealType(_vals[0]));
-    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x);}); 
+    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,const decltype(_vals[0]) &x) {return y+in(x);}); 
     return R/_points;
 }
 
@@ -225,7 +226,7 @@ template <class Obj, typename ...OtherArgTypes>
 inline auto KMesh::integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...))
 {
     decltype(in(_vals[0],Args...)) R = in(_vals[0],Args...);
-    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,decltype(_vals[0]) &x) {return y+in(x,Args...);}); 
+    R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,const decltype(_vals[0]) &x) {return y+in(x,Args...);}); 
     return R/_points;
 }
 

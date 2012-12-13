@@ -6,6 +6,7 @@ set (fk_src
     Grid.h Grid.hpp 
     Container.h Container.hpp
     GridObject.h GridObject.hpp
+    GFWrap.h GFWrap.cpp
     Solver.h Solver.cpp
     SelfConsistency.h SelfConsistency.hpp SelfConsistency.cpp
     )

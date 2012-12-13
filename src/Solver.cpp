@@ -15,13 +15,13 @@ FKImpuritySolver::FKImpuritySolver(RealType U, RealType mu, RealType e_d, GFType
 void FKImpuritySolver::run()
 {
     INFO("Running FK Solver, beta = " << beta << ", U = " << U << ", mu = " << mu << ", e_d = " << e_d);
-    std::function<ComplexType(ComplexType)> K0f, K1f;
-    K0f = [this](ComplexType w){return 1.0/(w+mu-Delta(w));};
-    K1f = [this](ComplexType w){return 1.0/(w+mu-Delta(w)-U);};
-    auto K0finv = [this](ComplexType w){return w+mu-Delta(w);};
+    std::function<ComplexType(FMatsubaraGrid::point)> K0f, K1f;
+    K0f = [this](FMatsubaraGrid::point w){return 1.0/(ComplexType(w)+mu-Delta(w));};
+    K1f = [this](FMatsubaraGrid::point w){return 1.0/(ComplexType(w)+mu-Delta(w)-U);};
+    auto K0finv = [this](FMatsubaraGrid::point w){return ComplexType(w)+mu-Delta(w);};
     K0 = K0f;
     K1 = K1f;
-    auto tempF = [this](ComplexType w){return K1(w)/K0(w)*(1.0+(U+e_d-2*mu)/w);};
+    auto tempF = [this](FMatsubaraGrid::point w){return K1(w)/K0(w)*(1.0+(U+e_d-2*mu)/ComplexType(w));};
     auto Z1toZ0 = w_grid.prod(tempF);
     w_0 = 1.0/(1.0+Z1toZ0);
     w_1 = 1.0-w_0;
@@ -39,8 +39,9 @@ void FKImpuritySolver::run()
     INFO("w_0 = " << w_0 << "; w_1 = " << w_1 );
     gw = K0*w_0 + K1*w_1;
     //DEBUG("gw = " << gw);
-    std::function<ComplexType(ComplexType)> Sigmaf = [this,K0finv](ComplexType w){return U*U*w_1*w_0/(K0finv(w)+w_1*U) + w_1*U;};
-    Sigma = Sigmaf;
+    //std::function<ComplexType(FMatsubaraGrid::point)> Sigmaf = [this,K0finv](FMatsubaraGrid::point w){return U*U*w_1*w_0/(K0finv(w)+w_1*U) + w_1*U;};
+    //Sigma = Sigmaf;
+    Sigma = U*U*w_1*w_0/(1.0/K0+w_1*U) + w_1*U;
     //DEBUG("Sigma = " << Sigma);
     }
 

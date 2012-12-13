@@ -34,6 +34,7 @@ public:
     /** End iterator. */
     typename Container<N,ValueType>::iterator end();
     /** Algebraic operators. */
+    Container<N,ValueType>& operator=(Container<N,ValueType> &&rhs);
     Container<N,ValueType>& operator=(const Container<N,ValueType> &rhs);
     Container<N,ValueType>& operator=(const ValueType &rhs);
     template <typename RhsArg> Container<N,ValueType>& operator+=(const RhsArg &rhs); 
@@ -80,6 +81,7 @@ public:
     typename Container<1,ValueType>::iterator end();
 
     /** Algebraic operators. */
+    Container<1,ValueType>& operator=(Container<1,ValueType> &&rhs);
     Container<1,ValueType>& operator=(const Container<1,ValueType> &rhs);
     Container<1,ValueType>& operator=(const ValueType &rhs);
     template <typename RhsArg> Container<1,ValueType>& operator+=(const RhsArg &rhs); 

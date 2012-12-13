@@ -71,7 +71,8 @@ public:
     template <template <typename, class> class Filler, typename ...ArgTypes> void fill(const Filler<ValueType,ArgTypes...> &);
 
     /** Return the value by grid values. */
-    template <typename ...ArgTypes> ValueType& operator()(const ArgTypes&... in);
+    template <typename ...ArgTypes> ValueType& get(const ArgTypes&... in);
+    template <typename ...ArgTypes> ValueType& operator()(const ArgTypes&... in){return this->get(in...);};
     template <typename ...ArgTypes> ValueType operator()(const ArgTypes&... in) const;
 
     /** A shortcut for fill method. */
@@ -95,10 +96,10 @@ public:
     GridObject& operator/= (const ValueType& rhs);
     GridObject operator/ (const GridObject & rhs) const;
     GridObject operator/ (const ValueType & rhs) const;
-    friend GridObject operator* (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out*rhs;};
-    friend GridObject operator+ (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out+rhs;};
-    friend GridObject operator- (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out-rhs;};
-    friend GridObject operator/ (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out/rhs;};
+    friend inline GridObject operator* (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out*rhs;};
+    friend inline GridObject operator+ (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out+rhs;};
+    friend inline GridObject operator- (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out-rhs;};
+    friend inline GridObject operator/ (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out/rhs;};
 
     /** Returns the complex conjugate of this object, if it's complex valued. */
     template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type=0>

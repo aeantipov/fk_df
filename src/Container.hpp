@@ -156,6 +156,22 @@ Container<1,ValueType>& Container<1,ValueType>::operator=(const Container<1,Valu
 }
 
 template <size_t N, typename ValueType> 
+Container<N,ValueType>& Container<N,ValueType>::operator=(Container<N,ValueType> &&rhs)
+{
+    _vals.swap(rhs._vals); 
+    return (*this);
+}
+
+template <typename ValueType> 
+Container<1,ValueType>& Container<1,ValueType>::operator=(Container<1,ValueType> &&rhs)
+{
+    _vals.swap(rhs._vals); 
+    return (*this);
+}
+
+
+
+template <size_t N, typename ValueType> 
 Container<N,ValueType>& Container<N,ValueType>::operator=(const ValueType &rhs)
 {
     std::for_each(_vals.begin(), _vals.end(), [&](Container<N-1,ValueType> &x){x=rhs;});
@@ -293,7 +309,7 @@ template <typename ValueType>
 template <typename RhsArg>
 inline Container<1,ValueType>& Container<1,ValueType>::operator-=(const RhsArg &rhs)
 {
-    (*this)+=rhs*(-1);
+    (*this)+=rhs*ValueType(-1);
     return *this;
 }
 
@@ -301,7 +317,7 @@ template <size_t N, typename ValueType>
 template <typename RhsArg>
 inline Container<N,ValueType>& Container<N,ValueType>::operator-=(const RhsArg &rhs)
 {
-    (*this)+=rhs*(-1);
+    (*this)+=rhs*ValueType(-1);
     return *this;
 }
 

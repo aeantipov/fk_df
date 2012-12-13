@@ -9,7 +9,8 @@ namespace FK {
 
 struct SelfConsistency 
 {
-    typedef GridObject<ComplexType,FMatsubaraGrid> GFType;
+    //typedef GridObject<ComplexType,FMatsubaraGrid> GFType;
+    typedef GFWrap GFType;
 protected:
     SelfConsistency(){};
 };

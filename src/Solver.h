@@ -5,6 +5,7 @@
 #include "Grid.h"
 #include "Container.h"
 #include "GridObject.h"
+#include "GFWrap.h"
 
 namespace FK { 
 
@@ -13,7 +14,8 @@ struct FKImpuritySolver
 private:
     ComplexType _v_mult;
 public:
-    typedef GridObject<ComplexType,FMatsubaraGrid> GFType;
+    //typedef GridObject<ComplexType,FMatsubaraGrid> GFType;
+    typedef GFWrap GFType;
     const RealType U;
     const RealType mu;
     const RealType e_d;

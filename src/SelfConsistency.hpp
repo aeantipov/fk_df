@@ -46,10 +46,15 @@ inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::glat(const GFType& gw, co
 {
     static_assert(sizeof...(ArgTypes) == D,"!");
     assert(Delta.getGrid().getVals() == gw.getGrid().getVals());
+    GFType out = 1.0/(1.0/gw+Delta-ek(_t, kpoints...));
+    //DEBUG(out);
+    //exit(0);
     //GFType out = 1.0/(1.0/gw+Delta-ek(_t, kpoints...)); 
-    GFType out(Delta.getGrid()); 
-    std::function<ComplexType(ComplexType)> f1 = [&](typename FMatsubaraGrid::point w){return glat_val(gw(w),Delta(w),kpoints...);};
-    out.fill(f1);
+    //DEBUG("!");
+    //std::function<ComplexType(FMatsubaraGrid::point)> f1 = [&](typename FMatsubaraGrid::point w){return glat_val(gw(w),Delta(w),kpoints...);};
+    //std::function<ComplexType(FMatsubaraGrid::point)> f1 = [&](typename FMatsubaraGrid::point w){return 1.0/gw(w)+Delta(w)-1.0;};
+    //out.fill(f1);
+    //DEBUG(out);
     return out;
 
 }
@@ -78,23 +83,22 @@ template <>
 inline typename CubicDMFTSC<2>::GFType CubicDMFTSC<2>::operator()(const GFType& gw, const GFType& Delta) const
 {
     assert(Delta.getGrid().getVals() == gw.getGrid().getVals());
-
-
+/*
     RecursiveGridIntegrator<KMesh, ArgFunType> t;
     ArgFunType f = [&](RealType k1, RealType k2){return glat(gw, Delta, k1,k2);};
     return t.integrate(_kgrid, f);
+*/
 
-/*
     size_t ksize = _kgrid._points;
     GridObject<ComplexType, KMesh, KMesh> e_k(std::make_tuple(_kgrid,_kgrid));
     GFType out(Delta); out=0.0; 
     for (auto w : out.getGrid().getVals()) {
         std::function<ComplexType(RealType,RealType)> f1 = [&](RealType k1, RealType k2){return glat_val(gw(w), Delta(w), k1, k2);};
         e_k.fill(f1);
-        out(w) = e_k.sum()/RealType(ksize*ksize);
+        out.get(w) = e_k.sum()/RealType(ksize*ksize);
     }
     return out;
-*/
+
 /*
     GFType out(Delta); out=0.0; 
     for ( RealType kx : _kgrid.getVals() ) 

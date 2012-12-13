@@ -96,7 +96,7 @@ ValueType& GridObject<ValueType,GridTypes...>::operator[](const std::array<size_
 
 template <typename ValueType, typename ...GridTypes> 
 template <typename ...ArgTypes> 
-inline ValueType& GridObject<ValueType,GridTypes...>::operator()(const ArgTypes&... in)
+inline ValueType& GridObject<ValueType,GridTypes...>::get(const ArgTypes&... in)
 {
     static_assert(sizeof...(ArgTypes) == sizeof...(GridTypes), "GridObject call, number of input parameters mismatch."); 
     return ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::get(*_data,_grids,in...);
@@ -347,7 +347,7 @@ inline GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::op
     const ValueType & rhs) const
 {
     GridObject out(*this);
-    out*=rhs;
+    out-=rhs;
     return out;
 }
 

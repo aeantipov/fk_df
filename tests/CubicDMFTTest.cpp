@@ -75,17 +75,16 @@ int main()
     std::function<GF(RealType,RealType,ComplexType)> ff2_2 = [&](RealType k1, RealType k2, ComplexType k3){return SC.glat(Solver.gw, Solver.Delta, k1,k2);};
     RecursiveGridIntegrator<KMesh, decltype(ff2)> t2;
     auto t2_int = t2.integrate(SC._kgrid,ff2);
-    auto t22_int = t2.integrate(SC._kgrid,ff2_2,ComplexType(0.0));
+    //auto t22_int = t2.integrate(SC._kgrid,ff2_2,ComplexType(0.0));
     DEBUG(t2_int);
-    DEBUG(t22_int);
-    exit(0);
+    //DEBUG(t22_int);
     //auto f1111 = std::bind(&CubicDMFTSC<2>::glat, SC);
 
 
 /*
     RecursiveGridIntegrator<2,decltype(ff2)> t2;
 */
-    exit(0);
+    return EXIT_SUCCESS;
  //std::function<ComplexType(ComplexType,ComplexType)> f1 = std::bind(g4, std::placeholders::_1, std::placeholders::_2);
     //std::function<ComplexType(ComplexType,ComplexType)> f2 = std::bind(&FKImpuritySolver::getVertex4, Solver, std::placeholders::_1, std::placeholders::_2);
     //GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> g44(std::make_tuple(grid,grid));
