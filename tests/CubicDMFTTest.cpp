@@ -54,14 +54,14 @@ int main()
     //DEBUG(Delta);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
-    CubicDMFTSC<2> SC(t,32);
+    CubicDMFTSC<FKImpuritySolver, 2> SC(Solver, t,32);
 
     DEBUG(SC.dispersion(0.0,PI/2.0));
     
     for (int i=0; i<maxit && diff>1e-8; ++i) {
         INFO("Iteration " << i);
         Solver.run();
-        auto G1 = SC(Solver.gw, Solver.Delta);
+        auto G1 = SC();
         auto diffG = Solver.Delta - G1;
         diff = std::real(grid.integrate(diffG.conj()*diffG));
         INFO("diff = " << diff);

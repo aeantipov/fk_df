@@ -29,7 +29,7 @@ inline CubicDMFTSC<Solver, D>::CubicDMFTSC ( const Solver &S, RealType t, size_t
     _npoints(npoints), 
     _kgrid(KMesh(npoints))
 {
-    fill_ek<D-1>::fill(_ek_vals,0);
+//    fill_ek<D-1>::fill(_ek_vals,0);
 }
 
 /*
