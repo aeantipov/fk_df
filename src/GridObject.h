@@ -107,9 +107,13 @@ public:
     /** Returns the sum of all elements in the container. */
     ValueType sum();
     /** Save the data to the txt file. */
-    void savetxt(const std::string& fname);
+    void savetxt(const std::string& fname) const;
+    /** Loads the data to the txt file. */
+    void loadtxt(const std::string& fname);
     /** Dumps the object to the stream. */
     template <typename ValType, class ...GridTypes2> friend std::ostream& operator<<(std::ostream& lhs, const GridObject<ValType,GridTypes2...> &in);
+    
+    class exIOProblem : public std::exception { virtual const char* what() const throw(){return "IO problem.";} }; 
 };
 
 } // end of namespace FK

@@ -8,6 +8,7 @@
 #include<list>
 #include<map>
 #include<array>
+#include<iomanip>
 
 #include<memory>
 #include<utility>
@@ -49,6 +50,19 @@ typedef Eigen::Matrix<int,Eigen::Dynamic,1,Eigen::AutoAlign> IntVectorType;
 
 inline ComplexType FMatsubara(int n, RealType beta){return PI*I/beta*ComplexType(2*n+1);};
 inline ComplexType BMatsubara(int n, RealType beta){return PI*I/beta*ComplexType(2*n);};
+
+template <typename T> 
+struct __num_format {
+    const int _prec = 12;
+    T _v;
+    __num_format(T v):_v(v){};
+    operator T(){return _v;};
+    friend std::ostream& operator<<(std::ostream& lhs, const __num_format<T> &in){lhs << std::setprecision(in._prec) << in._v; return lhs;};
+    friend std::istream& operator>>(std::istream& lhs, __num_format<T> &out){lhs >> out._v; return lhs;};
+};
+
+inline std::ostream& operator<<(std::ostream& lhs, const __num_format<ComplexType> &in){lhs << std::setprecision(in._prec) << real(in._v) << " " << imag(in._v); return lhs;};
+inline std::istream& operator>>(std::istream& lhs, __num_format<ComplexType> &out){RealType re,im; lhs >> re; lhs >> im; out._v = re+I*im; return lhs;};
 
 /* A tool to generate an array of grid sizes from a given tuple of grids. */
 template <size_t N>
@@ -102,6 +116,15 @@ struct function_traits<std::function<R(Args...)>>
     template <typename ValueType, typename ArgType1, typename ...ArgTypes> struct ArgFunGenerator<1, ValueType, ArgType1, ArgTypes...> 
         { typedef std::function<ValueType(ArgTypes..., ArgType1)> type; };
 
+/** A tool to calc an integer power function of an int. */
+template<int base, unsigned exponent >
+struct __power {
+    enum { value = base * __power<base, exponent - 1>::value };
+};
+template< int base >
+struct __power<base,0> {
+    enum { value = 1 };
+};
 } // end namespace FK
 
 #endif // endif::ifndef ___FK_FK_H___

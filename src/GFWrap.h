@@ -19,12 +19,14 @@ public:
     GFWrap(GFWrap&& in);
     GFWrap(const GridObject<ComplexType, FMatsubaraGrid>& in);
     GFWrap(GridObject<ComplexType, FMatsubaraGrid>&& in);
+    GFWrap(const std::string& fname);
 
     ComplexType& operator()(const point &in){return this->get(in);};
     ComplexType operator()(const point &in) const { return (*_data)[in._index]; };
     ComplexType& operator()(const ComplexType &in){return this->get(in);};
     ComplexType operator()(const ComplexType &in) const;
-
+    
+    //using GridObject<ComplexType, FMatsubaraGrid>::get;
     using GridObject<ComplexType, FMatsubaraGrid>::operator=;
     GFWrap& operator=(const GFWrap& in);
     GFWrap& operator=(GFWrap&& in);

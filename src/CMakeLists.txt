@@ -8,7 +8,7 @@ set (fk_src
     GridObject.h GridObject.hpp
     GFWrap.h GFWrap.cpp
     Solver.h Solver.cpp
-    SelfConsistency.h SelfConsistency.hpp SelfConsistency.cpp
+    SelfConsistency.h SelfConsistency.hpp
     )
 add_library(fk SHARED ${fk_src})
 set_target_properties(fk PROPERTIES LINKER_LANGUAGE CXX)

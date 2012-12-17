@@ -70,6 +70,7 @@ const char* Grid<ValueType,Derived>::exWrongIndex::what() const throw(){
      return "Index out of bounds";
 };
 
+
 //
 // MatsubaraGrid
 //
@@ -97,7 +98,6 @@ inline auto FMatsubaraGrid::integrate(const Obj &in) const -> decltype(in(_vals[
     R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,const decltype(_vals[0]) &x) {return y+in(x);}); 
     return R/_beta;
 }
-
 
 template <class Obj, typename ...OtherArgTypes> 
 inline auto FMatsubaraGrid::integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...))
@@ -132,6 +132,7 @@ auto FMatsubaraGrid::gridIntegrate(const std::vector<Obj> &in) const -> Obj
 inline std::tuple <bool, size_t, RealType> FMatsubaraGrid::find (ComplexType in) const
 {
     assert (std::abs(real(in))<std::numeric_limits<RealType>::epsilon());
+    DEBUG("Invoking matsubara find");
     int n=(imag(in)/_spacing-1)/2;
     if (n<_w_min) { ERROR("Frequency to find is out of bounds, " << in << "<" << FMatsubara(_w_min,_beta)); return std::make_tuple(0,0,0); };
     if (n>_w_max) { ERROR("Frequency to find is out of bounds, " << in << ">" << FMatsubara(_w_max,_beta)); return std::make_tuple(0,_vals.size(),0); };
@@ -147,25 +148,27 @@ inline auto FMatsubaraGrid::getValue(Obj &in, ComplexType x) const ->decltype(in
     return in[std::get<1>(find_result)];
 }
 
+
 template <class Obj>
 inline auto FMatsubaraGrid::getValue(Obj &in, FMatsubaraGrid::point x) const ->decltype(in[0]) 
 {
-    assert (x._index < _vals.size() && x == _vals[x._index]);
+    if (x._index < _vals.size() && x == _vals[x._index])
     return in[x._index];
+    else { ERROR ("Point not found"); return this->getValue(in, ComplexType(x)); };
 }
 
 //
 // RealGrid
 //
 inline RealGrid::RealGrid(RealType min, RealType max, size_t n_points):
-    Grid(0,n_points,[n_points,max,min](size_t in){return (max-min)/n_points*in;}),
+    Grid(0,n_points,[n_points,max,min](size_t in){return (max-min)/n_points*in+min;}),
     _min(min),
     _max(max)
 {
 }
 
 template <class Obj> 
-inline auto RealGrid::integrate(const Obj &in) -> decltype(in(_vals[0]))
+inline auto RealGrid::integrate(const Obj &in) const -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R=0.0;
     for (int i=0; i<_vals.size()-1; ++i) {
@@ -183,6 +186,35 @@ inline auto RealGrid::integrate(const Obj &in, OtherArgTypes... Args) const -> d
         R+=0.5*(in(_vals[i],Args...)+in(_vals[i+1],Args...))*(_vals[i+1]-_vals[i]);
         }
     return R;
+}
+
+inline std::tuple <bool, size_t, RealType> RealGrid::find (RealType in) const
+{
+    DEBUG("Invoking find");
+    if (in<_min) { ERROR("Point to find is out of bounds, " << in << "<" << _min ); return std::make_tuple(0,0,0); };
+    if (in>_max) { ERROR("Point to find is out of bounds, " << in << ">" << _max ); return std::make_tuple(0,_vals.size(),0); };
+    auto out = std::lower_bound (_vals.begin(), _vals.end(), in);
+    size_t i = size_t(out-_vals.begin());
+    RealType val_i = _vals[i];
+    RealType weight=(in-val_i)/(_vals[i+1]/val_i);
+    return std::make_tuple (1,i,weight);
+}
+
+
+template <class Obj>
+inline auto RealGrid::getValue(Obj &in, RealType x) const ->decltype(in[0]) 
+{
+    const auto find_result=this->find(x);
+    if (!std::get<0>(find_result)) throw (exWrongIndex()); 
+    return in[std::get<1>(find_result)];
+}
+
+template <class Obj>
+inline auto RealGrid::getValue(Obj &in, RealGrid::point x) const ->decltype(in[0]) 
+{
+    if (x._index < _vals.size() && x == _vals[x._index])
+    return in[x._index];
+    else { ERROR ("Point not found"); return this->getValue(in, RealType(x)); };
 }
 
 

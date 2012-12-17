@@ -18,30 +18,28 @@ void FKImpuritySolver::run()
     std::function<ComplexType(FMatsubaraGrid::point)> K0f, K1f;
     K0f = [this](FMatsubaraGrid::point w){return 1.0/(ComplexType(w)+mu-Delta(w));};
     K1f = [this](FMatsubaraGrid::point w){return 1.0/(ComplexType(w)+mu-Delta(w)-U);};
-    auto K0finv = [this](FMatsubaraGrid::point w){return ComplexType(w)+mu-Delta(w);};
     K0 = K0f;
     K1 = K1f;
-    auto tempF = [this](FMatsubaraGrid::point w){return K1(w)/K0(w)*(1.0+(U+e_d-2*mu)/ComplexType(w));};
+    /*auto tempF = [this](FMatsubaraGrid::point w){return K1(w)/K0(w)*(1.0+(U+e_d-2*mu)/ComplexType(w));};
     auto Z1toZ0 = w_grid.prod(tempF);
     w_0 = 1.0/(1.0+Z1toZ0);
     w_1 = 1.0-w_0;
-
-    /*auto Zf1 = [this](ComplexType w, RealType mu1){return 1.0+(mu1 - Delta(w))/w;};
+*/
+    
+    auto Zf1 = [this](FMatsubaraGrid::point w, RealType mu1){return 1.0+(mu1 - Delta(w))/ComplexType(w);};
     std::function<ComplexType(RealType)> Zfprod = [this,Zf1](RealType mu1){return w_grid.prod(std::bind(Zf1, std::placeholders::_1, mu1));};
     ComplexType Z0 = Zfprod(mu);
     ComplexType Z1 = Zfprod(mu-U)*std::exp(beta*(mu-e_d-U/2));
     ComplexType Z=Z0+Z1;
     DEBUG("Z0 = " << Z0 << ", Z1 = " << Z1);
     w_0 = Z0/Z;
-    w_1 = Z1/Z;*/
+    w_1 = Z1/Z;
+    
     
     _v_mult = beta*U*U*w_0*w_1;
     INFO("w_0 = " << w_0 << "; w_1 = " << w_1 );
     gw = K0*w_0 + K1*w_1;
-    //DEBUG("gw = " << gw);
-    //std::function<ComplexType(FMatsubaraGrid::point)> Sigmaf = [this,K0finv](FMatsubaraGrid::point w){return U*U*w_1*w_0/(K0finv(w)+w_1*U) + w_1*U;};
-    //Sigma = Sigmaf;
-    Sigma = U*U*w_1*w_0/(1.0/K0+w_1*U) + w_1*U;
+    Sigma = U*U*w_1*w_0/(1.0/K0-w_0*U) + w_1*U;
     //DEBUG("Sigma = " << Sigma);
     }
 

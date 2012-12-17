@@ -45,7 +45,6 @@ int main(int argc, char *argv[])
         return 1;
     }
     
-
     RealType U = opt.U;
     RealType mu = opt.mu;
     RealType e_d = opt.e_d;
@@ -53,31 +52,43 @@ int main(int argc, char *argv[])
     RealType t = opt.t; 
     size_t n_freq = opt.n_freq;
     size_t maxit = opt.n_iter;
-
+    RealType mix = opt.mix;
 
     Log.setDebugging(true);
+
     FMatsubaraGrid grid(-n_freq, n_freq, beta);
+    FMatsubaraGrid grid_half(0, n_freq, beta);
     GF Delta(grid);
     std::function<ComplexType(ComplexType)> f1;
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
-    Delta = f1;
-    //DEBUG(Delta(FMatsubara(11,beta)));
+    try { Delta.loadtxt("Delta_full.dat"); } 
+    catch (std::exception &e) { Delta = f1; };
+
+    Delta.savetxt("Delta_0.dat");
+    //try { GF Delta2("Delta.dat"); Delta=Delta2; } 
+    //catch (std::exception &e) { Delta = f1; };
+    
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
-    CubicDMFTSC<2> SC(t,32);
-    //BetheSC SC(t);
-    //CubicInfDMFTSC SC(t,RealGrid(-5,5,1024));
+    CubicDMFTSC<FKImpuritySolver,2> SC(Solver, t,32);
+    //BetheSC<FKImpuritySolver> SC(t);
+    //CubicInfDMFTSC<FKImpuritySolver> SC(Solver,t,RealGrid(-6.0,6.0,1024));
 
     for (int i=0; i<maxit && diff>1e-8; ++i) {
-        INFO("Iteration " << i);
+        INFO("Iteration " << i <<". Mixing = " << mix);
         Solver.run();
-        //DEBUG(Solver.gw);
-        //exit(0);
-        auto G1 = SC(Solver.gw, Solver.Delta);
-        auto diffG = Solver.Delta - G1;
+        auto Delta_new = SC()*mix+(1.0-mix)*Solver.Delta;
+        auto diffG = Delta_new - Solver.Delta;
         diff = std::real(grid.integrate(diffG.conj()*diffG));
         INFO("diff = " << diff);
-        Solver.Delta = G1;
+        Solver.Delta = Delta_new;
         }
-    Solver.Delta.savetxt("Delta.dat");
+    
+    GF Delta_half(grid_half); Delta_half = Delta;
+    GF gw_half(grid_half); gw_half = Solver.gw;
+    GF sigma_half(grid_half); sigma_half = Solver.Sigma;
+    sigma_half.savetxt("Sigma.dat");
+    gw_half.savetxt("Gw.dat");
+    Delta_half.savetxt("Delta.dat");
+    Solver.Delta.savetxt("Delta_full.dat");
 }

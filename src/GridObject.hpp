@@ -2,8 +2,14 @@
 #define ___FK_GRIDOBJECT_HPP___
 
 #include "GridObject.h"
+#include <iomanip>
 
 namespace FK {
+//
+// Specification of integration with GridObject
+//
+
+
 //
 // GridObject::ContainerExtractor
 //
@@ -167,10 +173,37 @@ inline ValueType GridObject<ValueType,GridTypes...>::sum()
 }
 
 template <typename ValueType, typename ...GridTypes> 
-inline void GridObject<ValueType,GridTypes...>::savetxt(const std::string& in)
+inline void GridObject<ValueType,GridTypes...>::savetxt(const std::string& fname) const
 {
-    _data->savetxt(in);
+    std::ofstream out;
+    out.open(fname.c_str());
+    for (auto x : std::get<0>(_grids).getVals())
+        {
+            out << std::scientific << __num_format<decltype(x)>(x) << "    " << __num_format<ValueType>((*this)(x)) << std::endl;
+        }
+    out.close();
 }
+
+template <typename ValueType, typename ...GridTypes> 
+inline void GridObject<ValueType,GridTypes...>::loadtxt(const std::string& fname)
+{
+    std::ifstream in;
+    static const RealType read_tol = 1e-3;
+    in.open(fname.c_str());
+    if (!in.good()) { throw exIOProblem(); }
+
+    for (auto x : std::get<0>(_grids).getVals())
+        {
+            __num_format<decltype(x)> tmp(x);
+            in >> tmp;
+            if (std::abs(tmp._v._val-ValueType(x))>read_tol) { ERROR("loadtxt - grid mismatch"); throw exIOProblem(); };
+             __num_format<ValueType> tmp2(this->get(x));
+            in >> tmp2;
+            this->get(x) = tmp2._v;
+        }
+    in.close();
+}
+
 
 //
 // Operators

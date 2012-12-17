@@ -54,14 +54,22 @@ public:
     /** Returns size of grid. */
     size_t getSize() const;
 
+    // CFTP forwards
+    /** Get a value of an object at the given point, which is defined on a grid. */
+    template <class Obj> auto getValue(Obj &in, Grid<ValueType,Derived>::point x) const ->decltype(in[0])
+        { return static_cast<const Derived*>(this)->getValue(in,x); };
+    /** Get a value of an object at the given coordinate, which is defined on a grid. */
+    template <class Obj> auto getValue(Obj &in, ValueType x) const ->decltype(in[0])
+        { return static_cast<const Derived*>(this)->getValue(in,x); };
     /** Returns a tuple of left closest index, weight, right closest index and weight, which are the closest to input value. */
-    std::tuple <bool, size_t, RealType> find (ValueType in) const { return static_cast<Derived*>(this)->find(in); };
-    /** A CRTP reference to one of the inherited objects. */
-    template <class Obj> auto integrate(const Obj &in)->decltype(in[_vals[0]]) { return static_cast<Derived*>(this)->integrate(in); };
+    std::tuple <bool, size_t, RealType> find (ValueType in) const 
+        { return static_cast<const Derived*>(this)->find(in); };
+    /** Integrate over grid. */
+    template <class Obj> auto integrate(const Obj &in) const ->decltype(in[_vals[0]]) 
+        { return static_cast<const Derived*>(this)->integrate(in); };
+    /** Integrate over grid with extra arguments provided. */
     template <class Obj, typename ...OtherArgTypes> auto integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...))
-        { return static_cast<Derived*>(this)->integrate(in, Args...); };
-    template <class Obj> auto getValue(const Obj &in, ValueType x)->decltype(in[0]) const { return static_cast<Derived*>(this)->get_val(in); };
-    template <class Obj> auto getValue(const Obj &in, point x)->decltype(in[0]) const { return static_cast<Derived*>(this)->get_val(in); };
+        { return static_cast<const Derived*>(this)->integrate(in, Args...); };
     /** Make the object printable. */
     template <typename ValType, class Derived2> friend std::ostream& operator<<(std::ostream& lhs, const Grid<ValType,Derived2> &gr);
 
@@ -88,6 +96,8 @@ public:
     //template <class Obj> auto gridIntegrate(const std::vector<Obj> &in) const -> Obj;
     template <class Obj> auto getValue(Obj &in, ComplexType x) const ->decltype(in[0]);
     template <class Obj> auto getValue(Obj &in, point x) const ->decltype(in[0]);
+    friend std::ostream& operator<<(std::ostream& lhs, const __num_format<point> &in){lhs << std::setprecision(in._prec) << imag(in._v._val); return lhs;};
+    friend std::istream& operator>>(std::istream& lhs, __num_format<point> &out){RealType im; lhs >> im; out._v._val = I*im; return lhs;};
 };
 
 /** A grid of real values. */
@@ -96,11 +106,13 @@ class RealGrid : public Grid<RealType, RealGrid>
     RealType _min;
     RealType _max;
 public:
-    template <class Obj> auto integrate(const Obj &in)->decltype(in(_vals[0]));
+    template <class Obj> auto integrate(const Obj &in) const ->decltype(in(_vals[0]));
     template <class Obj, typename ...OtherArgTypes> auto integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...));
     RealGrid(RealType min, RealType max, size_t npoints);
+    std::tuple <bool, size_t, RealType> find (RealType in) const ;
     //template <class Obj> auto gridIntegrate(std::vector<Obj> &in) -> Obj;
-    //std::tuple <size_t, RealType, size_t, RealType> find (ValueType in);
+    template <class Obj> auto getValue(Obj &in, RealType x) const ->decltype(in[0]);
+    template <class Obj> auto getValue(Obj &in, RealGrid::point x) const ->decltype(in[0]);
 };
 
 class KMesh : public Grid<RealType, KMesh>

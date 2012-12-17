@@ -63,9 +63,41 @@ GFWrap& GFWrap::operator=(GFWrap&& in)
 
 GFWrap& GFWrap::operator=(const GFWrap& in)
 {
-    (*_data) = *(in._data);
-    assert(std::get<0>(_grids).getVals() == std::get<0>(in._grids).getVals());
-    _tail_coeffs = in._tail_coeffs;
+    assert(std::get<0>(_grids)._beta == std::get<0>(in._grids)._beta);
+    if (std::get<0>(_grids).getVals() == std::get<0>(in._grids).getVals()) { 
+        (*_data) = *(in._data);
+        _tail_coeffs = in._tail_coeffs;
+        }
+    else {
+        const FMatsubaraGrid &g = std::get<0>(_grids);
+        const FMatsubaraGrid &g_rhs = std::get<0>(in._grids);
+        INFO("Interpolating GFWrap");
+        int min_index = 0; int max_index = g._w_max-g._w_min;
+        if (g._w_min < g_rhs._w_min) { 
+            for (int i=g._w_min; i<g_rhs._w_min; ++i) {
+                auto w = g[i-g._w_min];
+                this->get(w) = in(w); // interpolation 
+                //this->get(ComplexType(w)) = in(w);
+                };
+            min_index = g_rhs._w_min - g._w_min;
+            }
+        //DEBUG(*this);
+        if (g._w_max > g_rhs._w_max) { 
+            for (int i=g_rhs._w_max; i<g._w_max; ++i) {
+                auto w = g[i-g._w_min];
+                this->get(w) = in(w); // interpolation 
+                //this->get(ComplexType(w)) = in(w);
+                };
+            max_index = g_rhs._w_max-g._w_min;
+            };
+        //DEBUG(*this);
+        
+        for (int i=min_index; i<max_index; ++i) { 
+            //DEBUG(i);
+            auto w=g[i];
+            (*this)[i] = in(w);
+            }
+        }
     return (*this);
 }
 
