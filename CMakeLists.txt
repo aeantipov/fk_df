@@ -19,6 +19,7 @@ else ()
 endif ()
 #end :: C++11 check
 
+set(CMAKE_BUILD_TYPE Release)
 set(DOXYFILE_SOURCE_DIR "./src")
 include(UseDoxygen)
 
