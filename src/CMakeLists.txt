@@ -9,6 +9,7 @@ set (fk_src
     GFWrap.h GFWrap.cpp
     Solver.h Solver.cpp
     SelfConsistency.h SelfConsistency.hpp
+    DF.h DF.hpp
     )
 add_library(fk SHARED ${fk_src})
 set_target_properties(fk PROPERTIES LINKER_LANGUAGE CXX)
