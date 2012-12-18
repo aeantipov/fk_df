@@ -68,11 +68,11 @@ int main()
         Solver.Delta = G1;
         }
 
-    DEBUG(SC.glat(Solver.gw, Solver.Delta,0.0,PI));
+    DEBUG(SC.glat(0.0,PI));
     //DEBUG(SC.glat(Solver.gw, Solver.Delta,{{0.0,PI}}));
 
-    std::function<GF(RealType,RealType)> ff2 = [&](RealType k1, RealType k2){return SC.glat(Solver.gw, Solver.Delta, k1,k2);};
-    std::function<GF(RealType,RealType,ComplexType)> ff2_2 = [&](RealType k1, RealType k2, ComplexType k3){return SC.glat(Solver.gw, Solver.Delta, k1,k2);};
+    std::function<GF(RealType,RealType)> ff2 = [&](RealType k1, RealType k2){return SC.glat(k1,k2);};
+    std::function<GF(RealType,RealType,ComplexType)> ff2_2 = [&](RealType k1, RealType k2, ComplexType k3){return SC.glat(k1,k2);};
     RecursiveGridIntegrator<KMesh, decltype(ff2)> t2;
     auto t2_int = t2.integrate(SC._kgrid,ff2);
     //auto t22_int = t2.integrate(SC._kgrid,ff2_2,ComplexType(0.0));

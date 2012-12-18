@@ -44,8 +44,8 @@ public:
    bool operator> (const index_iterator& other) { return container_ == other.container_ && index_ >  other.index_; }
    bool operator>=(const index_iterator& other) { return container_ == other.container_ && index_ >= other.index_; }
 
-   index_iterator& operator+=(int b) { index_ += b; }
-   index_iterator& operator-=(int b) { index_ -= b; }
+   index_iterator& operator+=(int b) { index_ += b; return (*this); }
+   index_iterator& operator-=(int b) { index_ -= b; return (*this); }
 
    Value_t&       operator[](int i)       { return (*container_)[i]; }
    Value_t const& operator[](int i) const { return (*container_)[i]; }
