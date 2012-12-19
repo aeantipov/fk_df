@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
     //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
-    DFLadder<FKImpuritySolver,2, 5> SC(Solver, FMatsubaraGrid(0,n_dual_freq, beta), BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
-    DEBUG(SC._fGrid);
+    //DFLadder<FKImpuritySolver,2, 16> SC(Solver, FMatsubaraGrid(0,n_dual_freq, beta), BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
+    DFLadder<FKImpuritySolver,2, 16> SC(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
     //BetheSC<FKImpuritySolver> SC(t);
     //CubicInfDMFTSC<FKImpuritySolver> SC(Solver,t,RealGrid(-6.0,6.0,1024));
 
@@ -82,6 +82,8 @@ int main(int argc, char *argv[])
         INFO("Iteration " << i <<". Mixing = " << mix);
         Solver.run();
         Delta = SC();
+        DEBUG(Delta);
+        DEBUG(Solver.Delta);
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         auto diffG = Delta_new - Solver.Delta;
         diff = std::real(grid.integrate(diffG.conj()*diffG));

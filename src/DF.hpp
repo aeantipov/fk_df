@@ -32,7 +32,6 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
     GKType GLat(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kgrid)));
     for (auto iw : _fGrid.getVals()) {
         size_t iwn = size_t(iw);
-        DEBUG(iw);
         //GLatDMFT[iwn] = 1.0/(1.0/_S.gw(iw)+_S.Delta(iw)-_ek.getData());
         GLatDMFT[iwn] = 1.0/(1.0/gw(iw)+Delta(iw)-_ek.getData());
         //SigmaD[size_t(iw)] = -gw(iw)/( 1.0/(Delta(iw) - _ek.getData()) + gw(iw))*gw(iw);
@@ -45,11 +44,16 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
         GLatLoc[iwn] = GLat[iwn].sum()/RealType(__power<ksize,D>::value);
     }
 //    DEBUG(GD0);
-//    DEBUG(GDLoc);
+    DEBUG("e_k = " << _ek);
+    DEBUG("e_k.sum = " << _ek.sum());
+    DEBUG("Delta = " << Delta);
+    //DEBUG("GLatDMFT = " << GLatDMFT);
+    DEBUG("GLatDMFT.sum(0) = " << GLatDMFT[0].sum()/RealType(__power<ksize,D>::value));
+    DEBUG("GDLoc = " << GDLoc);
 //    DEBUG(GD0-SigmaD);
 
     Delta_out = Delta + 1.0/gw * GDLoc / GLatLoc;
-    DEBUG(Delta_out);
+    DEBUG(Delta_out-Delta);
     //exit(0);
     return Delta_out;
 }

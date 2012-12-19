@@ -21,7 +21,7 @@ public:
     const RealType e_d;
     const FMatsubaraGrid w_grid;
     const RealType beta;
-    GFType& Delta;
+    GFType Delta;
     GFType gw; 
     GFType K0;
     GFType K1;

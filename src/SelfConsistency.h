@@ -37,7 +37,7 @@ protected:
 public:
     const RealType _t;
     const KMesh _kgrid;
-    EkStorage _ek;
+    mutable EkStorage _ek;
     GFType _gloc;
 
     CubicDMFTSC(const Solver &S, RealType t);

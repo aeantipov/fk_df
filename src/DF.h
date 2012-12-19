@@ -18,8 +18,6 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
     const BMatsubaraGrid _bGrid;
     GKType GD0;
     GKType SigmaD;
-private:
-    GKType& _gen_gdual();
 public:
     DFLadder(const Solver &S, const FMatsubaraGrid& fGrid, const BMatsubaraGrid& bGrid, RealType t);
     GLocalType operator ()();
