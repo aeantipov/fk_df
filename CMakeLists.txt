@@ -4,6 +4,13 @@ project (FK)
 
 message (STATUS "Configuring FK code")
 
+# Select default build type
+IF(DEFINED CMAKE_BUILD_TYPE)
+   SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
+ELSE()
+   SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
+ENDIF()
+
 # begin :: C++11 check
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11")
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
@@ -19,7 +26,6 @@ else ()
 endif ()
 #end :: C++11 check
 
-set(CMAKE_BUILD_TYPE Release)
 set(DOXYFILE_SOURCE_DIR "./src")
 include(UseDoxygen)
 

@@ -48,8 +48,10 @@ typedef Eigen::Matrix<RealType,Eigen::Dynamic,1,Eigen::AutoAlign> RealVectorType
 /** Dense vector of integers. */
 typedef Eigen::Matrix<int,Eigen::Dynamic,1,Eigen::AutoAlign> IntVectorType;
 
-inline ComplexType FMatsubara(int n, RealType beta){return PI*I/beta*ComplexType(2*n+1);};
-inline ComplexType BMatsubara(int n, RealType beta){return PI*I/beta*ComplexType(2*n);};
+template <bool Fermion> inline ComplexType Matsubara(int n, RealType beta){return PI*I/beta*ComplexType(2*n+Fermion);};
+
+inline ComplexType FMatsubara(int n, RealType beta){return Matsubara<1>(n,beta);};
+inline ComplexType BMatsubara(int n, RealType beta){return Matsubara<0>(n,beta);};
 
 template <typename T> 
 struct __num_format {
@@ -81,6 +83,7 @@ inline void GetGridSizes<1>::TupleSizeToArray( const std::tuple<GridType...>& in
     std::get<0>(out) = std::get<0>(in).getSize();
 }
 
+/*
 template<typename T> 
 struct function_traits;  
 
@@ -97,24 +100,21 @@ struct function_traits<std::function<R(Args...)>>
         typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
     };
 };
-
+*/
 /** A tool to generate a type for an object T of D Args. */
-    template <size_t N, typename ...> struct ArgGenerator;
-    template <size_t N, typename ArgType1, template <typename ...> class T, typename ...ArgTypes>  
-        struct ArgGenerator<N,ArgType1,T<ArgTypes...>,ArgTypes...>:
-            ArgGenerator<N-1,ArgType1,T<ArgTypes...>,ArgTypes...,ArgType1 >{static_assert(N>1,"");};
+template <size_t N, typename ArgType1, template <typename ...> class T, typename ...ArgTypes>  
+struct ArgBackGenerator:ArgBackGenerator<N-1,ArgType1,T,ArgTypes...,ArgType1 > {};
 
-    template <typename ArgType1, template <typename ...> class T, typename ...ArgTypes> 
-        struct ArgGenerator<1, ArgType1, T<ArgTypes...>, ArgTypes...> 
-        { typedef T<ArgType1, ArgTypes...> type; };
+template <typename ArgType1, template <typename ...> class T, typename ...ArgTypes> 
+struct ArgBackGenerator<1, ArgType1, T, ArgTypes...> { typedef T<ArgTypes..., ArgType1> type; };
 
 /** A tool to generate a type for a function of N Args. */
-    //template <size_t N, typename ...> struct ArgGenerator;
-    template <size_t N, typename ValueType, typename ArgType1, typename ...ArgTypes>  
-        struct ArgFunGenerator : ArgFunGenerator<N-1,ValueType,ArgType1, ArgTypes...,ArgType1 >{static_assert(N>1,"");};
+template <size_t N, typename ValueType, typename ArgType1, typename ...ArgTypes>  
+struct ArgFunGenerator : ArgFunGenerator<N-1,ValueType,ArgType1, ArgTypes...,ArgType1 >{static_assert(N>1,"");};
 
-    template <typename ValueType, typename ArgType1, typename ...ArgTypes> struct ArgFunGenerator<1, ValueType, ArgType1, ArgTypes...> 
-        { typedef std::function<ValueType(ArgTypes..., ArgType1)> type; };
+template <typename ValueType, typename ArgType1, typename ...ArgTypes> 
+struct ArgFunGenerator<1, ValueType, ArgType1, ArgTypes...> { 
+    typedef std::function<ValueType(ArgTypes..., ArgType1)> type; };
 
 /** A tool to calc an integer power function of an int. */
 template<int base, unsigned exponent >

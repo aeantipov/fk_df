@@ -54,7 +54,7 @@ int main()
     //DEBUG(Delta);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
-    CubicDMFTSC<FKImpuritySolver, 2> SC(Solver, t,32);
+    CubicDMFTSC<FKImpuritySolver, 2, 32> SC(Solver, t);
 
     DEBUG(SC.dispersion(0.0,PI/2.0));
     

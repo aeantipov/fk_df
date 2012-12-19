@@ -76,19 +76,24 @@ public:
     class exWrongIndex : public std::exception { virtual const char* what() const throw(); }; 
 };
 
-/** A Grid of Matsubara frequencies. */
-class FMatsubaraGrid : public Grid<ComplexType, FMatsubaraGrid>
+/** A Grid of fermionic Matsubara frequencies. */
+template <bool Fermion>
+class MatsubaraGrid : public Grid<ComplexType, MatsubaraGrid<Fermion>>
 {
 public:
+    using Grid<ComplexType, MatsubaraGrid<Fermion>>::_vals;
+    using typename Grid<ComplexType, MatsubaraGrid<Fermion>>::exWrongIndex;
+    typedef typename Grid<ComplexType, MatsubaraGrid<Fermion>>::point point;
+    //using typename Grid<ComplexType, MatsubaraGrid<Fermion>>::point;
     /** Inverse temperature. */
     const RealType _beta;
     /** Spacing between values. */
     const RealType _spacing;
     /** Min and max numbers of freq. - useful for searching. */
     const int _w_min, _w_max;
-    FMatsubaraGrid(int min, int max, RealType beta);
-    FMatsubaraGrid(const FMatsubaraGrid &rhs);
-    FMatsubaraGrid(FMatsubaraGrid&& rhs);
+    MatsubaraGrid(int min, int max, RealType beta);
+    MatsubaraGrid(const MatsubaraGrid &rhs);
+    MatsubaraGrid(MatsubaraGrid&& rhs);
     std::tuple <bool, size_t, RealType> find (ComplexType in) const ;
     template <class Obj> auto integrate(const Obj &in) const -> decltype(in(_vals[0]));
     template <class Obj, typename ...OtherArgTypes> auto integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...));
@@ -96,10 +101,16 @@ public:
     //template <class Obj> auto gridIntegrate(const std::vector<Obj> &in) const -> Obj;
     template <class Obj> auto getValue(Obj &in, ComplexType x) const ->decltype(in[0]);
     template <class Obj> auto getValue(Obj &in, point x) const ->decltype(in[0]);
-    friend std::ostream& operator<<(std::ostream& lhs, const __num_format<point> &in){lhs << std::setprecision(in._prec) << imag(in._v._val); return lhs;};
-    friend std::istream& operator>>(std::istream& lhs, __num_format<point> &out){RealType im; lhs >> im; out._v._val = I*im; return lhs;};
 };
 
+
+typedef MatsubaraGrid<1> FMatsubaraGrid;
+typedef MatsubaraGrid<0> BMatsubaraGrid;
+
+inline std::ostream& operator<<(std::ostream& lhs, const __num_format< typename FMatsubaraGrid::point> &in){lhs << std::setprecision(in._prec) << imag(in._v._val); return lhs;};
+inline std::istream& operator>>(std::istream& lhs, __num_format<typename FMatsubaraGrid::point> &out){RealType im; lhs >> im; out._v._val = I*im; return lhs;};
+inline std::ostream& operator<<(std::ostream& lhs, const __num_format< typename BMatsubaraGrid::point> &in){lhs << std::setprecision(in._prec) << imag(in._v._val); return lhs;};
+inline std::istream& operator>>(std::istream& lhs, __num_format<typename BMatsubaraGrid::point> &out){RealType im; lhs >> im; out._v._val = I*im; return lhs;};
 /** A grid of real values. */
 class RealGrid : public Grid<RealType, RealGrid>
 {
@@ -118,10 +129,13 @@ public:
 class KMesh : public Grid<RealType, KMesh>
 {
 public:
-    const int _points;
+    int _points;
     KMesh(size_t n_points);
     KMesh(const KMesh& rhs);
     KMesh(KMesh &&rhs);
+    KMesh(){};
+    KMesh& operator=(KMesh &&rhs){_points = rhs._points; _vals.swap(rhs._vals); return (*this);};
+    KMesh& operator=(const KMesh &rhs){_points = rhs._points; _vals = rhs._vals; return (*this);};
     std::tuple <bool, size_t, RealType> find (RealType in) const ;
     template <class Obj> auto integrate(const Obj &in) const ->decltype(in(_vals[0]));
     template <class Obj, typename ...OtherArgTypes> auto integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...));

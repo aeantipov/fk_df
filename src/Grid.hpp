@@ -75,40 +75,57 @@ const char* Grid<ValueType,Derived>::exWrongIndex::what() const throw(){
 // MatsubaraGrid
 //
 
-inline FMatsubaraGrid::FMatsubaraGrid(int min, int max, RealType beta):
-    Grid(min,max,std::bind(FMatsubara, std::placeholders::_1, beta)),
-    _beta(beta), _spacing(PI/beta), _w_min(min), _w_max(max)
+template <bool F>
+inline MatsubaraGrid<F>::MatsubaraGrid(int min, int max, RealType beta):
+    Grid<ComplexType, MatsubaraGrid<F>>(min,max,std::bind(Matsubara<F>, std::placeholders::_1, beta)),
+    _beta(beta), 
+    _spacing(PI/beta), 
+    _w_min(min),
+    _w_max(max)
 {
 }
 
-inline FMatsubaraGrid::FMatsubaraGrid(const FMatsubaraGrid &rhs) : 
-    Grid<ComplexType, FMatsubaraGrid>(rhs._vals),
-    _beta(rhs._beta), _spacing(rhs._spacing), _w_min(rhs._w_min), _w_max(rhs._w_max)
+template <bool F>
+inline MatsubaraGrid<F>::MatsubaraGrid(const MatsubaraGrid<F> &rhs) : 
+    Grid<ComplexType, MatsubaraGrid<F>>(rhs._vals),
+    _beta(rhs._beta), 
+    _spacing(rhs._spacing), 
+    _w_min(rhs._w_min), 
+    _w_max(rhs._w_max)
 {
 }
 
-inline FMatsubaraGrid::FMatsubaraGrid(FMatsubaraGrid&& rhs):Grid<ComplexType, FMatsubaraGrid>(rhs._vals), _beta(rhs._beta), _spacing(rhs._spacing), _w_min(rhs._w_min), _w_max(rhs._w_max)
+template <bool F>
+inline MatsubaraGrid<F>::MatsubaraGrid(MatsubaraGrid<F>&& rhs):
+    Grid<ComplexType, MatsubaraGrid>(rhs._vals), 
+    _beta(rhs._beta), 
+    _spacing(rhs._spacing), 
+    _w_min(rhs._w_min), 
+    _w_max(rhs._w_max)
 {
 }
 
+template <bool F>
 template <class Obj> 
-inline auto FMatsubaraGrid::integrate(const Obj &in) const -> decltype(in(_vals[0]))
+inline auto MatsubaraGrid<F>::integrate(const Obj &in) const -> decltype(in(_vals[0]))
 {
-    decltype(in(_vals[0])) R = in(_vals[0]);
+    decltype(in(this->_vals[0])) R = in(this->_vals[0]);
     R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,const decltype(_vals[0]) &x) {return y+in(x);}); 
     return R/_beta;
 }
 
+template <bool F>
 template <class Obj, typename ...OtherArgTypes> 
-inline auto FMatsubaraGrid::integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...))
+inline auto MatsubaraGrid<F>::integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...))
 {
     decltype(in(_vals[0],Args...)) R = in(_vals[0],Args...);
     R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,const decltype(_vals[0]) &x) {return y+in(x,Args...);}); 
     return R/_beta;
 }
 
+template <bool F>
 template <class Obj> 
-inline auto FMatsubaraGrid::prod(const Obj &in) const -> decltype(in(_vals[0]))
+inline auto MatsubaraGrid<F>::prod(const Obj &in) const -> decltype(in(_vals[0]))
 {
     decltype(in(_vals[0])) R = in(_vals[0]);
     R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,const decltype(_vals[0]) &x) {return y*in(x);}); 
@@ -121,7 +138,7 @@ inline auto FMatsubaraGrid::prod(const Obj &in) const -> decltype(in(_vals[0]))
 
 /*
 template <class Obj> 
-auto FMatsubaraGrid::gridIntegrate(const std::vector<Obj> &in) const -> Obj
+auto MatsubaraGrid::gridIntegrate(const std::vector<Obj> &in) const -> Obj
 {
     decltype(in[0]) R = in[0];
     R=std::accumulate(_vals.begin()+1, _vals.end(),R,[&](decltype(in[0])& y, decltype(in[0]) &x) {return y+x;}); 
@@ -129,19 +146,23 @@ auto FMatsubaraGrid::gridIntegrate(const std::vector<Obj> &in) const -> Obj
 }
 */
 
-inline std::tuple <bool, size_t, RealType> FMatsubaraGrid::find (ComplexType in) const
+template <bool F>
+inline std::tuple <bool, size_t, RealType> MatsubaraGrid<F>::find (ComplexType in) const
 {
     assert (std::abs(real(in))<std::numeric_limits<RealType>::epsilon());
+    #ifndef NDEBUG
     DEBUG("Invoking matsubara find");
-    int n=(imag(in)/_spacing-1)/2;
+    #endif
+    int n=(imag(in)/_spacing-F)/2;
     if (n<_w_min) { ERROR("Frequency to find is out of bounds, " << in << "<" << FMatsubara(_w_min,_beta)); return std::make_tuple(0,0,0); };
     if (n>_w_max) { ERROR("Frequency to find is out of bounds, " << in << ">" << FMatsubara(_w_max,_beta)); return std::make_tuple(0,_vals.size(),0); };
     return std::make_tuple (1,n-_w_min,1);
 }
 
 
+template <bool F>
 template <class Obj>
-inline auto FMatsubaraGrid::getValue(Obj &in, ComplexType x) const ->decltype(in[0]) 
+inline auto MatsubaraGrid<F>::getValue(Obj &in, ComplexType x) const ->decltype(in[0]) 
 {
     const auto find_result=this->find(x);
     if (!std::get<0>(find_result)) throw (exWrongIndex()); 
@@ -149,8 +170,9 @@ inline auto FMatsubaraGrid::getValue(Obj &in, ComplexType x) const ->decltype(in
 }
 
 
+template <bool F>
 template <class Obj>
-inline auto FMatsubaraGrid::getValue(Obj &in, FMatsubaraGrid::point x) const ->decltype(in[0]) 
+inline auto MatsubaraGrid<F>::getValue(Obj &in, MatsubaraGrid::point x) const ->decltype(in[0]) 
 {
     if (x._index < _vals.size() && x == _vals[x._index])
     return in[x._index];
@@ -190,7 +212,9 @@ inline auto RealGrid::integrate(const Obj &in, OtherArgTypes... Args) const -> d
 
 inline std::tuple <bool, size_t, RealType> RealGrid::find (RealType in) const
 {
+    #ifndef NDEBUG
     DEBUG("Invoking find");
+    #endif
     if (in<_min) { ERROR("Point to find is out of bounds, " << in << "<" << _min ); return std::make_tuple(0,0,0); };
     if (in>_max) { ERROR("Point to find is out of bounds, " << in << ">" << _max ); return std::make_tuple(0,_vals.size(),0); };
     auto out = std::lower_bound (_vals.begin(), _vals.end(), in);

@@ -48,6 +48,12 @@ public:
     Container<N,ValueType>& operator+=(const Container<N,ValueType> &rhs); 
     Container<N,ValueType>& operator*=(const Container<N,ValueType> &rhs); 
     Container<N,ValueType>& operator/=(const Container<N,ValueType> &rhs); 
+    friend inline Container<N,ValueType> operator* (const ValueType & lhs, const Container<N,ValueType> & rhs) {return rhs*lhs;};
+    friend inline Container<N,ValueType> operator+ (const ValueType & lhs, const Container<N,ValueType> & rhs) {return rhs+lhs;};
+    friend inline Container<N,ValueType> operator- (const ValueType & lhs, const Container<N,ValueType> & rhs) {return rhs*(-1.0)+lhs;};
+    friend inline Container<N,ValueType> operator/ (const ValueType & lhs, const Container<N,ValueType> & rhs) {Container<N,ValueType> out(rhs); out=lhs; return out/rhs;};
+
+
  
     /** Conjugate. */
     template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type=0> 
@@ -95,6 +101,10 @@ public:
     Container<1,ValueType>& operator+=(const Container<1,ValueType> &rhs); 
     Container<1,ValueType>& operator*=(const Container<1,ValueType> &rhs); 
     Container<1,ValueType>& operator/=(const Container<1,ValueType> &rhs); 
+    friend inline Container<1,ValueType> operator* (const ValueType & lhs, const Container<1,ValueType> & rhs) {return rhs*lhs;};
+    friend inline Container<1,ValueType> operator+ (const ValueType & lhs, const Container<1,ValueType> & rhs) {return rhs+lhs;};
+    friend inline Container<1,ValueType> operator- (const ValueType & lhs, const Container<1,ValueType> & rhs) {return rhs*(-1.0)+lhs;};
+    friend inline Container<1,ValueType> operator/ (const ValueType & lhs, const Container<1,ValueType> & rhs) {Container<1,ValueType> out(rhs); out=lhs; return out/rhs;};
 
     /** Conjugate. */
     template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type=0>

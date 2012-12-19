@@ -10,6 +10,7 @@ class GFWrap : public GridObject<ComplexType, FMatsubaraGrid>
 {
     std::vector<ComplexType> _tail_coeffs;
 
+    GFWrap& copyAndInterpolate(const GFWrap &in);
     ComplexType interp(ComplexType in) const;
 public:
     typedef FMatsubaraGrid::point point;
@@ -21,8 +22,9 @@ public:
     GFWrap(GridObject<ComplexType, FMatsubaraGrid>&& in);
     GFWrap(const std::string& fname);
 
+
     ComplexType& operator()(const point &in){return this->get(in);};
-    ComplexType operator()(const point &in) const { return (*_data)[in._index]; };
+    ComplexType operator()(const point &in) const;
     ComplexType& operator()(const ComplexType &in){return this->get(in);};
     ComplexType operator()(const ComplexType &in) const;
     

@@ -188,7 +188,7 @@ template <typename ValueType, typename ...GridTypes>
 inline void GridObject<ValueType,GridTypes...>::loadtxt(const std::string& fname)
 {
     std::ifstream in;
-    static const RealType read_tol = 1e-3;
+    static const RealType read_tol = 1e-6;
     in.open(fname.c_str());
     if (!in.good()) { throw exIOProblem(); }
 

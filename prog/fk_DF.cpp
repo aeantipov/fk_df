@@ -7,6 +7,7 @@
 #include "GFWrap.h"
 #include "Solver.h"
 #include "SelfConsistency.h"
+#include "DF.h"
 
 #include "OptionParser.h"
 
@@ -51,6 +52,7 @@ int main(int argc, char *argv[])
     RealType beta = opt.beta;
     RealType t = opt.t; 
     size_t n_freq = opt.n_freq;
+    size_t n_dual_freq = opt.n_dual_freq;
     size_t maxit = opt.n_iter;
     RealType mix = opt.mix;
 
@@ -70,14 +72,17 @@ int main(int argc, char *argv[])
     
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
-    CubicDMFTSC<FKImpuritySolver,2> SC(Solver, t,32);
+    //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
+    DFLadder<FKImpuritySolver,2, 5> SC(Solver, FMatsubaraGrid(0,n_dual_freq, beta), BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
+    DEBUG(SC._fGrid);
     //BetheSC<FKImpuritySolver> SC(t);
     //CubicInfDMFTSC<FKImpuritySolver> SC(Solver,t,RealGrid(-6.0,6.0,1024));
 
     for (int i=0; i<maxit && diff>1e-8; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
         Solver.run();
-        auto Delta_new = SC()*mix+(1.0-mix)*Solver.Delta;
+        Delta = SC();
+        auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         auto diffG = Delta_new - Solver.Delta;
         diff = std::real(grid.integrate(diffG.conj()*diffG));
         INFO("diff = " << diff);

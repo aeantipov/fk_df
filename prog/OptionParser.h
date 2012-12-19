@@ -237,12 +237,13 @@ public:
 	FK::RealType e_d  ;
 	FK::RealType mix  ;
 	size_t n_freq;
+	size_t n_dual_freq;
 	size_t n_iter;
 	//std::string LatticeFile;
 	std::string help;
     //bool calc_vertex;
 
-	FKOptionParser() : beta(10), U(4.0), t(1.0), mu(2.0), e_d(0.0), mix(1.0), n_freq(1024), n_iter(100), help("") {}
+	FKOptionParser() : beta(10), U(4.0), t(1.0), mu(2.0), e_d(0.0), mix(1.0), n_freq(1024), n_dual_freq(256), n_iter(100), help("") {}
 
 	BEGIN_OPTION_MAP_INLINE()
 		ON_OPTION(SHORTOPT('b') || LONGOPT("beta"))
@@ -280,10 +281,16 @@ public:
 			// no need of the notification: used_args variable will be set to 1.
 
 
-		ON_OPTION_WITH_ARG(SHORTOPT('m') || LONGOPT("matsubaras"))
+		ON_OPTION_WITH_ARG(SHORTOPT('m') || LONGOPT("nfreq"))
 			n_freq = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
+
+        ON_OPTION_WITH_ARG(LONGOPT("ndfreq"))
+			n_dual_freq = std::atoi(arg);
+			used_args = 1;	// Notify the parser of a consumption of argument.
+			// no need of the notification: used_args variable will be set to 1.
+
 
         ON_OPTION(SHORTOPT('h') || LONGOPT("help"))
             std::cout << "Usage: fk_DF [options]" << std::endl;
@@ -294,6 +301,7 @@ public:
             std::cout << "--mu                 : The value of mu. When not specified mu=U/2. Default: " << mu << std::endl;
             std::cout << "--ed                 : The value of e_d. Default: " << e_d << std::endl;
             std::cout << "-m     --matsubaras  : Amount of Matsubara frequencies. Default: " << n_freq<< std::endl;
+            std::cout << "--ndfreq             : Amount of Matsubara frequencies for DF calc. Default: " << n_dual_freq<< std::endl;
             std::cout << "-n     --niter       : Amount of Matsubara frequencies. Default: " << n_iter<< std::endl;
             std::cout << "-h     --help        : Show this help message" << std::endl;
             //std::cout << "--calc_vertex        : Defines whether the program will calculate a vertex or not. Default: false." << std::endl;

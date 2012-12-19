@@ -54,6 +54,7 @@ public:
     /** Move constructor. */
     GridObject( GridObject<ValueType, GridTypes...>&& rhs);
 
+    const std::tuple<GridTypes...> getGrids() const { return _grids; };
     /** Returns an Mth grid in _grids. */
     template<size_t M> auto getGrid() const -> const decltype(std::get<M>(_grids));
     /** Returns the top level grid. */
@@ -74,6 +75,7 @@ public:
     template <typename ...ArgTypes> ValueType& get(const ArgTypes&... in);
     template <typename ...ArgTypes> ValueType& operator()(const ArgTypes&... in){return this->get(in...);};
     template <typename ...ArgTypes> ValueType operator()(const ArgTypes&... in) const;
+    //template <typename ...ArgTypes> auto operator()(const ArgType1& in)->decltype() const;
 
     /** A shortcut for fill method. */
     template <typename ...ArgTypes> GridObject& operator= (const std::function<ValueType(ArgTypes...)> &);
@@ -96,9 +98,9 @@ public:
     GridObject& operator/= (const ValueType& rhs);
     GridObject operator/ (const GridObject & rhs) const;
     GridObject operator/ (const ValueType & rhs) const;
-    friend inline GridObject operator* (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out*rhs;};
-    friend inline GridObject operator+ (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out+rhs;};
-    friend inline GridObject operator- (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out-rhs;};
+    friend inline GridObject operator* (const ValueType & lhs, const GridObject & rhs) {return rhs*lhs;};
+    friend inline GridObject operator+ (const ValueType & lhs, const GridObject & rhs) {return rhs+lhs;};
+    friend inline GridObject operator- (const ValueType & lhs, const GridObject & rhs) {return rhs*(-1.0)+lhs;};
     friend inline GridObject operator/ (const ValueType & lhs, const GridObject & rhs) {GridObject out(rhs); out=lhs; return out/rhs;};
 
     /** Returns the complex conjugate of this object, if it's complex valued. */

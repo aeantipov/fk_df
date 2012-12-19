@@ -19,42 +19,54 @@ inline typename BetheSC<Solver>::GFType BetheSC<Solver>::operator()() const
 }
 
 //
-// CubicDMFT
+// CubicTraits
 //
-
-template <class Solver, size_t D>
-inline CubicDMFTSC<Solver, D>::CubicDMFTSC ( const Solver &S, RealType t, size_t npoints):
-    SelfConsistency<Solver>(S),
-    _t(t),
-    _npoints(npoints), 
-    _kgrid(KMesh(_ksize)),
-    _gloc(this->_S.w_grid)
-{
-    __fill_ek<D,_ksize>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kgrid);
-}
 
 template <size_t M, size_t ksize> 
 template <class IteratorType, typename ...ArgTypes> 
-inline void __fill_ek<M, ksize>::fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
+inline void CubicTraits<M, ksize>::fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
 {
+    assert(grid.getSize() == ksize);
     size_t mult = __power<ksize,M-1>::value;
     auto move_it = in;
     for (size_t kx = 0; kx<ksize; ++kx) { 
-        __fill_ek<M-1, ksize>::template fill<IteratorType, ArgTypes..., RealType> (move_it, t, grid, otherpos..., grid[kx]);
+        CubicTraits<M-1, ksize>::template fill<IteratorType, ArgTypes..., RealType> (move_it, t, grid, otherpos..., grid[kx]);
         move_it += mult;
         }
 }
 
+template <size_t M, size_t ksize> 
+template <class ContainerType, typename ...ArgTypes> 
+inline void CubicTraits<M, ksize>::fillContainer(ContainerType &in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
+{
+    assert(grid.getSize() == ksize);
+    for (size_t kx = 0; kx<ksize; ++kx) { 
+        //CubicTraits<M-1, ksize>::template fillContainer<decltype(in[kx]), ArgTypes..., RealType> (in[kx], t, grid, otherpos..., grid[kx]);
+        CubicTraits<M-1, ksize>::fillContainer(in[kx], t, grid, otherpos..., grid[kx]);
+        }
+}
+
+
+
 template <size_t ksize> 
 template <class IteratorType, typename ...ArgTypes> 
-inline void __fill_ek<0, ksize>::fill (IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
+inline void CubicTraits<0, ksize>::fill (IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
 {
     *in = ek(t,otherpos...);
 }
 
 template <size_t ksize> 
+template <class DataType, typename ...ArgTypes> 
+inline void CubicTraits<0, ksize>::fillContainer(DataType &in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
+{
+    assert(grid.getSize() == ksize);
+    in = ek(t,otherpos...);
+}
+
+
+template <size_t ksize> 
 template <typename ArgType1, typename ...ArgTypes> 
-inline RealType __fill_ek<0, ksize>::ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints) 
+inline RealType CubicTraits<0, ksize>::ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints) 
 {
     static_assert(std::is_convertible<ArgType1, RealType>::value,"Wrong kpoint");
     assert (kpoint1>=0 && kpoint1 < 2*PI);
@@ -63,40 +75,66 @@ inline RealType __fill_ek<0, ksize>::ek(RealType t, ArgType1 kpoint1, ArgTypes..
  
 template <size_t ksize> 
 template <typename ArgType1> 
-inline RealType __fill_ek<0, ksize>::ek(RealType t, ArgType1 kpoint1)
+inline RealType CubicTraits<0, ksize>::ek(RealType t, ArgType1 kpoint1)
 {
     static_assert(std::is_convertible<ArgType1, RealType>::value,"Wrong kpoint");
     assert (kpoint1>=0 && kpoint1 < 2*PI);
     return -2*t*cos(kpoint1);
 }
- 
-template <class Solver, size_t D>
-template <typename ...ArgTypes>
-inline RealType CubicDMFTSC<Solver, D>::dispersion(const ArgTypes&... kpoints)
+
+//
+// CubicDMFT
+//
+
+template <class Solver, size_t D, size_t ksize>
+inline CubicDMFTSC<Solver,D,ksize>::CubicDMFTSC ( const Solver &S, RealType t):
+    SelfConsistency<Solver>(S),
+    _t(t),
+    _kgrid(KMesh(ksize)),
+    _ek(CubicTraits<D,ksize>::getTuples(_kgrid)),
+    _gloc(this->_S.w_grid)
 {
-    static_assert(sizeof...(ArgTypes) == D, "Number of points mismatch!" );
-    return __fill_ek<0,_ksize>::ek(_t, kpoints...);
+    std::cout << std::get<1>(_ek.getGrids()) << std::endl;
+    //CubicTraits<D,ksize>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kgrid);
+    CubicTraits<D,ksize>::template fillContainer<Container<D,ComplexType>>(_ek.getData(), _t, _kgrid);
 }
 
-template <class Solver, size_t D>
+
+template <class Solver, size_t D, size_t ksize>
 template <typename ...ArgTypes>
-inline typename CubicDMFTSC<Solver, D>::GFType CubicDMFTSC<Solver,D>::glat(ArgTypes... kpoints) const
+inline RealType CubicDMFTSC<Solver,D,ksize>::dispersion(ArgTypes... kpoints) const
+{
+    static_assert(sizeof...(ArgTypes) == D, "Number of points mismatch!" );
+    return CubicTraits<0,ksize>::ek(_t, kpoints...);
+}
+
+template <class Solver, size_t D, size_t ksize>
+template <typename ...ArgTypes>
+inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::glat(ArgTypes... kpoints) const
 {
     static_assert(sizeof...(ArgTypes) == D,"!");
-    GFType out = 1.0/(1.0/this->_S.gw+this->_S.Delta-__fill_ek<0,_ksize>::ek(_t, kpoints...));
+    auto e = dispersion<ArgTypes...>(kpoints...);
+    GFType out = 1.0/(1.0/_S.gw+_S.Delta-e);
     return out;
 
 }
 
-template <class Solver, size_t D>
-inline typename CubicDMFTSC<Solver,D>::GFType CubicDMFTSC<Solver,D>::operator()()
+template <class Solver, size_t D, size_t ksize>
+template <typename MPoint, typename ...ArgTypes> 
+ComplexType CubicDMFTSC<Solver,D,ksize>::glat_val(MPoint w, ArgTypes... kpoints) const
+{
+    return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-dispersion(kpoints...));
+}
+
+template <class Solver, size_t D, size_t ksize>
+inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::operator()()
 {
     GFType out(this->_S.w_grid); 
     out=0.0; 
     for (auto w : _gloc.getGrid().getVals()) {
-        EkStorage e1 = (1.0/(1.0/this->_S.gw(w)+this->_S.Delta(w)-_ek_vals)); 
-        _gloc.get(w) = e1.sum()/RealType(_ksize*_ksize);
-        out.get(w) = -1.0/_gloc(w)+this->_S.mu-this->_S.Sigma(w)+ComplexType(w);
+        EkStorage e1 = (1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek)); 
+        _gloc.get(w) = e1.sum()/RealType(ksize*ksize);
+        out.get(w) = -1.0/_gloc(w)+_S.mu-_S.Sigma(w)+ComplexType(w);
     }
     return out;
 }
