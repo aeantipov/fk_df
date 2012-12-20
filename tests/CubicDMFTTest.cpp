@@ -13,6 +13,7 @@
 
 using namespace FK;
 
+//typedef GridObject<ComplexType,FMatsubaraGrid> GF;
 typedef GFWrap GF;
 typedef GridObject<ComplexType,KMesh,FMatsubaraGrid> GF1d;
 typedef GridObject<ComplexType,KMesh,KMesh,FMatsubaraGrid> GF2d;

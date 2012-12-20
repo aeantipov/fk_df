@@ -14,6 +14,7 @@
 #include <iostream>
 #include <ctime>
 #include <array>
+#include <csignal>
 
 using namespace FK;
 
@@ -23,8 +24,20 @@ typedef GridObject<ComplexType,KMesh,FMatsubaraGrid> GF1d;
 typedef GridObject<ComplexType,KMesh,KMesh,FMatsubaraGrid> GF2d;
 typedef GridObject<ComplexType,KMesh,KMesh,KMesh,FMatsubaraGrid> GF3d;
 
+bool interrupt = false;
+
+void sighandler(int signal)
+{
+    INFO("Caught interrupt, signal " << signal <<". Exiting...")
+    interrupt = true;
+}
+
 int main(int argc, char *argv[])
 {
+  // Catch CTRL-C
+  std::signal(SIGABRT, &sighandler);
+  std::signal(SIGTERM, &sighandler);
+  std::signal(SIGINT , &sighandler);
 
   FKOptionParser opt;
    try {
@@ -61,8 +74,12 @@ int main(int argc, char *argv[])
     FMatsubaraGrid grid(-n_freq, n_freq, beta);
     FMatsubaraGrid grid_half(0, n_freq, beta);
     GF Delta(grid);
-    std::function<ComplexType(ComplexType)> f1;
+    std::function<ComplexType(ComplexType)> f1, f2;
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
+    f2 = [t](ComplexType w) -> ComplexType {return t;};
+
+//   exit(0);
+
     try { Delta.loadtxt("Delta_full.dat"); } 
     catch (std::exception &e) { Delta = f1; };
 
@@ -72,18 +89,17 @@ int main(int argc, char *argv[])
     
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
-    //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
-    //DFLadder<FKImpuritySolver,2, 16> SC(Solver, FMatsubaraGrid(0,n_dual_freq, beta), BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
-    DFLadder<FKImpuritySolver,2, 16> SC(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
+    CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
+    //DFLadder<FKImpuritySolver,2, 16> SC(Solver, FMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), BMatsubaraGrid(-2*n_dual_freq,2*n_dual_freq, beta), t);
+    //DFLadder<FKImpuritySolver,2, 16> SC(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
     //BetheSC<FKImpuritySolver> SC(t);
     //CubicInfDMFTSC<FKImpuritySolver> SC(Solver,t,RealGrid(-6.0,6.0,1024));
 
-    for (int i=0; i<maxit && diff>1e-8; ++i) {
+    for (int i=0; i<maxit && diff>1e-8 &&!interrupt; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
-        Solver.run();
+        if (diff/mix>1e-3) Solver.run(true);
+        else Solver.run(false);
         Delta = SC();
-        DEBUG(Delta);
-        DEBUG(Solver.Delta);
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         auto diffG = Delta_new - Solver.Delta;
         diff = std::real(grid.integrate(diffG.conj()*diffG));

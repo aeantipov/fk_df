@@ -15,6 +15,7 @@ inline BetheSC<Solver>::BetheSC(const Solver &S, RealType t):SelfConsistency<Sol
 template <class Solver>
 inline typename BetheSC<Solver>::GFType BetheSC<Solver>::operator()() const
 {
+    INFO("Using DMFT self-consistency on a Bethe lattice in infinite dimensions");
     return (this->_S.gw)*(_t*_t);
 }
 
@@ -129,6 +130,7 @@ ComplexType CubicDMFTSC<Solver,D,ksize>::glat_val(MPoint w, ArgTypes... kpoints)
 template <class Solver, size_t D, size_t ksize>
 inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::operator()()
 {
+    INFO("Using DMFT self-consistency on a cubic lattice in " << D << " dimensions on a lattice of " << ksize << " atoms.");
     GFType out(this->_S.w_grid); 
     out=0.0; 
     for (auto w : _gloc.getGrid().getVals()) {
@@ -158,6 +160,8 @@ inline CubicInfDMFTSC<Solver> :: CubicInfDMFTSC(const Solver &S, RealType t, con
 template <class Solver>
 inline typename CubicInfDMFTSC<Solver>::GFType CubicInfDMFTSC<Solver>::operator()() const 
 {
+
+    INFO("Using DMFT self-consistency on a hybercubic lattice in infinite dimensions");
     CubicInfDMFTSC::GFType gl(this->_S.w_grid); 
     CubicInfDMFTSC::GFType out(this->_S.w_grid); 
     ComplW denominator(_realgrid);

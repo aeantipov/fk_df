@@ -20,20 +20,27 @@ public:
     const RealType mu;
     const RealType e_d;
     const FMatsubaraGrid w_grid;
+    const FMatsubaraGrid half_grid;
     const RealType beta;
     GFType Delta;
     GFType gw; 
     GFType K0;
     GFType K1;
     GFType Sigma;
-    ComplexType w_0;
-    ComplexType w_1;
+    RealType w_0;
+    RealType w_1;
 
     friend struct ImpurityVertex4;
 
     FKImpuritySolver(RealType U, RealType mu, RealType e_d, GFType& Delta);
-    void run();
-    ComplexType getVertex4(ComplexType w1, ComplexType w2) const {return _v_mult*K0(w1)*K0(w2)*K1(w1)*K1(w2);};
+    void run(bool calc_weight = true);
+    //ComplexType getVertex4(ComplexType w1, ComplexType w2) const {return _v_mult*K0(w1)*K0(w2)*K1(w1)*K1(w2);};
+    template <typename Arg1, typename Arg2, 
+              typename std::enable_if<std::is_convertible<Arg1, ComplexType>::value, int>::type=0, 
+              typename std::enable_if<std::is_convertible<Arg2, ComplexType>::value, int>::type=0> 
+        ComplexType getVertex4(Arg1, Arg2) const;
+    //ComplexType getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>(FMatsubaraGrid::point, FMatsubaraGrid::point) const;
+ //{return _v_mult*K0(wF)*K0(ComplexType(wF)+ComplexType(WB))*K1(wF)*K1(ComplexType(wF)+ComplexType(WB));};
 };
 
 struct ImpurityVertex4 { 

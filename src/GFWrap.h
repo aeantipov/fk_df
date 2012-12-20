@@ -8,14 +8,12 @@ namespace FK {
 
 class GFWrap : public GridObject<ComplexType, FMatsubaraGrid>
 {
-    std::vector<ComplexType> _tail_coeffs;
-
     GFWrap& copyAndInterpolate(const GFWrap &in);
     ComplexType interp(ComplexType in) const;
 public:
     typedef FMatsubaraGrid::point point;
-    GFWrap(const FMatsubaraGrid &in, size_t tail_size = 5);
-    GFWrap(const std::tuple<FMatsubaraGrid> &in, size_t tail_size = 5);
+    GFWrap(const FMatsubaraGrid &in);
+    GFWrap(const std::tuple<FMatsubaraGrid> &in);
     GFWrap(const GFWrap& in);
     GFWrap(GFWrap&& in);
     GFWrap(const GridObject<ComplexType, FMatsubaraGrid>& in);

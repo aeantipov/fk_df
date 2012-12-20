@@ -58,5 +58,36 @@ int main()
     DEBUG(D4);
     DEBUG(D3);
     DEBUG(D3+D4);
+
+    /** Tails test. */
+    int n_freq = 6;
+    RealType beta=10.0;
+    FMatsubaraGrid fgrid(-n_freq,n_freq,beta);
+    RealType t=3.0;
+    std::function<ComplexType(ComplexType)> f11, f21;
+    f11 = [t](ComplexType w) -> ComplexType {return t*t/w;};
+    f21 = [t](ComplexType w) -> ComplexType {return t;};
+    GridObject<ComplexType,FMatsubaraGrid> D21(fgrid);
+    GridObject<ComplexType,FMatsubaraGrid> D31(fgrid);
+    D21 = t;
+    DEBUG(D21);
+    DEBUG(D21(FMatsubara(n_freq+1,beta)));
+
+    D21.fill(f11);
+    DEBUG(D21);
+    DEBUG(D21(FMatsubara(n_freq+1,beta)));
+
+    
+    D21 = 2.0;
+    DEBUG(D21(FMatsubara(n_freq+1,beta)));
+    D21+=-1.0;
+    DEBUG(D21(FMatsubara(n_freq+1,beta)));
+    D31 = 3.0;
+    DEBUG(D31(FMatsubara(n_freq+1,beta)));
+
+    auto D41 = D21+D31;
+    DEBUG(D41);
+    DEBUG(D41(FMatsubara(n_freq+1,beta)));
+ 
     return EXIT_SUCCESS;
 }

@@ -243,7 +243,7 @@ public:
 	std::string help;
     //bool calc_vertex;
 
-	FKOptionParser() : beta(10), U(4.0), t(1.0), mu(2.0), e_d(0.0), mix(1.0), n_freq(1024), n_dual_freq(256), n_iter(100), help("") {}
+	FKOptionParser() : beta(10), U(4.0), t(1.0), mu(2.0), e_d(0.0), mix(1.0), n_freq(1024), n_dual_freq(1024), n_iter(100), help("") {}
 
 	BEGIN_OPTION_MAP_INLINE()
 		ON_OPTION(SHORTOPT('b') || LONGOPT("beta"))
@@ -283,6 +283,7 @@ public:
 
 		ON_OPTION_WITH_ARG(SHORTOPT('m') || LONGOPT("nfreq"))
 			n_freq = std::atoi(arg);
+            n_dual_freq = n_freq;
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
 

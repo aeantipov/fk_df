@@ -16,6 +16,7 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
     using CubicDMFTSC<Solver,D,ksize>::_ek;
     const FMatsubaraGrid _fGrid;
     const BMatsubaraGrid _bGrid;
+    const KMesh _qGrid;
     GKType GD0;
     GKType SigmaD;
 public:

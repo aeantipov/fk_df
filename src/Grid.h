@@ -6,6 +6,8 @@
 
 namespace FK { 
 
+template <typename ValueType, typename ... > struct GridPointTypeExtractor;
+
 /** A representatin of a one-dimensional grid, which stores an array of ValuType values. */
 template <typename ValueType, class Derived>
 class Grid {
@@ -94,6 +96,7 @@ public:
     MatsubaraGrid(int min, int max, RealType beta);
     MatsubaraGrid(const MatsubaraGrid &rhs);
     MatsubaraGrid(MatsubaraGrid&& rhs);
+    int getNumber(ComplexType in) const;
     std::tuple <bool, size_t, RealType> find (ComplexType in) const ;
     template <class Obj> auto integrate(const Obj &in) const -> decltype(in(_vals[0]));
     template <class Obj, typename ...OtherArgTypes> auto integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...));
@@ -142,6 +145,33 @@ public:
     //template <class Obj> auto gridIntegrate(std::vector<Obj> &in) const -> Obj;
     template <class Obj> auto getValue(Obj &in, RealType x) const ->decltype(in[0]);
     template <class Obj> auto getValue(Obj &in, point x) const ->decltype(in[0]);
+};
+/** A tool to generate a function of argtypes of grids. */
+template <typename ValueType, template <typename ...> class T, typename GridType1, typename ...GridTypes, typename ...ArgTypes>
+struct GridPointTypeExtractor<ValueType, T<GridType1, GridTypes...>, ArgTypes...> : 
+GridPointTypeExtractor<ValueType, T<GridTypes...>, ArgTypes...,decltype(GridType1::point::_val)>
+{
+};
+
+template <typename ValueType, template <typename ...> class T, typename GridType1, typename ...ArgTypes>
+struct GridPointTypeExtractor<ValueType, T<GridType1>, ArgTypes...> {
+    typedef std::function<ValueType(ArgTypes...,decltype(GridType1::point::_val))> type; 
+};
+
+template <typename FunctionType> struct __fun_traits;
+template <typename ValType, typename ... ArgTypes> 
+struct __fun_traits<std::function<ValType(ArgTypes...)> >
+{
+    static std::function<ValType(ArgTypes...)> constant(const ValType &c) 
+    { return [c](ArgTypes...in){return c;};}
+    static std::function<ValType(ArgTypes...)> add(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    { return [f1,f2](ArgTypes... in){return f1(in...)+f2(in...);}; }
+    static std::function<ValType(ArgTypes...)> multiply(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
+    static std::function<ValType(ArgTypes...)> subtract(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    { return [f1,f2](ArgTypes... in){return f1(in...)-f2(in...);}; }
+    static std::function<ValType(ArgTypes...)> divide(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
 };
 
 /** A tool to recursiverly integrate over a grid. */

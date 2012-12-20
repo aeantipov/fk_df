@@ -14,6 +14,9 @@ namespace FK {
 template< typename ValueType, typename ...GridTypes> 
 class GridObject 
 {
+public:
+    /** A typedef for a function that gives the analytical value of the object, when it's not stored. */
+    typedef typename GridPointTypeExtractor<ValueType, std::tuple<GridTypes...> >::type FunctionType;
 protected:
     static const size_t N = sizeof...(GridTypes);
     /** Grids on which the data is defined. */
@@ -24,7 +27,8 @@ protected:
      * constructor for the Container.
      */
     std::unique_ptr<Container<N, ValueType>> _data;
-    
+
+    static FunctionType add_fun(FunctionType f1, FunctionType f2);
     /** A helper recursive template utility to extract and set data from the container. */
     template <size_t Nc, typename ArgType1, typename ...ArgTypes> struct ContainerExtractor {
         /** Gets the data by values. */
@@ -42,19 +46,21 @@ protected:
         static void set(Container<1, ValueType> &data, const std::tuple<GridTypes...> &grids, const std::function<ValueType(ArgType1)> &f);
         };
 public:
-
+    /** This function returns the value of the object when the point is not in container. */
+    FunctionType _f;
     /** Constructs a grid object out of a tuple containing various grids. */
     GridObject( const std::tuple<GridTypes...> &grids);
     /** Constructor of grids and data. */
     GridObject( const std::tuple<GridTypes...> &grids, const Container<sizeof...(GridTypes), ValueType>& data):
         _grids(grids),
-        _data(new Container<sizeof...(GridTypes), ValueType>>(data)){};
+        _data(new Container<sizeof...(GridTypes), ValueType>>(data)),
+        _f(__fun_traits<FunctionType>::constant(0.0)) {};
     /** Copy constructor. */
-    GridObject( const GridObject<ValueType, GridTypes...>& rhs):_grids(rhs._grids), _data(new Container<sizeof...(GridTypes), ValueType>(*(rhs._data))){}; 
+    GridObject( const GridObject<ValueType, GridTypes...>& rhs);
     /** Move constructor. */
     GridObject( GridObject<ValueType, GridTypes...>&& rhs);
 
-    const std::tuple<GridTypes...> getGrids() const { return _grids; };
+    const std::tuple<GridTypes...> getGrids() const;
     /** Returns an Mth grid in _grids. */
     template<size_t M> auto getGrid() const -> const decltype(std::get<M>(_grids));
     /** Returns the top level grid. */
@@ -73,7 +79,6 @@ public:
 
     /** Return the value by grid values. */
     template <typename ...ArgTypes> ValueType& get(const ArgTypes&... in);
-    template <typename ...ArgTypes> ValueType& operator()(const ArgTypes&... in){return this->get(in...);};
     template <typename ...ArgTypes> ValueType operator()(const ArgTypes&... in) const;
     //template <typename ...ArgTypes> auto operator()(const ArgType1& in)->decltype() const;
 

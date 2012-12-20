@@ -149,16 +149,21 @@ auto MatsubaraGrid::gridIntegrate(const std::vector<Obj> &in) const -> Obj
 template <bool F>
 inline std::tuple <bool, size_t, RealType> MatsubaraGrid<F>::find (ComplexType in) const
 {
-    assert (std::abs(real(in))<std::numeric_limits<RealType>::epsilon());
     #ifndef NDEBUG
     DEBUG("Invoking matsubara find");
     #endif
-    int n=(imag(in)/_spacing-F)/2;
+    int n=getNumber(in);
     if (n<_w_min) { ERROR("Frequency to find is out of bounds, " << in << "<" << FMatsubara(_w_min,_beta)); return std::make_tuple(0,0,0); };
     if (n>_w_max) { ERROR("Frequency to find is out of bounds, " << in << ">" << FMatsubara(_w_max,_beta)); return std::make_tuple(0,_vals.size(),0); };
     return std::make_tuple (1,n-_w_min,1);
 }
 
+template <bool F>
+inline int MatsubaraGrid<F>::getNumber(ComplexType in) const
+{
+    assert (std::abs(real(in))<std::numeric_limits<RealType>::epsilon());
+    return (imag(in)/_spacing-F)/2;
+};
 
 template <bool F>
 template <class Obj>
