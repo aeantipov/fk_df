@@ -21,7 +21,7 @@ inline Container<N,ValueType>::Container ( const std::array<size_t, M> &in):
 template <size_t N, typename ValueType>
 inline auto Container<N,ValueType>::operator[](size_t i)->decltype(_vals[0])
 {
-    assert(i<_vals.size());
+    if (i>=_vals.size()) throw exWrongIndex();
     return _vals[i];
 }
 

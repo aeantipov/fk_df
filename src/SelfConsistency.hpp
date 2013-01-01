@@ -135,9 +135,11 @@ inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>:
     out=0.0; 
     for (auto w : _gloc.getGrid().getVals()) {
         EkStorage e1 = (1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek)); 
-        _gloc.get(w) = e1.sum()/RealType(ksize*ksize);
+        _gloc.get(w) = e1.sum()/RealType(__power<ksize,D>::value);
         out.get(w) = -1.0/_gloc(w)+_S.mu-_S.Sigma(w)+ComplexType(w);
     }
+    out._f = std::bind([&](ComplexType w){return _t*_t*2*RealType(D)/w;}, std::placeholders::_1);
+    //out._f = [&](ComplexType w)->ComplexType{return _t*_t*2*RealType(D)/w;};
     return out;
 }
 

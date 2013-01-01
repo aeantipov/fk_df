@@ -66,41 +66,6 @@ struct __num_format {
 inline std::ostream& operator<<(std::ostream& lhs, const __num_format<ComplexType> &in){lhs << std::setprecision(in._prec) << real(in._v) << " " << imag(in._v); return lhs;};
 inline std::istream& operator>>(std::istream& lhs, __num_format<ComplexType> &out){RealType re,im; lhs >> re; lhs >> im; out._v = re+I*im; return lhs;};
 
-/* A tool to generate an array of grid sizes from a given tuple of grids. */
-template <size_t N>
-struct GetGridSizes {
-    template <typename... GridType, size_t M>
-    static inline void TupleSizeToArray( const std::tuple<GridType...>& in, std::array<size_t, M> &out ) {
-        static_assert(N>1,"!");
-        std::get<N-1>(out) = std::get<N-1>(in).getSize();
-        GetGridSizes<N-1>::TupleSizeToArray( in, out );
-    }
-};
-
-template <>
-template <typename... GridType, size_t M>
-inline void GetGridSizes<1>::TupleSizeToArray( const std::tuple<GridType...>& in, std::array<size_t, M> &out ) {
-    std::get<0>(out) = std::get<0>(in).getSize();
-}
-
-/*
-template<typename T> 
-struct function_traits;  
-
-template<typename R, typename ...Args> 
-struct function_traits<std::function<R(Args...)>>
-{
-    static const size_t nargs = sizeof...(Args);
-
-    typedef R result_type;
-
-    template <size_t i>
-    struct arg
-    {
-        typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
-    };
-};
-*/
 /** A tool to generate a type for an object T of D Args. */
 template <size_t N, typename ArgType1, template <typename ...> class T, typename ...ArgTypes>  
 struct ArgBackGenerator:ArgBackGenerator<N-1,ArgType1,T,ArgTypes...,ArgType1 > {};
@@ -125,6 +90,37 @@ template< int base >
 struct __power<base,0> {
     enum { value = 1 };
 };
+
+/** Function traits. */
+template <typename FunctionType> struct __fun_traits;
+template <typename ValType, typename ... ArgTypes> 
+struct __fun_traits<std::function<ValType(ArgTypes...)> >
+{
+    static std::function<ValType(ArgTypes...)> constant(const ValType &c) 
+    { return [c](ArgTypes...in){return c;};}
+    static std::function<ValType(ArgTypes...)> add(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    { return [f1,f2](ArgTypes... in){return f1(in...)+f2(in...);}; }
+    static std::function<ValType(ArgTypes...)> multiply(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
+    static std::function<ValType(ArgTypes...)> subtract(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    { return [f1,f2](ArgTypes... in){return f1(in...)-f2(in...);}; }
+    static std::function<ValType(ArgTypes...)> divide(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
+};
+
+
+/** A tool to wrap a call a class method from a tuple. */
+template<int ...> struct __seq {};
+template<int N, int ...S> struct __gens : __gens<N-1, N-1, S...> {};
+template<int ...S> struct __gens<0, S...>{ typedef __seq<S...> type; };
+
+template <typename ReturnType, typename ...Args> struct __caller { 
+    std::tuple<Args...> _params;
+    std::function<ReturnType(Args...)> _f;
+    template<int ...S> ReturnType _callf(__seq<S...>) { return _f(std::get<S>(_params)...); };
+    ReturnType call(){ return _callf(typename __gens<sizeof...(Args)>::type()); };
+};
+
 } // end namespace FK
 
 #endif // endif::ifndef ___FK_FK_H___

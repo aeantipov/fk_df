@@ -36,27 +36,22 @@ ComplexType GFWrap::operator()(const ComplexType &in) const
 {
     assert(std::abs(real(in))<std::numeric_limits<RealType>::epsilon());
     if (imag(in)<0) return std::conj((*this)(std::conj(in)));
-    if (imag(in)>=imag(FMatsubara(std::get<0>(_grids)._w_max, std::get<0>(_grids)._beta))) return interp(in);
+    if (imag(in)>=imag(FMatsubara(std::get<0>(_grids)._w_max, std::get<0>(_grids)._beta))) return _f(in);
     return GridObject<ComplexType, FMatsubaraGrid>::operator()(in);
 }
 
 ComplexType GFWrap::operator()(const typename FMatsubaraGrid::point &in) const
 { 
-    if (size_t(in) < std::get<0>(_grids).getSize() && std::abs(ComplexType(in) - std::get<0>(_grids)[size_t(in)])<std::numeric_limits<RealType>::epsilon())
+    if (size_t(in) < std::get<0>(_grids).getSize() && std::abs(ComplexType(in) - ComplexType(std::get<0>(_grids)[size_t(in)]))<std::numeric_limits<RealType>::epsilon())
         return (*_data)[in._index]; 
     else return (*this)(in._val);
 };
-
-ComplexType GFWrap::interp(ComplexType in) const
-{
-    ComplexType out = _f(in);
-    return out;
-}
 
 GFWrap& GFWrap::operator=(GFWrap&& in)
 {
     if (std::get<0>(_grids).getVals() == std::get<0>(in._grids).getVals()) {
         _data.swap(in._data);
+        _f.swap(in._f);
         return (*this);
         }
     else return this->copyAndInterpolate(in);
@@ -64,6 +59,7 @@ GFWrap& GFWrap::operator=(GFWrap&& in)
 
 GFWrap& GFWrap::copyAndInterpolate(const GFWrap &in)
 {
+        _f = in._f;
         const FMatsubaraGrid &g = std::get<0>(_grids);
         const FMatsubaraGrid &g_rhs = std::get<0>(in._grids);
         #ifndef NDEBUG
@@ -103,6 +99,7 @@ GFWrap& GFWrap::operator=(const GFWrap& in)
     assert(std::get<0>(_grids)._beta == std::get<0>(in._grids)._beta);
     if (std::get<0>(_grids).getVals() == std::get<0>(in._grids).getVals()) { 
         (*_data) = *(in._data);
+        _f = in._f;
         return (*this);
         }
     else return this->copyAndInterpolate(in);

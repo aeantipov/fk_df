@@ -80,6 +80,7 @@ public:
     /** Return the value by grid values. */
     template <typename ...ArgTypes> ValueType& get(const ArgTypes&... in);
     template <typename ...ArgTypes> ValueType operator()(const ArgTypes&... in) const;
+    template <typename ...ArgTypes> ValueType operator()(const std::tuple<ArgTypes...>& in) const;
     //template <typename ...ArgTypes> auto operator()(const ArgType1& in)->decltype() const;
 
     /** A shortcut for fill method. */

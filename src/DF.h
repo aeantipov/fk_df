@@ -8,10 +8,12 @@ namespace FK {
 
 template <class Solver, size_t D, size_t ksize=32>
 struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
+
     using typename CubicDMFTSC<Solver,D,ksize>::EkStorage;
     typedef typename Solver::GFType GLocalType;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType;
     using CubicDMFTSC<Solver,D,ksize>::_S;
+    using CubicDMFTSC<Solver,D,ksize>::_t;
     using CubicDMFTSC<Solver,D,ksize>::_kgrid;
     using CubicDMFTSC<Solver,D,ksize>::_ek;
     const FMatsubaraGrid _fGrid;
@@ -19,7 +21,12 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
     const KMesh _qGrid;
     GKType GD0;
     GKType SigmaD;
+protected:
+    static std::array<KMesh::point, D> _shift_point(const std::array<KMesh::point, D> &in, const std::array<KMesh::point, D> &shift);
+
 public:
+    template <typename ...KP> GLocalType getBubble(BMatsubaraGrid::point W, KP...kpoints) const;
+    GLocalType getBubble(BMatsubaraGrid::point W, const std::array<KMesh::point,D>& q) const;
     DFLadder(const Solver &S, const FMatsubaraGrid& fGrid, const BMatsubaraGrid& bGrid, RealType t);
     GLocalType operator ()();
 

@@ -50,7 +50,7 @@ public:
     /** Move constructor. */
     Grid(Grid&& rhs){_vals.swap(rhs._vals);};
     /** Returns a value at given index. */
-    ValueType operator[](size_t in) const;
+    point operator[](size_t in) const;
     /** Returns all values. */
     const std::vector<point> & getVals() const;
     /** Returns size of grid. */
@@ -158,21 +158,23 @@ struct GridPointTypeExtractor<ValueType, T<GridType1>, ArgTypes...> {
     typedef std::function<ValueType(ArgTypes...,decltype(GridType1::point::_val))> type; 
 };
 
-template <typename FunctionType> struct __fun_traits;
-template <typename ValType, typename ... ArgTypes> 
-struct __fun_traits<std::function<ValType(ArgTypes...)> >
-{
-    static std::function<ValType(ArgTypes...)> constant(const ValType &c) 
-    { return [c](ArgTypes...in){return c;};}
-    static std::function<ValType(ArgTypes...)> add(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
-    { return [f1,f2](ArgTypes... in){return f1(in...)+f2(in...);}; }
-    static std::function<ValType(ArgTypes...)> multiply(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
-    { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
-    static std::function<ValType(ArgTypes...)> subtract(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
-    { return [f1,f2](ArgTypes... in){return f1(in...)-f2(in...);}; }
-    static std::function<ValType(ArgTypes...)> divide(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
-    { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
+/* A tool to generate an array of grid sizes from a given tuple of grids. */
+template <size_t N>
+struct GetGridSizes {
+    template <typename... GridType, size_t M>
+    static inline void TupleSizeToArray( const std::tuple<GridType...>& in, std::array<size_t, M> &out ) {
+        static_assert(N>1,"!");
+        std::get<N-1>(out) = std::get<N-1>(in).getSize();
+        GetGridSizes<N-1>::TupleSizeToArray( in, out );
+    }
 };
+
+template <>
+template <typename... GridType, size_t M>
+inline void GetGridSizes<1>::TupleSizeToArray( const std::tuple<GridType...>& in, std::array<size_t, M> &out ) {
+    std::get<0>(out) = std::get<0>(in).getSize();
+}
+
 
 /** A tool to recursiverly integrate over a grid. */
 template <typename GridType, class Obj> struct RecursiveGridIntegrator;

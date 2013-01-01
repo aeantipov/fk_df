@@ -18,6 +18,54 @@ DFLadder<Solver,D,ksize>::DFLadder(const Solver &S, const FMatsubaraGrid& fGrid,
 };
 
 template <class Solver, size_t D, size_t ksize>
+std::array<KMesh::point, D> DFLadder<Solver,D,ksize>::_shift_point(const std::array<KMesh::point, D> &in, const std::array<KMesh::point, D> &shift)
+{
+    std::array<KMesh::point,D> out_k;
+    for (size_t t=0; t<D; ++t) { 
+        out_k[t]._index = (in[t]._index + shift[t]._index)%ksize; 
+        out_k[t]._val = out_k[t]._index*2.0*PI/ksize; // %ksize;
+        };
+    return out_k;
+};
+
+
+template <class Solver, size_t D, size_t ksize>
+template <typename ...KP>
+typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::getBubble(BMatsubaraGrid::point W, KP... Q) const
+{
+    std::array<KMesh::point,D> arrQ = {{ Q...} };
+    return this->getBubble(W,arrQ);
+}
+
+template <class Solver, size_t D, size_t ksize>
+typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::getBubble(BMatsubaraGrid::point W, const std::array<KMesh::point,D>& Q) const
+{
+    GLocalType out(this->_fGrid);
+    
+    for (auto w1 : _fGrid.getVals()) {
+        int n=_bGrid.getNumber(W);
+        FMatsubaraGrid::point w2; w2._index=0;
+        w2._val=w1._val+W._val;
+        if (-n<int(w1)) w2._index=w1._index+n;
+        //auto f2 = [&](FMatsubaraPoint::w1, KPoint
+        //out[size_t(w1)]=GD0[size_t(w1)] * GD0(w)
+        };
+/*
+    //typename GKType::FunctionType f1;
+    auto shift_point = [&](const std::array<KMesh::point,D>& arrK)->std::array<KMesh::point,D>{ 
+        std::array<KMesh::point,D> out_k;
+        for (size_t t=0; t<D; ++t) { 
+                out_k[t]._index = (arrK[t]._index + Q[t]._index)%ksize; 
+                out_k[t]._val = out_k[t]._index*2.0*PI/ksize; // %ksize;
+            };
+        return out_k;
+        };
+        FK::additional::__caller<ComplexType,GKType,FMatsubara::point,KMesh::point,KMesh::point> t1(GD0, std::tuple_cat(std::make_tuple(w2),shift_point({{_kgrid[0],_kgrid[0]}})));
+    }*/
+    return out;
+}
+
+template <class Solver, size_t D, size_t ksize>
 typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator()() 
 {
     INFO("Using DF Ladder self-consistency in " << D << " dimensions on a cubic lattice of " << ksize << "^" << D <<" atoms.");
@@ -33,34 +81,42 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
     GKType GLatDMFT(wkgrids);
     GKType GD(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kgrid)));
     GKType GLat(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kgrid)));
+
+    GLocalType GDsum(_fGrid);
+
     for (auto iw : _fGrid.getVals()) {
         size_t iwn = size_t(iw);
         //GLatDMFT[iwn] = 1.0/(1.0/_S.gw(iw)+_S.Delta(iw)-_ek.getData());
         GLatDMFT[iwn] = 1.0/(1.0/gw(iw)+Delta(iw)-_ek.getData());
         //SigmaD[size_t(iw)] = -gw(iw)/( 1.0/(Delta(iw) - _ek.getData()) + gw(iw))*gw(iw);
         GD0[iwn] = GLatDMFT[iwn] - gw(iw);
+        GDsum[iwn] = GD0(iw,0.0,0.0);
     };
+
+    auto fw3 = [this, &Delta](ComplexType w)->ComplexType{return Delta._f(w)/w/w;};
+    GDsum._f = fw3; 
+    GDsum.savetxt("GDsum.dat");
+    typename GKType::FunctionType fwk3 = std::bind(fw3, std::placeholders::_1);
+    GD0._f = fwk3; 
+    DEBUG(GD0(FMatsubara(_fGrid._w_max-1,_fGrid._beta),0,0));
+    DEBUG(GD0(FMatsubara(_fGrid._w_max,_fGrid._beta),0,0));
     
-    typename GridPointTypeExtractor<ComplexType, decltype(wkgrids)>::type t1;
+    //typename GridPointTypeExtractor<ComplexType, decltype(wkgrids)>::type t1;
+
+    exit(0);
+    typename GKType::FunctionType t1;
     t1 = [](ComplexType w, RealType k1, RealType k2){return 1.0/w + k1+k2;};
     GLocalType Vertex4(_fGrid);
     GKType Chi0(wkgrids);
-    Chi0 = t1;
-    DEBUG(Chi0);
-    exit(0);
-    GKType Chi0Gamma(wkgrids);
+    //GKType Chi0Gamma(wkgrids);
     INFO("Evaluating Bethe-Salpeter equation");
     for (auto iW : _bGrid.getVals()) {
         std::function<ComplexType(FMatsubaraGrid::point)> f1 = std::bind(&FKImpuritySolver::getVertex4<FMatsubaraGrid::point, BMatsubaraGrid::point>, std::ref(_S), std::placeholders::_1, iW);
         Vertex4.fill(f1);
         DEBUG(Vertex4);
+        DEBUG(this->getBubble(_bGrid[0],_qGrid[0],_qGrid[0]));
         exit(0);
-        for (auto q : _qGrid.getVals()) {
-            //GLocalType Vertex = 
-            //DEBUG("iW = " << iW << ", q = " << q);
-            
-        }
-    }
+        };
 
     for (auto iw : _fGrid.getVals()) {
         size_t iwn = size_t(iw);

@@ -9,7 +9,6 @@ namespace FK {
 class GFWrap : public GridObject<ComplexType, FMatsubaraGrid>
 {
     GFWrap& copyAndInterpolate(const GFWrap &in);
-    ComplexType interp(ComplexType in) const;
 public:
     typedef FMatsubaraGrid::point point;
     GFWrap(const FMatsubaraGrid &in);
@@ -18,12 +17,9 @@ public:
     GFWrap(GFWrap&& in);
     GFWrap(const GridObject<ComplexType, FMatsubaraGrid>& in);
     GFWrap(GridObject<ComplexType, FMatsubaraGrid>&& in);
-    GFWrap(const std::string& fname);
+ //   GFWrap(const std::string& fname);
 
-
-    ComplexType& operator()(const point &in){return this->get(in);};
     ComplexType operator()(const point &in) const;
-    ComplexType& operator()(const ComplexType &in){return this->get(in);};
     ComplexType operator()(const ComplexType &in) const;
     
     //using GridObject<ComplexType, FMatsubaraGrid>::get;

@@ -36,7 +36,7 @@ Grid<ValueType,Derived>::Grid(int min, int max, std::function<ValueType (const i
 }
 
 template <typename ValueType, class Derived>
-ValueType Grid<ValueType,Derived>::operator[](size_t index) const
+typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::operator[](size_t index) const
 {
     if (index>_vals.size()) throw exWrongIndex();
     return _vals[index];
@@ -149,10 +149,10 @@ auto MatsubaraGrid::gridIntegrate(const std::vector<Obj> &in) const -> Obj
 template <bool F>
 inline std::tuple <bool, size_t, RealType> MatsubaraGrid<F>::find (ComplexType in) const
 {
+    int n=getNumber(in);
     #ifndef NDEBUG
     DEBUG("Invoking matsubara find");
     #endif
-    int n=getNumber(in);
     if (n<_w_min) { ERROR("Frequency to find is out of bounds, " << in << "<" << FMatsubara(_w_min,_beta)); return std::make_tuple(0,0,0); };
     if (n>_w_max) { ERROR("Frequency to find is out of bounds, " << in << ">" << FMatsubara(_w_max,_beta)); return std::make_tuple(0,_vals.size(),0); };
     return std::make_tuple (1,n-_w_min,1);
@@ -275,6 +275,23 @@ inline std::tuple <bool, size_t, RealType> KMesh::find (RealType in) const
     return std::make_tuple (1,n,weight);
 }
 
+template <class Obj>
+inline auto KMesh::getValue(Obj &in, RealType x) const ->decltype(in[0]) 
+{
+    const auto find_result=this->find(x);
+    if (!std::get<0>(find_result)) throw (exWrongIndex()); 
+    return in[std::get<1>(find_result)];
+}
+
+
+template <class Obj>
+inline auto KMesh::getValue(Obj &in, KMesh::point x) const ->decltype(in[0]) 
+{
+    if (x._index < _vals.size() && x == _vals[x._index])
+    return in[x._index];
+    else { ERROR ("Point not found"); return this->getValue(in, RealType(x)); };
+}
+
 template <class Obj> 
 inline auto KMesh::integrate(const Obj &in) const -> decltype(in(_vals[0]))
 {
@@ -290,8 +307,6 @@ inline auto KMesh::integrate(const Obj &in, OtherArgTypes... Args) const -> decl
     R=std::accumulate(_vals.begin()+1, _vals.end(), R,[&](decltype(in(_vals[0]))& y,const decltype(_vals[0]) &x) {return y+in(x,Args...);}); 
     return R/_points;
 }
-
-
 
 } // end of namespace FK
 #endif

@@ -62,6 +62,8 @@ public:
     ValueType sum();
     /** Make the object streamable. */
     template <size_t M, typename ValType> friend std::ostream& operator<<(std::ostream& lhs, const Container<M,ValType> &in);
+
+    class exWrongIndex : public std::exception { virtual const char* what() const throw(){return "Index out of bounds";}}; 
 };
 
 /* A specialization for the 1d Container. */
