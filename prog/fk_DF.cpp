@@ -14,6 +14,7 @@
 #include <iostream>
 #include <ctime>
 #include <array>
+#include <unordered_map>
 #include <csignal>
 
 using namespace FK;
@@ -68,8 +69,15 @@ int main(int argc, char *argv[])
     size_t n_dual_freq = opt.n_dual_freq;
     size_t maxit = opt.n_iter;
     RealType mix = opt.mix;
+    std::string sc_type = opt.sc_type;
 
     Log.setDebugging(true);
+
+    std::function<ComplexType(ComplexType, ComplexType, ComplexType)> f_3 = [](ComplexType w1, ComplexType w2, ComplexType w3)->ComplexType { return w1+w2+w3; };
+    auto f_32 = [](ComplexType w1, ComplexType w2, ComplexType w3)->ComplexType { return w1+w2-w3; };
+    auto f_4 = [=](ComplexType w1, ComplexType w2, ComplexType w3, ComplexType w4)->ComplexType { return w1+f_32(w2,w3,w4); };
+    auto f_2 = [](ComplexType w1, ComplexType w2)->ComplexType { return w1-w2-3.21; };
+    auto f_1 = [](ComplexType w1, ComplexType w2)->ComplexType { return w1+w2; };
 
     FMatsubaraGrid grid(-n_freq, n_freq, beta);
     FMatsubaraGrid grid_half(0, n_freq, beta);
@@ -84,12 +92,26 @@ int main(int argc, char *argv[])
     
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
+    /*
+    #if defined Bethe
+        BetheSC<FKImpuritySolver> SC(Solver, t);
+    #elif defined CubicDMFTInf
+        CubicInfDMFTSC<FKImpuritySolver> SC(Solver,t,RealGrid(-6.0,6.0,1024));
+    #elif defined CubicDMFT1
+        CubicDMFTSC<FKImpuritySolver,1, 16> SC(Solver, t);
+    #elif defined CubicDMFT2
+        CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
+    #elif defined CubicDMFT3
+        CubicDMFTSC<FKImpuritySolver,3, 16> SC(Solver, t);
+    #else 
+        BetheSC<FKImpuritySolver> SC(Solver, t);
+    #endif
+    */
+  
+    CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
     //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
-    //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
-    DFLadder<FKImpuritySolver,2, 16> SC(Solver, FMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), BMatsubaraGrid(-2*n_dual_freq,2*n_dual_freq, beta), t);
+    //DFLadder<FKImpuritySolver,2, 16> SC(Solver, FMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), BMatsubaraGrid(-2*n_dual_freq,2*n_dual_freq, beta), t);
     //DFLadder<FKImpuritySolver,2, 16> SC(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
-    //BetheSC<FKImpuritySolver> SC(t);
-    //CubicInfDMFTSC<FKImpuritySolver> SC(Solver,t,RealGrid(-6.0,6.0,1024));
 
     for (int i=0; i<maxit && diff>1e-8 &&!interrupt; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
@@ -106,8 +128,12 @@ int main(int argc, char *argv[])
 
     DEBUG(Delta(FMatsubara(grid._w_max-1, beta)));
     DEBUG(Delta(FMatsubara(grid._w_max, beta)));
+    DEBUG(Solver.gw(FMatsubara(grid._w_max-1, beta)));
+    DEBUG(Solver.gw(FMatsubara(grid._w_max, beta)));
+    DEBUG(Solver.Sigma(FMatsubara(grid._w_max-1, beta)));
+    DEBUG(Solver.Sigma(FMatsubara(grid._w_max, beta)));
 
-    exit(0);
+   // exit(0);
     
     GF Delta_half(grid_half); Delta_half = Delta;
     GF gw_half(grid_half); gw_half = Solver.gw;

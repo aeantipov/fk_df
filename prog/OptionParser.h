@@ -230,6 +230,7 @@ protected:
  */
 class FKOptionParser : public optparse {
 public:
+    //enum class SC : unsigned int { Bethe, Cubic1, Cubic2, C
 	FK::RealType beta ;
 	FK::RealType U    ;
 	FK::RealType t    ;
@@ -239,11 +240,11 @@ public:
 	size_t n_freq;
 	size_t n_dual_freq;
 	size_t n_iter;
-	//std::string LatticeFile;
+	std::string sc_type;
 	std::string help;
     //bool calc_vertex;
 
-	FKOptionParser() : beta(10), U(4.0), t(1.0), mu(2.0), e_d(0.0), mix(1.0), n_freq(1024), n_dual_freq(1024), n_iter(100), help("") {}
+	FKOptionParser() : beta(10), U(4.0), t(1.0), mu(2.0), e_d(0.0), mix(1.0), n_freq(1024), n_dual_freq(1024), n_iter(100), sc_type("Bethe"), help("") {}
 
 	BEGIN_OPTION_MAP_INLINE()
 		ON_OPTION(SHORTOPT('b') || LONGOPT("beta"))
@@ -292,6 +293,9 @@ public:
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
 
+        ON_OPTION(SHORTOPT('s') || LONGOPT("sc"))
+            sc_type = arg;
+            used_args = 1;
 
         ON_OPTION(SHORTOPT('h') || LONGOPT("help"))
             std::cout << "Usage: fk_DF [options]" << std::endl;

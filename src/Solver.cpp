@@ -47,7 +47,10 @@ void FKImpuritySolver::run(bool calc_weight)
     _v_mult = beta*U*U*w_0*w_1;
     INFO("w_0 = " << w_0 << "; w_1 = " << w_1 );
     gw = K0*w_0 + K1*w_1;
-    Sigma = U*U*w_1*w_0/(1.0/K0-w_0*U) + w_1*U;
+    Sigma = U*U*w_1*w_0/(1.0/K0-w_0*U) + w_1*U; 
+    Sigma._f = std::bind([this](ComplexType w){return w_1*U + w_0*w_1*U*U/w;}, std::placeholders::_1);
+    //gw._f = std::bind([=](ComplexType w){return (mu-w_1*U-real(Delta._f(w)))/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
+    gw._f = std::bind([this](ComplexType w){return (mu-w_1*U)/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
     //DEBUG("Sigma = " << Sigma);
 }
 

@@ -93,6 +93,8 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
         GDsum[iwn] = GD0(iw,0.0,0.0);
     };
 
+    GLatDMFT._f = std::bind([&](ComplexType w)->ComplexType { return 1.0/w; }, std::placeholders::_1);
+
     auto fw3 = [this, &Delta](ComplexType w)->ComplexType{return Delta._f(w)/w/w;};
     GDsum._f = fw3; 
     GDsum.savetxt("GDsum.dat");
