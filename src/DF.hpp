@@ -70,6 +70,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
 {
     INFO("Using DF Ladder self-consistency in " << D << " dimensions on a cubic lattice of " << ksize << "^" << D <<" atoms.");
     SigmaD = 0.0;
+    RealType beta = _fGrid._beta;
     GLocalType gw(_fGrid); 
     gw = _S.gw;
     GLocalType Delta(_fGrid); 
@@ -84,28 +85,51 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
 
     GLocalType GDsum(_fGrid);
 
+    DEBUG(Delta(FMatsubara(_fGrid._w_max-1, beta)));
+    DEBUG(Delta(FMatsubara(_fGrid._w_max, beta)));
+
     for (auto iw : _fGrid.getVals()) {
         size_t iwn = size_t(iw);
         //GLatDMFT[iwn] = 1.0/(1.0/_S.gw(iw)+_S.Delta(iw)-_ek.getData());
         GLatDMFT[iwn] = 1.0/(1.0/gw(iw)+Delta(iw)-_ek.getData());
         //SigmaD[size_t(iw)] = -gw(iw)/( 1.0/(Delta(iw) - _ek.getData()) + gw(iw))*gw(iw);
         GD0[iwn] = GLatDMFT[iwn] - gw(iw);
-        GDsum[iwn] = GD0(iw,0.0,0.0);
+        GDsum[iwn] = GD0[iwn].sum()/RealType(__power<ksize,D>::value);
     };
 
-    GLatDMFT._f = std::bind([&](ComplexType w)->ComplexType { return 1.0/w; }, std::placeholders::_1);
+    if (D==2) {  // Change it later
+        auto _f1 = [&](ComplexType w, RealType kx, RealType ky){return (_S.mu - _S.Sigma._f(w)-_ek(kx,ky))/std::abs(w*w)+1.0/w;};
+       // auto _f12 = [&](std::tuple<ComplexType> w_t, std::array<RealType,D> kpoints)->ComplexType 
+       //     { ComplexType w = std::get<0>(w_t);
+       //       return (_S.mu - _S.Sigma._f(w)-_ek(kpoints))/std::abs(w*w)+1.0/w;};
+        GLatDMFT._f = _f1;
+        auto _f2 = [&](ComplexType w, RealType kx, RealType ky){
+            //return (-_ek(kx,ky))/std::abs(w*w) + I*imag(Delta._f(w))/std::abs(w*w)-(_ek(kx,ky)*_ek(kx,ky) - 2.0*_ek(kx,ky)*(_S.mu - _S.Sigma._f(w)))/w/std::abs(w*w); };
+            return (-_ek(kx,ky))/std::abs(w*w) + I*imag(Delta._f(w))/std::abs(w*w)-(_ek(kx,ky)*_ek(kx,ky) - 2.0*_ek(kx,ky)*(_S.mu - _S.Sigma._f(w)))/w/std::abs(w*w); };
+        GD0._f = _f2;
+        };
+    DEBUG(GLatDMFT(FMatsubara(_fGrid._w_max-2, beta),PI/4.,PI/4.));
+    DEBUG(GLatDMFT(FMatsubara(_fGrid._w_max-1, beta),PI/4.,PI/4.));
+    DEBUG(GLatDMFT(FMatsubara(_fGrid._w_max,   beta),PI/4.,PI/4.0));
+    DEBUG(GLatDMFT(FMatsubara(_fGrid._w_max+1,   beta),PI/4.,PI/4.0));
+    DEBUG("-------");
+    DEBUG(GD0(FMatsubara(_fGrid._w_max-2, beta),PI/4.,PI/4.));
+    DEBUG(GD0(FMatsubara(_fGrid._w_max-1, beta),PI/4.,PI/4.));
+    DEBUG(GD0(FMatsubara(_fGrid._w_max,   beta),PI/4.,PI/4.0));
+    DEBUG(GD0(FMatsubara(_fGrid._w_max+1,   beta),PI/4.,PI/4.0));
 
-    auto fw3 = [this, &Delta](ComplexType w)->ComplexType{return Delta._f(w)/w/w;};
-    GDsum._f = fw3; 
+    //auto fw3 = [this, &Delta](ComplexType w)->ComplexType{return Delta._f(w)/w/w;};
+    //GDsum._f = fw3; 
     GDsum.savetxt("GDsum.dat");
-    typename GKType::FunctionType fwk3 = std::bind(fw3, std::placeholders::_1);
-    GD0._f = fwk3; 
+    DEBUG(GD0(FMatsubara(_fGrid._w_max-2,_fGrid._beta),0,0));
     DEBUG(GD0(FMatsubara(_fGrid._w_max-1,_fGrid._beta),0,0));
     DEBUG(GD0(FMatsubara(_fGrid._w_max,_fGrid._beta),0,0));
+    DEBUG(GD0(FMatsubara(_fGrid._w_max+1,_fGrid._beta),0,0));
     
+    exit(0);
+
     //typename GridPointTypeExtractor<ComplexType, decltype(wkgrids)>::type t1;
 
-    exit(0);
     typename GKType::FunctionType t1;
     t1 = [](ComplexType w, RealType k1, RealType k2){return 1.0/w + k1+k2;};
     GLocalType Vertex4(_fGrid);

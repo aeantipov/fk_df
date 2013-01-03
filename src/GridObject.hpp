@@ -134,6 +134,7 @@ inline ValueType GridObject<ValueType,GridTypes...>::operator()(const ArgTypes&.
         #ifndef NDEBUG
         DEBUG("Using analytical expression");
         #endif
+        DEBUG("Using analytical expression");
         return _f(in...);
      };
 

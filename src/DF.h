@@ -23,6 +23,7 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
     GKType SigmaD;
 protected:
     static std::array<KMesh::point, D> _shift_point(const std::array<KMesh::point, D> &in, const std::array<KMesh::point, D> &shift);
+    template <typename wtype, typename ... kpoints> std::function<ComplexType(wtype,kpoints...)> _ektoiw(){ return [&](wtype w, kpoints ... k){return _ek(k...)/w;};};
 
 public:
     template <typename ...KP> GLocalType getBubble(BMatsubaraGrid::point W, KP...kpoints) const;

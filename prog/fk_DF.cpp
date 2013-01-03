@@ -73,12 +73,6 @@ int main(int argc, char *argv[])
 
     Log.setDebugging(true);
 
-    std::function<ComplexType(ComplexType, ComplexType, ComplexType)> f_3 = [](ComplexType w1, ComplexType w2, ComplexType w3)->ComplexType { return w1+w2+w3; };
-    auto f_32 = [](ComplexType w1, ComplexType w2, ComplexType w3)->ComplexType { return w1+w2-w3; };
-    auto f_4 = [=](ComplexType w1, ComplexType w2, ComplexType w3, ComplexType w4)->ComplexType { return w1+f_32(w2,w3,w4); };
-    auto f_2 = [](ComplexType w1, ComplexType w2)->ComplexType { return w1-w2-3.21; };
-    auto f_1 = [](ComplexType w1, ComplexType w2)->ComplexType { return w1+w2; };
-
     FMatsubaraGrid grid(-n_freq, n_freq, beta);
     FMatsubaraGrid grid_half(0, n_freq, beta);
     GF Delta(grid);
@@ -108,17 +102,20 @@ int main(int argc, char *argv[])
     #endif
     */
   
-    CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
+    CubicDMFTSC<FKImpuritySolver,2, 16> SCDMFT(Solver, t);
     //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
     //DFLadder<FKImpuritySolver,2, 16> SC(Solver, FMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), BMatsubaraGrid(-2*n_dual_freq,2*n_dual_freq, beta), t);
-    //DFLadder<FKImpuritySolver,2, 16> SC(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
+    DFLadder<FKImpuritySolver,2, 16> SCDual(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
 
     for (int i=0; i<maxit && diff>1e-8 &&!interrupt; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
         //if (diff/mix>1e-3) Solver.run(true);
         if (i<4) Solver.run(true);
         else Solver.run(false);
-        Delta = SC();
+        if (i<5) 
+            Delta = SCDMFT();
+        else 
+            Delta = SCDual();
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         auto diffG = Delta_new - Solver.Delta;
         diff = std::real(grid.integrate(diffG.conj()*diffG));

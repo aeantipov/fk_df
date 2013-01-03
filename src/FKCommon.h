@@ -106,6 +106,8 @@ struct __fun_traits<std::function<ValType(ArgTypes...)> >
     { return [f1,f2](ArgTypes... in){return f1(in...)-f2(in...);}; }
     static std::function<ValType(ArgTypes...)> divide(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
     { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
+    static std::function<ValType(ArgTypes...)> getFromTupleF(const std::function<ValType(std::tuple<ArgTypes...>)>& f1)
+    { return [f1](ArgTypes...in){return f1(in...);};}
 };
 
 
