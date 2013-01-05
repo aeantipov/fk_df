@@ -16,14 +16,19 @@ FKImpuritySolver::FKImpuritySolver(RealType U, RealType mu, RealType e_d, GFType
 void FKImpuritySolver::run(bool calc_weight)
 {
     INFO("Running FK Solver, beta = " << beta << ", U = " << U << ", mu = " << mu << ", e_d = " << e_d);
-    std::function<ComplexType(FMatsubaraGrid::point)> K0f, K1f;
-    K0f = [this](FMatsubaraGrid::point w){return 1.0/(ComplexType(w)+mu-Delta(w));};
-    K1f = [this](FMatsubaraGrid::point w){return 1.0/(ComplexType(w)+mu-Delta(w)-U);};
-    auto tailf = [this](FMatsubaraGrid::point w)->ComplexType{return 1.0/(ComplexType(w));};
-    K0 = K0f;
-    K1 = K1f;
-    K0._f = tailf;
-    K1._f = tailf; 
+    GFType iw(w_grid);
+    std::function<ComplexType(ComplexType)> iw_f = [](ComplexType w){return w;};
+    iw.fill(iw_f);
+    K0 = 1.0/(iw+mu-Delta);
+    K1 = 1.0/(iw+mu-Delta-U);
+    //std::function<ComplexType(FMatsubaraGrid::point)> K0f, K1f;
+    //K0f = [this](FMatsubaraGrid::point w){return 1.0/(ComplexType(w)+mu-Delta(w));};
+    //K1f = [this](FMatsubaraGrid::point w){return 1.0/(ComplexType(w)+mu-Delta(w)-U);};
+    //auto tailf = [this](FMatsubaraGrid::point w)->ComplexType{return 1.0/(ComplexType(w));};
+    //K0.fill(K0f);
+    //K1 = K1f;
+    //K0._f = tailf;
+    //K1._f = tailf; 
     if (calc_weight) {
         //auto tempF = [this](FMatsubaraGrid::point w){return K1(w)/K0(w)*(1.0+(U+e_d-2*mu)/ComplexType(w));};
         std::function<RealType(FMatsubaraGrid::point)> tempF = [this](ComplexType w){return std::pow(std::abs(K1(w))/std::abs(K0(w)),2)*(1.0+std::pow(U+e_d-2*mu,2)/std::pow(imag(ComplexType(w)),2));};

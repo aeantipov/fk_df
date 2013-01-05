@@ -66,7 +66,7 @@ std::ostream& operator<<(std::ostream& lhs, const Grid<ValueType,Derived> &gr)
 }
 
 template <typename ValueType, class Derived>
-const char* Grid<ValueType,Derived>::exWrongIndex::what() const throw(){
+const char* Grid<ValueType,Derived>::exWrongIndex::what() const throw(){ 
      return "Index out of bounds";
 };
 
@@ -170,7 +170,7 @@ template <class Obj>
 inline auto MatsubaraGrid<F>::getValue(Obj &in, ComplexType x) const ->decltype(in[0]) 
 {
     const auto find_result=this->find(x);
-    if (!std::get<0>(find_result)) throw (exWrongIndex()); 
+    if (!std::get<0>(find_result)) { throw (exWrongIndex()); } 
     return in[std::get<1>(find_result)];
 }
 

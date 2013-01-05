@@ -16,7 +16,13 @@ class GridObject
 {
 public:
     /** A typedef for a function that gives the analytical value of the object, when it's not stored. */
-    typedef typename GridPointTypeExtractor<ValueType, std::tuple<GridTypes...> >::type FunctionType;
+    typedef typename GridPointTypeExtractor<ValueType, std::tuple<GridTypes...> >::arg_type FunctionType;
+    /** A typedef for a function that gives the analytical value of the object, when it's not stored. */
+    typedef typename GridPointExtractor<ValueType, std::tuple<GridTypes...> >::point_type PointFunctionType;
+    /** A typedef for a tuple of grids. */
+    typedef std::tuple<GridTypes...> GridTupleType;
+    /** A typedef for a tuple of grid points. */
+    typedef typename GridPointTypeExtractor<ValueType, std::tuple<GridTypes...> >::arg_tuple_type PointTupleType;
 protected:
     static const size_t N = sizeof...(GridTypes);
     /** Grids on which the data is defined. */
@@ -28,7 +34,6 @@ protected:
      */
     std::unique_ptr<Container<N, ValueType>> _data;
 
-    static FunctionType add_fun(FunctionType f1, FunctionType f2);
     /** A helper recursive template utility to extract and set data from the container. */
     template <size_t Nc, typename ArgType1, typename ...ArgTypes> struct ContainerExtractor {
         /** Gets the data by values. */
@@ -74,8 +79,10 @@ public:
     Container<sizeof...(GridTypes), ValueType>& getData(){return *_data;};
     /** Fills the Container with a provided function. */
     template <typename ...ArgTypes> void fill(const std::function<ValueType(ArgTypes...)> &);
+    void fill(const FunctionType &in);
+    template <typename ...ArgTypes> void fill_tuple(const std::function<ValueType(const std::tuple<ArgTypes...>)> &);
     /** Fills the Container with any proper class with call operator. Untested */
-    template <template <typename, class> class Filler, typename ...ArgTypes> void fill(const Filler<ValueType,ArgTypes...> &);
+    //template <template <typename, class> class Filler, typename ...ArgTypes> void fill(const Filler<ValueType,ArgTypes...> &);
 
     /** Return the value by grid values. */
     template <typename ...ArgTypes> ValueType& get(const ArgTypes&... in);
@@ -84,7 +91,7 @@ public:
     //template <typename ...ArgTypes> auto operator()(const ArgType1& in)->decltype() const;
 
     /** A shortcut for fill method. */
-    template <typename ...ArgTypes> GridObject& operator= (const std::function<ValueType(ArgTypes...)> &);
+    //template <typename ...ArgTypes> GridObject& operator= (const std::function<ValueType(ArgTypes...)> &);
     /** Algebraic operators. */
     GridObject& operator= (const GridObject & rhs);
     GridObject& operator= (const ValueType & rhs);

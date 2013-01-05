@@ -36,7 +36,7 @@ ComplexType GFWrap::operator()(const ComplexType &in) const
 {
     assert(std::abs(real(in))<std::numeric_limits<RealType>::epsilon());
     if (imag(in)<0) return std::conj((*this)(std::conj(in)));
-    if (imag(in)>=imag(FMatsubara(std::get<0>(_grids)._w_max, std::get<0>(_grids)._beta))) { DEBUG("!"); return _f(in); };
+    if (imag(in)>=imag(FMatsubara(std::get<0>(_grids)._w_max, std::get<0>(_grids)._beta))) { return _f(in); };
     return GridObject<ComplexType, FMatsubaraGrid>::operator()(in);
 }
 

@@ -49,6 +49,7 @@ typedef Eigen::Matrix<RealType,Eigen::Dynamic,1,Eigen::AutoAlign> RealVectorType
 typedef Eigen::Matrix<int,Eigen::Dynamic,1,Eigen::AutoAlign> IntVectorType;
 
 template <bool Fermion> inline ComplexType Matsubara(int n, RealType beta){return PI*I/beta*ComplexType(2*n+Fermion);};
+template <bool Fermion> inline int MatsubaraIndex(ComplexType in, RealType beta){return (beta*imag(in)/PI-Fermion)/2.0;};
 
 inline ComplexType FMatsubara(int n, RealType beta){return Matsubara<1>(n,beta);};
 inline ComplexType BMatsubara(int n, RealType beta){return Matsubara<0>(n,beta);};

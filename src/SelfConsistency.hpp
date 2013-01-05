@@ -42,7 +42,6 @@ inline void CubicTraits<M, ksize>::fillContainer(ContainerType &in, RealType t, 
 {
     assert(grid.getSize() == ksize);
     for (size_t kx = 0; kx<ksize; ++kx) { 
-        //CubicTraits<M-1, ksize>::template fillContainer<decltype(in[kx]), ArgTypes..., RealType> (in[kx], t, grid, otherpos..., grid[kx]);
         CubicTraits<M-1, ksize>::fillContainer(in[kx], t, grid, otherpos..., grid[kx]);
         }
 }
@@ -98,6 +97,8 @@ inline CubicDMFTSC<Solver,D,ksize>::CubicDMFTSC ( const Solver &S, RealType t):
     std::cout << std::get<1>(_ek.getGrids()) << std::endl;
     //CubicTraits<D,ksize>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kgrid);
     CubicTraits<D,ksize>::template fillContainer<Container<D,ComplexType>>(_ek.getData(), _t, _kgrid);
+    //CubicTraits<D,ksize>::template fillContainer<EkStorage>(_ek, _t, _kgrid);
+    _ek._f = CubicTraits<D,ksize>::template get_dispersion<typename EkStorage::FunctionType> (t); 
 }
 
 

@@ -7,6 +7,7 @@
 namespace FK { 
 
 template <typename ValueType, typename ... > struct GridPointTypeExtractor;
+template <typename ValueType, typename ... > struct GridPointExtractor;
 
 /** A representatin of a one-dimensional grid, which stores an array of ValuType values. */
 template <typename ValueType, class Derived>
@@ -15,7 +16,7 @@ public:
     struct point {
         ValueType _val;
         size_t _index;
-        inline operator ValueType() const { return _val; }
+        operator ValueType() const { return _val; }
         explicit inline operator size_t() const { return _index; }
         explicit inline operator int() const { return _index; }
         point(){};
@@ -24,7 +25,7 @@ public:
         inline point(point&& rhs) { _val = rhs._val, _index = rhs._index; }
         inline point& operator=(point&& rhs) { _val = rhs._val, _index = rhs._index; return *this;}
         inline point operator=(const point& rhs) { _val = rhs._val, _index = rhs._index; return *this;}
-        inline point(ValueType in):_val(in){_index=0;};
+        //inline point(ValueType in):_val(in){_index=2;};
         bool operator==(const point &rhs) const {return (_val == rhs._val) && (_index == rhs._index);}
         friend std::ostream& operator<<(std::ostream& lhs, const point &gr)
             {lhs<<"{"<<gr._val<<"<-["<<gr._index<<"]}"; return lhs;};
@@ -85,8 +86,8 @@ class MatsubaraGrid : public Grid<ComplexType, MatsubaraGrid<Fermion>>
 public:
     using Grid<ComplexType, MatsubaraGrid<Fermion>>::_vals;
     using typename Grid<ComplexType, MatsubaraGrid<Fermion>>::exWrongIndex;
-    typedef typename Grid<ComplexType, MatsubaraGrid<Fermion>>::point point;
-    //using typename Grid<ComplexType, MatsubaraGrid<Fermion>>::point;
+    //typedef typename Grid<ComplexType, MatsubaraGrid<Fermion>>::point point;
+    using typename Grid<ComplexType, MatsubaraGrid<Fermion>>::point;
     /** Inverse temperature. */
     const RealType _beta;
     /** Spacing between values. */
@@ -146,6 +147,7 @@ public:
     template <class Obj> auto getValue(Obj &in, RealType x) const ->decltype(in[0]);
     template <class Obj> auto getValue(Obj &in, point x) const ->decltype(in[0]);
 };
+
 /** A tool to generate a function of argtypes of grids. */
 template <typename ValueType, template <typename ...> class T, typename GridType1, typename ...GridTypes, typename ...ArgTypes>
 struct GridPointTypeExtractor<ValueType, T<GridType1, GridTypes...>, ArgTypes...> : 
@@ -156,7 +158,22 @@ GridPointTypeExtractor<ValueType, T<GridTypes...>, ArgTypes...,decltype(GridType
 template <typename ValueType, template <typename ...> class T, typename GridType1, typename ...ArgTypes>
 struct GridPointTypeExtractor<ValueType, T<GridType1>, ArgTypes...> {
     typedef std::function<ValueType(ArgTypes...,decltype(GridType1::point::_val))> type; 
+    typedef std::function<ValueType(ArgTypes...,decltype(GridType1::point::_val))> arg_type; 
+    typedef std::tuple<ArgTypes...,decltype(GridType1::point::_val)> arg_tuple_type;
 };
+
+/** A tool to generate a function of argtypes of grids. */
+template <typename ValueType, template <typename ...> class T, typename GridType1, typename ...GridTypes, typename ...ArgTypes>
+struct GridPointExtractor<ValueType, T<GridType1, GridTypes...>, ArgTypes...> : 
+GridPointExtractor<ValueType, T<GridTypes...>, ArgTypes...,typename GridType1::point>
+{
+};
+
+template <typename ValueType, template <typename ...> class T, typename GridType1, typename ...ArgTypes>
+struct GridPointExtractor<ValueType, T<GridType1>, ArgTypes...> {
+    typedef std::function<ValueType(ArgTypes...,typename GridType1::point)> point_type; 
+};
+
 
 /* A tool to generate an array of grid sizes from a given tuple of grids. */
 template <size_t N>

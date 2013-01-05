@@ -56,6 +56,9 @@ struct CubicTraits{
     static KMeshTupleType getTuples(const KMesh &grid){std::array<KMesh,M> out; out.fill(grid); return out;};
     template <class IteratorType, typename ...ArgTypes> static void fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
     template <class ContainerType, typename ...ArgTypes> static void fillContainer(ContainerType &in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
+    template <class ObjType, typename ...ArgTypes> static void setAnalytics(ObjType &in, RealType t);
+    template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t)
+        { return CubicTraits<M-1, ksize>::template get_dispersion<FunctionType,ArgTypes...,RealType>(t); }
     //static RealType ek(RealType t, ArgTypes... kpoints); 
 };
 
@@ -68,6 +71,7 @@ struct CubicTraits<0, ksize>{
     //template <typename ...ArgTypes> static RealType ek(RealType t, ArgTypes... kpoints) { return 1.0; } ; 
     template <typename ArgType1, typename ...ArgTypes> static RealType ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints); 
     template <typename ArgType1> static RealType ek(RealType t, ArgType1 kpoint1); 
+    template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t) { return [t](ArgTypes ... in){return ek(t,in...);};};
 };
 
 

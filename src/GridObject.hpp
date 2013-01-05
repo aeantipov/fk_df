@@ -48,6 +48,7 @@ inline void GridObject<ValueType,GridTypes...>::ContainerExtractor<Nc,ArgType1,A
     static_assert(std::is_convertible<decltype(grid_vals[0]), ArgType1>::value, "!");
     for (size_t i=0; i<grid_size; ++i) { 
         const auto& cur_val = grid_vals[i];
+        DEBUG(cur_val);
         const auto f1 = [&f,&cur_val](const ArgTypes&... Args){return f(cur_val,Args...);};
         ContainerExtractor<Nc-1, ArgTypes...>::set(data[i],grids,f1);
     }
@@ -130,7 +131,8 @@ inline ValueType GridObject<ValueType,GridTypes...>::operator()(const ArgTypes&.
 {
     static_assert(sizeof...(ArgTypes) == sizeof...(GridTypes), "GridObject call, number of input parameters mismatch."); 
     try { return ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::get(*_data,_grids,in...); }
-    catch (std::exception &e) { 
+    //catch (std::exception &e) { 
+    catch (...) { 
         #ifndef NDEBUG
         DEBUG("Using analytical expression");
         #endif
@@ -145,8 +147,7 @@ template <typename ...ArgTypes>
 inline ValueType GridObject<ValueType,GridTypes...>::operator()(const std::tuple<ArgTypes...>& in) const
 {
     static_assert(sizeof...(ArgTypes) == sizeof...(GridTypes), "GridObject call, number of input parameters mismatch."); 
-
-    std::function<ValueType(ArgTypes...)> f1 = [&](ArgTypes... in)->ValueType{return ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::get(*_data,_grids,in...);};
+    std::function<ValueType(ArgTypes...)> f1 = [&](ArgTypes... in1)->ValueType{return this->operator()(in1...); };// ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::get(*_data,_grids,in...);};
     __caller<ValueType,ArgTypes...> t = {in,f1};
 
     return t.call();
@@ -181,8 +182,57 @@ inline void GridObject<ValueType,GridTypes...>::fill(const std::function<ValueTy
 {
     static_assert(sizeof...(ArgTypes) == sizeof...(GridTypes), "GridObject fill, number of input parameters mismatch."); 
     ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::set(*_data,_grids,in);
+}
+
+template <class F> struct PointFToF;
+template <typename ValueType, typename ... PointTypes > 
+struct PointFToF<std::function<ValueType(PointTypes...)>> {
+    template <typename ...ArgTypes> static std::function<ValueType(ArgTypes...)> convert(const std::function<ValueType(PointTypes...)>& in);
+};
+/*
+template <size_t N, template <size_t, typename ...> class, typename ... > struct __genContainerExtractor;
+template <size_t N, template <size_t, typename ...> class T, template <typename ...> class B, typename GridType1, typename ... GridTypes, typename ...ArgTypes> 
+struct __genContainerExtractor<N,T,B<GridType1, GridTypes...>, ArgTypes... > : __genContainerExtractor<N-1,T, B<GridTypes...>, typename GridType1::point, ArgTypes...> {} ;
+template <template <size_t, typename ...> class T, template <typename ...> class B, typename ... ArgTypes> 
+struct __genContainerExtractor<0,T,B<>, ArgTypes...> { typedef T<sizeof...(ArgTypes),ArgTypes...> type; };
+
+template <typename ValueType, typename ...GridTypes> 
+inline void GridObject<ValueType,GridTypes...>::fill(const typename GridObject<ValueType,GridTypes...>::PointFunctionType& in)
+{
+
+    __genContainerExtractor<sizeof...(GridTypes), ContainerExtractor, std::tuple<GridTypes...>>::type::set(*_data,_grids,in);
+
+    //ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::set(*_data,_grids,in);
+    //_f = in;
+}
+*/
+
+
+template <size_t N, template <size_t, typename ...> class, typename ... > struct __genContainerExtractorForFunctionType;
+template <size_t N, template <size_t, typename ...> class T, template <typename ...> class B, typename GridType1, typename ... GridTypes, typename ...ArgTypes> 
+struct __genContainerExtractorForFunctionType<N,T,B<GridType1, GridTypes...>, ArgTypes... > :
+     __genContainerExtractorForFunctionType<N-1,T, B<GridTypes...>, decltype(GridType1::point::_val), ArgTypes...> {} ;
+template <template <size_t, typename ...> class T, template <typename ...> class B, typename ... ArgTypes> 
+struct __genContainerExtractorForFunctionType<0,T,B<>, ArgTypes...> { typedef T<sizeof...(ArgTypes),ArgTypes...> type; };
+
+template <typename ValueType, typename ...GridTypes> 
+inline void GridObject<ValueType,GridTypes...>::fill(const typename GridObject<ValueType,GridTypes...>::FunctionType& in)
+{
+    __genContainerExtractorForFunctionType<sizeof...(GridTypes), ContainerExtractor, std::tuple<GridTypes...>>::type::set(*_data,_grids,in);
     _f = in;
 }
+
+
+
+template <typename ValueType, typename ...GridTypes> 
+template <typename ...ArgTypes> 
+inline void GridObject<ValueType,GridTypes...>::fill_tuple(const std::function<ValueType(std::tuple<ArgTypes...>)> & in)
+{
+    static_assert(sizeof...(ArgTypes) == sizeof...(GridTypes), "GridObject fill, number of input parameters mismatch."); 
+    std::function<ValueType(ArgTypes...)> f1 = [&](ArgTypes... in1)->ValueType{return in(std::make_tuple(in1...)); };
+    this->fill(f1);
+}
+
 
 /*
 template <typename ValueType, typename ...GridTypes> 
@@ -247,15 +297,16 @@ inline void GridObject<ValueType,GridTypes...>::loadtxt(const std::string& fname
 // Operators
 //
 
+/*
 template <typename ValueType, typename ...GridTypes> 
 template <typename ...ArgTypes> 
 inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator= (
     const std::function<ValueType(ArgTypes...)> & in)
 {
     this->fill(in);
-    _f = in;
     return *this;
 }
+*/
 
 template <typename ValueType, typename ...GridTypes> 
 inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::operator= (

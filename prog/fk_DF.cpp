@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
 
     try { Delta.loadtxt("Delta_full.dat"); } 
-    catch (std::exception &e) { Delta = f1; };
+    catch (std::exception &e) { Delta.fill(f1); };
 
     Delta.savetxt("Delta_0.dat");
     
@@ -102,10 +102,13 @@ int main(int argc, char *argv[])
     #endif
     */
   
-    CubicDMFTSC<FKImpuritySolver,2, 16> SCDMFT(Solver, t);
+    static const size_t lattice_size = 3;
+
+    CubicDMFTSC<FKImpuritySolver,2, lattice_size> SCDMFT(Solver, t);
     //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
     //DFLadder<FKImpuritySolver,2, 16> SC(Solver, FMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), BMatsubaraGrid(-2*n_dual_freq,2*n_dual_freq, beta), t);
-    DFLadder<FKImpuritySolver,2, 16> SCDual(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
+    //DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
+    DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(0,2, beta), t);
 
     for (int i=0; i<maxit && diff>1e-8 &&!interrupt; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
