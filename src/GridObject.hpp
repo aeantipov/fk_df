@@ -48,7 +48,6 @@ inline void GridObject<ValueType,GridTypes...>::ContainerExtractor<Nc,ArgType1,A
     static_assert(std::is_convertible<decltype(grid_vals[0]), ArgType1>::value, "!");
     for (size_t i=0; i<grid_size; ++i) { 
         const auto& cur_val = grid_vals[i];
-        DEBUG(cur_val);
         const auto f1 = [&f,&cur_val](const ArgTypes&... Args){return f(cur_val,Args...);};
         ContainerExtractor<Nc-1, ArgTypes...>::set(data[i],grids,f1);
     }
@@ -136,7 +135,6 @@ inline ValueType GridObject<ValueType,GridTypes...>::operator()(const ArgTypes&.
         #ifndef NDEBUG
         DEBUG("Using analytical expression");
         #endif
-        DEBUG("Using analytical expression");
         return _f(in...);
      };
 

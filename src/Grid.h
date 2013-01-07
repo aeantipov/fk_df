@@ -148,6 +148,14 @@ public:
     template <class Obj> auto getValue(Obj &in, point x) const ->decltype(in[0]);
 };
 
+struct KMeshPatch : public KMesh 
+{
+public:
+    const KMesh& _parent;
+    size_t _npoints;
+    KMeshPatch(const KMesh& parent, std::vector<size_t> indices);
+};
+
 /** A tool to generate a function of argtypes of grids. */
 template <typename ValueType, template <typename ...> class T, typename GridType1, typename ...GridTypes, typename ...ArgTypes>
 struct GridPointTypeExtractor<ValueType, T<GridType1, GridTypes...>, ArgTypes...> : 

@@ -13,22 +13,23 @@
 namespace FK {
 
 template <class Solver, size_t D, size_t ksize>
-DFLadder<Solver,D,ksize>::DFLadder(const Solver &S, const FMatsubaraGrid& fGrid, const BMatsubaraGrid& bGrid, RealType t):
+DFLadder<Solver,D,ksize>::DFLadder(const Solver &S, const FMatsubaraGrid& fGrid, const BMatsubaraGrid& bGrid, const std::array<typename DFLadder<Solver,D,ksize>::qGridType,D>& qGrids, RealType t):
     CubicDMFTSC<Solver,D,ksize>(S,t),
     _fGrid(fGrid),
     _bGrid(bGrid),
-    _qGrid(_kgrid),
+    _qGrids(qGrids),
     GD0(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kgrid))),
     SigmaD(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kgrid)))
 {
 };
 
 template <class Solver, size_t D, size_t ksize>
-std::array<KMesh::point, D> DFLadder<Solver,D,ksize>::_shift_point(const std::array<KMesh::point, D> &in, const std::array<KMesh::point, D> &shift) const
+template <typename PointType>
+std::array<KMesh::point, D> DFLadder<Solver,D,ksize>::_shift_point(const std::array<KMesh::point, D> &in, const std::array<PointType, D> &shift) const
 {
     std::array<KMesh::point,D> out_k;
     for (size_t t=0; t<D; ++t) { 
-        out_k[t]._val = (in[t]._val + shift[t]._val); 
+        out_k[t]._val = (in[t]._val + RealType(shift[t])); 
         out_k[t]._val-= int(out_k[t]._val/(2.0*PI))*2.0*PI; 
         out_k[t]._index = std::get<1>(_kgrid.find(out_k[t]._val)); 
         };
@@ -39,42 +40,31 @@ std::array<KMesh::point, D> DFLadder<Solver,D,ksize>::_shift_point(const std::ar
 
 template <class Solver, size_t D, size_t ksize>
 template <typename ...KP>
-typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::getBubble(BMatsubaraGrid::point W, KP... Q) const
+typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::getBubble(BMatsubaraGrid::point W, KP... q) const
 {
-    std::array<KMesh::point,D> arrQ = {{ Q...} };
-    return this->getBubble(W,arrQ);
-}
 
-
-//
-// DFLadder2d
-//
-
-template <class Solver, size_t ksize>
-typename DFLadder2d<Solver,ksize>::GLocalType DFLadder2d<Solver,ksize>::getBubble(BMatsubaraGrid::point W, KMesh::point q1, KMesh::point q2) const 
-{
     GLocalType out(this->_fGrid);
     GKType GD_shifted(this->GD0); // G(w+W,k+Q)
 
 
-    typename GKType::PointFunctionType ShiftFunction = [&](FMatsubaraGrid::point w1, KMesh::point kx, KMesh::point ky)->ComplexType { 
-        DEBUG(w1);
+    typename GKType::PointFunctionType ShiftFunction = [&](FMatsubaraGrid::point w1, KP...k)->ComplexType { 
+        //DEBUG(w1);
         int n=_bGrid.getNumber(W);
         FMatsubaraGrid::point w2; w2._index=0;
         w2._val=w1._val+W._val;
         if (-n<int(w1)) w2._index=w1._index+n;
-        std::array<KMesh::point, D> K = {{ kx,ky }};
-        std::array<KMesh::point, D> Q = {{ q1,q2 }};
+        std::array<KMesh::point, D> K = {{ k... }};
+        std::array<KMesh::point, D> Q = {{ q... }};
         std::array<KMesh::point, D> KpQ = _shift_point(K,Q); 
-        DEBUG(kx << ";" << ky << "||" << KpQ[0] << ";" << KpQ[1]);
-        return this->GD0(w2, KpQ[0], KpQ[1]); 
+        //DEBUG(kx << ";" << ky << "||" << KpQ[0] << ";" << KpQ[1]);
+        return this->GD0(std::tuple_cat(std::forward_as_tuple(w2), KpQ));
         };
 
     GD_shifted.fill(ShiftFunction);
     
-    DEBUG(W);
-    DEBUG(GD0);
-    DEBUG(GD_shifted);
+    //DEBUG(W);
+    //DEBUG(GD0);
+    //DEBUG(GD_shifted);
 
     GD_shifted*=GD0;
     
@@ -86,7 +76,14 @@ typename DFLadder2d<Solver,ksize>::GLocalType DFLadder2d<Solver,ksize>::getBubbl
     RealType T = 1.0/(this->_fGrid._beta);
     out*=(-T);
     return out;
+
 }
+
+
+//
+// DFLadder2d
+//
+
 
 template <class Solver, size_t ksize>
 typename DFLadder2d<Solver,ksize>::GLocalType DFLadder2d<Solver,ksize>::operator()() 
@@ -139,17 +136,42 @@ typename DFLadder2d<Solver,ksize>::GLocalType DFLadder2d<Solver,ksize>::operator
 //    DEBUG(GD0(FMatsubara(_fGrid._w_max+1,_fGrid._beta),0,0));
     
     GLocalType Vertex4(_fGrid);
-    GKType Chi0(wkgrids);
-    //GKType Chi0Gamma(wkgrids);
+    GLocalType Chi0(_fGrid);
     INFO("Evaluating Bethe-Salpeter equation");
+    size_t niter = 10;
     for (auto iW : _bGrid.getVals()) {
         DEBUG("iW = " << iW);
         std::function<ComplexType(FMatsubaraGrid::point)> f1 = std::bind(&FKImpuritySolver::getVertex4<FMatsubaraGrid::point, BMatsubaraGrid::point>, std::cref(_S), std::placeholders::_1, iW);
         Vertex4.fill(f1);
-        DEBUG(Vertex4);
-        DEBUG(this->getBubble(iW,_qGrid[0],_qGrid[0]));
+        //DEBUG(Vertex4);
+        for (auto qx : _qGrids[0].getVals()) { 
+            for (auto qy : _qGrids[1].getVals()) { 
+                GLocalType IrrVertex4_old(Vertex4);
+                GLocalType IrrVertex4_new(Vertex4);
+                //DEBUG(this->getBubble(iW,_qGrid[0],_qGrid[0]));
+                Chi0 = this->getBubble(iW,qx,qy);
+                //typename GLocalType::PointFunctionType
+                GridObject<RealType,FMatsubaraGrid> EVCheck(_fGrid); 
+                std::function<RealType(FMatsubaraGrid::point)> f1 = [&](FMatsubaraGrid::point w)->RealType{return std::abs(Chi0(w)*Vertex4(w)); };
+                EVCheck.fill(f1);
+                RealType max_ev = *std::max_element(EVCheck.getData().begin(), EVCheck.getData().end());
+                INFO("Maximum EV of Chi0*gamma = " << max_ev);
+                for (size_t n=0; n<niter; ++n) { 
+                        INFO("BS iteration " << n << " for iW = " << ComplexType(iW) << ", (qx,qy) = (" << RealType(qx) << "," << RealType(qy) << ").");
+                        IrrVertex4_new = Vertex4 + Vertex4*Chi0*IrrVertex4_old;
+
+                        auto diffV = IrrVertex4_new - IrrVertex4_old;
+                        auto diff = std::real(_fGrid.integrate(diffV.conj()*diffV));
+                        INFO("vertex diff = " << diff);
+                        IrrVertex4_old = IrrVertex4_new;
+                    }
+                auto IrrVertex4_direct = Vertex4/(1.0 - Chi0 * Vertex4);
+                DEBUG(IrrVertex4_direct);
+                DEBUG(IrrVertex4_new - IrrVertex4_direct);
+                //DEBUG(Chi0);
+                }
+            }
         };
-    exit(0);
 
     for (auto iw : _fGrid.getVals()) {
         size_t iwn = size_t(iw);

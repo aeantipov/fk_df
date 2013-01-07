@@ -181,7 +181,12 @@ inline auto MatsubaraGrid<F>::getValue(Obj &in, MatsubaraGrid::point x) const ->
 {
     if (x._index < _vals.size() && x == _vals[x._index])
     return in[x._index];
-    else { ERROR ("Point not found"); return this->getValue(in, ComplexType(x)); };
+    else { 
+        #ifndef NDEBUG
+        ERROR ("Point not found"); 
+        #endif
+        return this->getValue(in, ComplexType(x)); 
+         };
 }
 
 //
@@ -289,7 +294,12 @@ inline auto KMesh::getValue(Obj &in, KMesh::point x) const ->decltype(in[0])
 {
     if (x._index < _vals.size() && x == _vals[x._index])
     return in[x._index];
-    else { ERROR ("Point not found"); return this->getValue(in, RealType(x)); };
+    else { 
+        #ifndef NDEBUG
+        ERROR ("Point not found"); 
+        #endif
+        return this->getValue(in, RealType(x)); 
+         };
 }
 
 template <class Obj> 
@@ -308,5 +318,20 @@ inline auto KMesh::integrate(const Obj &in, OtherArgTypes... Args) const -> decl
     return R/_points;
 }
 
+//
+// KMeshPatch
+//
+
+
+inline KMeshPatch::KMeshPatch(const KMesh& parent, std::vector<size_t> indices):
+    _parent(parent),
+    _npoints(indices.size())
+{
+    _vals.resize(_npoints); 
+    DEBUG(_npoints);
+    for (size_t i=0; i<_npoints; ++i) {
+        _vals[i]=_parent[indices[i]]; 
+        }
+}
 } // end of namespace FK
 #endif
