@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     #endif
     */
   
-    static const size_t lattice_size = 3;
+    static const size_t lattice_size = 16;
 
     CubicDMFTSC<FKImpuritySolver,2, lattice_size> SCDMFT(Solver, t);
     //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);

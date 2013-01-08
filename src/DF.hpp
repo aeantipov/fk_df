@@ -201,14 +201,13 @@ typename DFLadder2d<Solver,ksize>::GLocalType DFLadder2d<Solver,ksize>::operator
                     INFO ("Caught divergence, evaluating BS equation self_consistently ");
                     RealType diffBS = 1.0;
                     size_t niter = 10;
+                    RealType bs_mix = 0.5; 
                     for (size_t n=0; n<niter && diffBS > 1e-8; ++n) { 
                         INFO("BS iteration " << n << " for iW = " << ComplexType(iW) << ", (qx,qy) = (" << RealType(qx) << "," << RealType(qy) << ").");
                         IrrVertex4 = Vertex4 + Vertex4*Chi0*IrrVertex4_old;
-
-                        auto diffV = IrrVertex4 - IrrVertex4_old;
-                        diffBS = std::real(_fGrid.integrate(diffV.conj()*diffV));
+                        auto diffBS = IrrVertex4.diff(IrrVertex4_old);
                         INFO("vertex diff = " << diffBS);
-                        IrrVertex4_old = IrrVertex4;
+                        IrrVertex4_old = IrrVertex4*bs_mix+(1.0-bs_mix)*IrrVertex4_old;
                         }
                     }
                 else { 
@@ -216,8 +215,9 @@ typename DFLadder2d<Solver,ksize>::GLocalType DFLadder2d<Solver,ksize>::operator
                     IrrVertex4 = Vertex4/(1.0 - Chi0 * Vertex4);
                     //DEBUG(IrrVertex4);
                      }
+                auto GD_shift = GD.shift(iW,qx,qy);
                 typename GKType::PointFunctionType SigmaF = [&](FMatsubaraGrid::point w, KMesh::point kx, KMesh::point ky)->ComplexType { 
-                    return Vertex4(w)*Chi0(w)*GD.shift(iW,qx,qy)(w,kx,ky)*IrrVertex4(w);
+                    return Vertex4(w)*Chi0(w)*GD_shift(w,kx,ky)*IrrVertex4(w);
                     };
                 GKType tmp(this->SigmaD.getGrids());
                 tmp.fill(SigmaF);
