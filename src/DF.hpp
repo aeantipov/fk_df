@@ -179,57 +179,72 @@ typename DFLadder2d<Solver,ksize>::GLocalType DFLadder2d<Solver,ksize>::operator
 
     GLocalType Vertex4(_fGrid);
     GLocalType Chi0(_fGrid);
-    INFO("Evaluating Bethe-Salpeter equation");
+    INFO("Starting ladder dual fermion calculations")
+    const int n_sc = 10; 
+    RealType mix_df = 1.0;
+    RealType diffGD = 1.0;
+    for (size_t nd_iter=0; nd_iter<n_sc && diffGD > 1e-8; ++nd_iter) { 
+        INFO("DF iteration " << nd_iter);
+        INFO("Evaluating Bethe-Salpeter equation");
 
-    for (auto iW : _bGrid.getVals()) {
-        INFO("iW = " << iW);
-        std::function<ComplexType(FMatsubaraGrid::point)> f1 = std::bind(&FKImpuritySolver::getVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(_S), iW, std::placeholders::_1);
-        Vertex4.fill(f1);
-        for (auto qx : _qGrids[0].getVals()) { 
-            for (auto qy : _qGrids[1].getVals()) { 
-                //DEBUG("qx = " << qx << ", qy = " << qy);
-                Chi0 = this->getBubble(iW,qx,qy);
-                //DEBUG(Chi0);
-                GLocalType IrrVertex4(Vertex4);
-                GridObject<RealType,FMatsubaraGrid> EVCheck(_fGrid); 
-                std::function<RealType(FMatsubaraGrid::point)> f1 = [&](FMatsubaraGrid::point w)->RealType{return std::abs(Chi0(w)*Vertex4(w)); };
-                EVCheck.fill(f1);
-                RealType max_ev = *std::max_element(EVCheck.getData().begin(), EVCheck.getData().end());
-                INFO("Maximum EV of Chi0*gamma = " << max_ev);
-                if (std::abs(max_ev-1.0) < 1e-6 || eval_BS_SC) {
-                    GLocalType IrrVertex4_old(Vertex4);
-                    INFO ("Caught divergence, evaluating BS equation self_consistently ");
-                    RealType diffBS = 1.0;
-                    size_t niter = 10;
-                    RealType bs_mix = 0.5; 
-                    for (size_t n=0; n<niter && diffBS > 1e-8; ++n) { 
-                        INFO("BS iteration " << n << " for iW = " << ComplexType(iW) << ", (qx,qy) = (" << RealType(qx) << "," << RealType(qy) << ").");
-                        IrrVertex4 = Vertex4 + Vertex4*Chi0*IrrVertex4_old;
-                        auto diffBS = IrrVertex4.diff(IrrVertex4_old);
-                        INFO("vertex diff = " << diffBS);
-                        IrrVertex4_old = IrrVertex4*bs_mix+(1.0-bs_mix)*IrrVertex4_old;
+        for (auto iW : _bGrid.getVals()) {
+            INFO("iW = " << iW);
+            std::function<ComplexType(FMatsubaraGrid::point)> f1 = std::bind(&FKImpuritySolver::getVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(_S), iW, std::placeholders::_1);
+            Vertex4.fill(f1);
+            size_t nqpoints = _qGrids[0].getSize()*_qGrids[1].getSize();
+            size_t qcount = 0;
+            for (auto qx : _qGrids[0].getVals()) { 
+                for (auto qy : _qGrids[1].getVals()) { 
+                    INFO_NONEWLINE(++qcount << "/" << nqpoints<< ". ");
+                    //DEBUG("qx = " << qx << ", qy = " << qy);
+                    Chi0 = this->getBubble(iW,qx,qy);
+                    //DEBUG(Chi0);
+                    GLocalType IrrVertex4(Vertex4);
+                    GridObject<RealType,FMatsubaraGrid> EVCheck(_fGrid); 
+                    std::function<RealType(FMatsubaraGrid::point)> f1 = [&](FMatsubaraGrid::point w)->RealType{return std::abs(Chi0(w)*Vertex4(w)); };
+                    EVCheck.fill(f1);
+                    RealType max_ev = *std::max_element(EVCheck.getData().begin(), EVCheck.getData().end());
+                    INFO("Maximum EV of Chi0*gamma = " << max_ev);
+                    if (std::abs(max_ev-1.0) < 1e-6 || eval_BS_SC) {
+                        GLocalType IrrVertex4_old(Vertex4);
+                        INFO ("Caught divergence, evaluating BS equation self_consistently ");
+                        RealType diffBS = 1.0;
+                        size_t niter = 10;
+                        RealType bs_mix = 0.5; 
+                        for (size_t n=0; n<niter && diffBS > 1e-8; ++n) { 
+                            INFO("BS iteration " << n << " for iW = " << ComplexType(iW) << ", (qx,qy) = (" << RealType(qx) << "," << RealType(qy) << ").");
+                            IrrVertex4 = Vertex4 + Vertex4*Chi0*IrrVertex4_old;
+                            auto diffBS = IrrVertex4.diff(IrrVertex4_old);
+                            INFO("vertex diff = " << diffBS);
+                            IrrVertex4_old = IrrVertex4*bs_mix+(1.0-bs_mix)*IrrVertex4_old;
+                            }
                         }
+                    else { 
+                        INFO("Evaluating BS equation using inversion");
+                        IrrVertex4 = Vertex4/(1.0 - Chi0 * Vertex4);
+                        //DEBUG(IrrVertex4);
+                        }
+                    auto GD_shift = GD0.shift(iW,qx,qy);
+                    typename GKType::PointFunctionType SigmaF = [&](FMatsubaraGrid::point w, KMesh::point kx, KMesh::point ky)->ComplexType { 
+                        return Vertex4(w)*Chi0(w)*GD_shift(w,kx,ky)*IrrVertex4(w);
+                        };
+                    GKType tmp(this->SigmaD.getGrids());
+                    tmp.fill(SigmaF);
+                    //DEBUG("Vertex4 = " << Vertex4);
+                    //DEBUG("IrrVertex4 = " << IrrVertex4);
+                    //DEBUG("Chi0 = " << Chi0);
+                    SigmaD+=tmp*T/2.0/std::pow(_qGrids[0].getSize(),2);
                     }
-                else { 
-                    INFO("Evaluating BS equation using inversion");
-                    IrrVertex4 = Vertex4/(1.0 - Chi0 * Vertex4);
-                    //DEBUG(IrrVertex4);
-                     }
-                auto GD_shift = GD.shift(iW,qx,qy);
-                typename GKType::PointFunctionType SigmaF = [&](FMatsubaraGrid::point w, KMesh::point kx, KMesh::point ky)->ComplexType { 
-                    return Vertex4(w)*Chi0(w)*GD_shift(w,kx,ky)*IrrVertex4(w);
-                    };
-                GKType tmp(this->SigmaD.getGrids());
-                tmp.fill(SigmaF);
-                //DEBUG("Vertex4 = " << Vertex4);
-                //DEBUG("IrrVertex4 = " << IrrVertex4);
-                //DEBUG("Chi0 = " << Chi0);
-                SigmaD+=tmp*T/2.0/std::pow(_qGrids[0].getSize(),2);
                 }
-            }
-        };
+            };
 
-    GD = 1.0/(1.0/GD0 - SigmaD); // Dyson eq;
+        GD = 1.0/(1.0/GD0 - SigmaD); // Dyson eq;
+        diffGD = GD.diff(GD0);
+        INFO("DF diff = " << diffGD);
+        GD=GD*mix_df + GD0*(1.0-mix_df);
+    };
+
+    exit(0);
 
     for (auto iw : _fGrid.getVals()) {
         size_t iwn = size_t(iw);

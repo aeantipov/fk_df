@@ -102,13 +102,15 @@ int main(int argc, char *argv[])
     #endif
     */
   
-    static const size_t lattice_size = 16;
+    static const size_t lattice_size = 5;
 
     CubicDMFTSC<FKImpuritySolver,2, lattice_size> SCDMFT(Solver, t);
     //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
     //DFLadder<FKImpuritySolver,2, 16> SC(Solver, FMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), BMatsubaraGrid(-2*n_dual_freq,2*n_dual_freq, beta), t);
     //DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
-    KMeshPatch qGrid(SCDMFT._kGrid,{{0}});
+    //KMeshPatch qGrid(SCDMFT._kGrid,{{0}});
+    KMeshPatch qGrid(SCDMFT._kGrid);
+    DEBUG(qGrid);
     std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }});
     DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(0,2, beta), qGrids, t);
 
@@ -128,16 +130,7 @@ int main(int argc, char *argv[])
         INFO("diff = " << diff);
         Solver.Delta = Delta_new;
         }
-
-    DEBUG(Delta(FMatsubara(grid._w_max-1, beta)));
-    DEBUG(Delta(FMatsubara(grid._w_max, beta)));
-    DEBUG(Solver.gw(FMatsubara(grid._w_max-1, beta)));
-    DEBUG(Solver.gw(FMatsubara(grid._w_max, beta)));
-    DEBUG(Solver.Sigma(FMatsubara(grid._w_max-1, beta)));
-    DEBUG(Solver.Sigma(FMatsubara(grid._w_max, beta)));
-
-   // exit(0);
-    
+   
     GF Delta_half(grid_half); Delta_half = Delta;
     GF gw_half(grid_half); gw_half = Solver.gw;
     GF sigma_half(grid_half); sigma_half = Solver.Sigma;
@@ -146,3 +139,14 @@ int main(int argc, char *argv[])
     Delta_half.savetxt("Delta.dat");
     Solver.Delta.savetxt("Delta_full.dat");
 }
+
+/*
+    DEBUG(Delta(FMatsubara(grid._w_max-1, beta)));
+    DEBUG(Delta(FMatsubara(grid._w_max, beta)));
+    DEBUG(Solver.gw(FMatsubara(grid._w_max-1, beta)));
+    DEBUG(Solver.gw(FMatsubara(grid._w_max, beta)));
+    DEBUG(Solver.Sigma(FMatsubara(grid._w_max-1, beta)));
+    DEBUG(Solver.Sigma(FMatsubara(grid._w_max, beta)));
+*/
+   // exit(0);
+ 

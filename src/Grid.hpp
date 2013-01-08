@@ -173,8 +173,18 @@ inline std::tuple <bool, size_t, RealType> MatsubaraGrid<F>::find (ComplexType i
     #ifndef NDEBUG
     DEBUG("Invoking matsubara find");
     #endif
-    if (n<_w_min) { ERROR("Frequency to find is out of bounds, " << in << "<" << FMatsubara(_w_min,_beta)); return std::make_tuple(0,0,0); };
-    if (n>_w_max) { ERROR("Frequency to find is out of bounds, " << in << ">" << FMatsubara(_w_max,_beta)); return std::make_tuple(0,_vals.size(),0); };
+    if (n<_w_min) { 
+        #ifdef NDEBUG
+        ERROR("Frequency to find is out of bounds, " << in << "<" << FMatsubara(_w_min,_beta)); 
+        #endif
+        return std::make_tuple(0,0,0); 
+        };
+    if (n>=_w_max) { 
+        #ifdef NDEBUG
+        ERROR("Frequency to find is out of bounds, " << in << ">" << FMatsubara(_w_max,_beta)); 
+        #endif
+        return std::make_tuple(0,_vals.size(),0); 
+        };
     return std::make_tuple (1,n-_w_min,1);
 }
 
@@ -338,6 +348,28 @@ inline auto KMesh::integrate(const Obj &in, OtherArgTypes... Args) const -> decl
     return R/_points;
 }
 
+template <class ArgType>
+inline RealType KMesh::shift(RealType in, ArgType shift_arg) const
+{
+    assert (in>0 && in < 2.0*PI);
+    RealType out;
+    out = in + RealType(shift_arg); 
+    out-= int(out/(2.0*PI))*2.0*PI; 
+    return out;
+}
+
+
+template <class ArgType>
+inline typename KMesh::point KMesh::shift(point in, ArgType shift_arg) const
+{
+    point out;
+    out._val = this->shift(in._val, shift_arg);
+    auto find_result = this->find(out._val);
+    if (!std::get<0>(find_result)) throw (exWrongIndex());
+    out._index = std::get<1>(find_result);
+    return out;
+}
+
 //
 // KMeshPatch
 //
@@ -348,10 +380,17 @@ inline KMeshPatch::KMeshPatch(const KMesh& parent, std::vector<size_t> indices):
     _npoints(indices.size())
 {
     _vals.resize(_npoints); 
-    DEBUG(_npoints);
     for (size_t i=0; i<_npoints; ++i) {
         _vals[i]=_parent[indices[i]]; 
         }
 }
+
+inline KMeshPatch::KMeshPatch(const KMesh& parent):
+    _parent(parent),
+    _npoints(parent.getSize())
+{
+    _vals = parent.getVals();
+}
+
 } // end of namespace FK
 #endif

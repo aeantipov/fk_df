@@ -151,6 +151,8 @@ public:
     //template <class Obj> auto gridIntegrate(std::vector<Obj> &in) const -> Obj;
     template <class Obj> auto getValue(Obj &in, RealType x) const ->decltype(in[0]);
     template <class Obj> auto getValue(Obj &in, point x) const ->decltype(in[0]);
+    template <class ArgType> point shift(point in, ArgType shift_arg) const;
+    template <class ArgType> RealType shift(RealType in, ArgType shift_arg) const;
 };
 
 struct KMeshPatch : public KMesh 
@@ -158,7 +160,9 @@ struct KMeshPatch : public KMesh
 public:
     const KMesh& _parent;
     size_t _npoints;
+    using KMesh::_vals;
     KMeshPatch(const KMesh& parent, std::vector<size_t> indices);
+    KMeshPatch(const KMesh& parent);
 };
 
 /** A tool to generate a function of argtypes of grids. */
