@@ -27,7 +27,7 @@ int main()
     GF Delta(grid);
     std::function<ComplexType(ComplexType)> f1;
     f1 = [](ComplexType w) -> ComplexType {return 1.0/w;};
-    Delta = f1;
+    Delta.fill(f1);
     RealType U = 1.0;
     RealType mu = 0.5;
     RealType e_d = 0.0;
@@ -37,7 +37,7 @@ int main()
     Solver.run();
  //std::function<ComplexType(ComplexType,ComplexType)> f1 = std::bind(g4, std::placeholders::_1, std::placeholders::_2);
     //std::function<ComplexType(ComplexType,ComplexType)>
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::FunctionType f2 = std::bind(&FKImpuritySolver::getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>, Solver, std::placeholders::_1, std::placeholders::_2);
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType f2 = std::bind(&FKImpuritySolver::getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>, Solver, std::placeholders::_1, std::placeholders::_2);
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> g44(std::make_tuple(grid,grid));
     g44.fill(f2);
     DEBUG(g44);

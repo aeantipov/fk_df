@@ -52,9 +52,9 @@ int main()
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid, FMatsubaraGrid> D3(std::make_tuple(n1,n2,n2));
     std::function<ComplexType(ComplexType, ComplexType, ComplexType)>  f2 = [](const ComplexType &a1, const ComplexType &a2, const ComplexType &a3){return a3/(a1+a2);};
     std::function<ComplexType(ComplexType, ComplexType, ComplexType)>  f3 = [](const ComplexType &a1, const ComplexType &a2, const ComplexType &a3){return a3*a2/(a1);};
-    D3 = f2;
+    D3.fill(f2);
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid, FMatsubaraGrid> D4(std::make_tuple(n1,n2,n2));
-    D4 = f3;
+    D4.fill(f3);
     DEBUG(D4);
     DEBUG(D3);
     DEBUG(D3+D4);

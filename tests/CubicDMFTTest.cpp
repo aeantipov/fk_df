@@ -51,7 +51,7 @@ int main()
     GF Delta(grid);
     std::function<ComplexType(ComplexType)> f1;
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
-    Delta = f1;
+    Delta.fill(f1);
     //DEBUG(Delta);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
@@ -75,7 +75,7 @@ int main()
     std::function<GF(RealType,RealType)> ff2 = [&](RealType k1, RealType k2){return SC.glat(k1,k2);};
     std::function<GF(RealType,RealType,ComplexType)> ff2_2 = [&](RealType k1, RealType k2, ComplexType k3){return SC.glat(k1,k2);};
     RecursiveGridIntegrator<KMesh, decltype(ff2)> t2;
-    auto t2_int = t2.integrate(SC._kgrid,ff2);
+    auto t2_int = t2.integrate(SC._kGrid,ff2);
     //auto t22_int = t2.integrate(SC._kgrid,ff2_2,ComplexType(0.0));
     DEBUG(t2_int);
     //DEBUG(t22_int);
