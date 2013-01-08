@@ -174,13 +174,13 @@ inline std::tuple <bool, size_t, RealType> MatsubaraGrid<F>::find (ComplexType i
     DEBUG("Invoking matsubara find");
     #endif
     if (n<_w_min) { 
-        #ifdef NDEBUG
+        #ifndef NDEBUG
         ERROR("Frequency to find is out of bounds, " << in << "<" << FMatsubara(_w_min,_beta)); 
         #endif
         return std::make_tuple(0,0,0); 
         };
     if (n>=_w_max) { 
-        #ifdef NDEBUG
+        #ifndef NDEBUG
         ERROR("Frequency to find is out of bounds, " << in << ">" << FMatsubara(_w_max,_beta)); 
         #endif
         return std::make_tuple(0,_vals.size(),0); 

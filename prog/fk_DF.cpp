@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
     KMeshPatch qGrid(SCDMFT._kGrid);
     DEBUG(qGrid);
     std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }});
-    DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(0,2, beta), qGrids, t);
+    DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(0,10, beta), qGrids, t);
 
     for (int i=0; i<maxit && diff>1e-8 &&!interrupt; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);

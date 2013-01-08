@@ -234,9 +234,9 @@ typename DFLadder2d<Solver,ksize>::GLocalType DFLadder2d<Solver,ksize>::operator
                     //DEBUG("IrrVertex4 = " << IrrVertex4);
                     //DEBUG("Chi0 = " << Chi0);
                     SigmaD+=tmp*T/2.0/std::pow(_qGrids[0].getSize(),2);
-                    }
-                }
-            };
+                    } // end of qx loop
+                } // end of qy loop
+            }; //end of iW loop
 
         GD = 1.0/(1.0/GD0 - SigmaD); // Dyson eq;
         diffGD = GD.diff(GD0);
