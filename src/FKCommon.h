@@ -108,7 +108,7 @@ struct __fun_traits<std::function<ValType(ArgTypes...)> >
     static std::function<ValType(ArgTypes...)> divide(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
     { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
     static std::function<ValType(ArgTypes...)> getFromTupleF(const std::function<ValType(std::tuple<ArgTypes...>)>& f1)
-    { return [f1](ArgTypes...in){return f1(in...);};}
+    { return [f1](ArgTypes...in){return f1(std::forward_as_tuple(in...));};}
 };
 
 
@@ -122,6 +122,24 @@ template <typename ReturnType, typename ...Args> struct __caller {
     std::function<ReturnType(Args...)> _f;
     template<int ...S> ReturnType _callf(__seq<S...>) { return _f(std::get<S>(_params)...); };
     ReturnType call(){ return _callf(typename __gens<sizeof...(Args)>::type()); };
+};
+
+/** A tool to split a tuple from http://stackoverflow.com/questions/10626856/how-to-split-a-tuple. */
+template <typename Target, typename Tuple, int N, bool end >
+struct __split_tuple
+{
+    template < typename ... Args >
+    static Target create(Tuple const& t, Args && ... args)
+    {
+        return __split_tuple<Target,Tuple, N+1, std::tuple_size<Tuple>::value == N+1>::create(t, std::forward<Args>(args)..., std::get<N>(t));
+    }
+};
+
+template < typename Target, typename Tuple, int N >
+struct __split_tuple<Target,Tuple,N,true>
+{
+    template < typename ... Args >
+    static Target create(Tuple const& t, Args && ... args) { return Target(std::forward<Args>(args)...); }
 };
 
 } // end namespace FK

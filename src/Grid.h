@@ -57,6 +57,11 @@ public:
     /** Returns size of grid. */
     size_t getSize() const;
 
+    template <class ArgType>
+        point shift(point in, ArgType shift_arg) const;
+    template <class ArgType>
+        ValueType shift(ValueType in, ArgType shift_arg) const;
+
     // CFTP forwards
     /** Get a value of an object at the given point, which is defined on a grid. */
     template <class Obj> auto getValue(Obj &in, Grid<ValueType,Derived>::point x) const ->decltype(in[0])
@@ -180,6 +185,7 @@ GridPointExtractor<ValueType, T<GridTypes...>, ArgTypes...,typename GridType1::p
 template <typename ValueType, template <typename ...> class T, typename GridType1, typename ...ArgTypes>
 struct GridPointExtractor<ValueType, T<GridType1>, ArgTypes...> {
     typedef std::function<ValueType(ArgTypes...,typename GridType1::point)> point_type; 
+    typedef std::tuple<ArgTypes...,typename GridType1::point> arg_tuple_type;
 };
 
 

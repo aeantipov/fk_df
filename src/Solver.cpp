@@ -66,7 +66,7 @@ ComplexType FKImpuritySolver::getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::
 }
  
 template <> 
-ComplexType FKImpuritySolver::getVertex4<FMatsubaraGrid::point, BMatsubaraGrid::point> (FMatsubaraGrid::point wF, BMatsubaraGrid::point wB) const 
+ComplexType FKImpuritySolver::getVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point> (BMatsubaraGrid::point wB, FMatsubaraGrid::point wF) const 
 {
     int bindex=BMatsubaraGrid(0,0,w_grid._beta).getNumber(wB);
     FMatsubaraGrid::point w2;

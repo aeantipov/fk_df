@@ -55,6 +55,26 @@ size_t Grid<ValueType,Derived>::getSize() const
 }
 
 template <typename ValueType, class Derived>
+template <class ArgType>
+typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::shift(point in, ArgType shift_arg) const
+{
+    point out;
+    out._val = in._val + ValueType(shift_arg);
+    auto find_result = this->find(out._val);
+    if (std::get<0>(find_result)) out._index = std::get<1>(find_result);
+    else out._index = this->getSize();
+    return out;
+}
+
+template <typename ValueType, class Derived>
+template <class ArgType>
+ValueType Grid<ValueType,Derived>::shift(ValueType in, ArgType shift_arg) const
+{
+    return in+ValueType(shift_arg);
+}
+
+
+template <typename ValueType, class Derived>
 std::ostream& operator<<(std::ostream& lhs, const Grid<ValueType,Derived> &gr)
 { 
     lhs << "{";

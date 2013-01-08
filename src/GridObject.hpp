@@ -84,6 +84,7 @@ GridObject<ValueType,GridTypes...>::GridObject( const std::tuple<GridTypes...> &
 template <typename ValueType, typename ...GridTypes> 
 GridObject<ValueType,GridTypes...>::GridObject( const GridObject<ValueType, GridTypes...>& rhs):
     _grids(rhs._grids), 
+    _dims(rhs._dims),
     _data(new Container<sizeof...(GridTypes), ValueType>(*(rhs._data))),
     _f(rhs._f)
 {
@@ -95,6 +96,7 @@ GridObject<ValueType,GridTypes...>::GridObject( GridObject<ValueType,GridTypes..
     _f(rhs._f)
 {
     _data.swap(rhs._data);
+    _dims.swap(rhs._dims);
 }
 
 template <typename ValueType, typename ...GridTypes> 
@@ -221,7 +223,7 @@ inline void GridObject<ValueType,GridTypes...>::fill(const typename GridObject<V
 }
 
 
-
+/*
 template <typename ValueType, typename ...GridTypes> 
 template <typename ...ArgTypes> 
 inline void GridObject<ValueType,GridTypes...>::fill_tuple(const std::function<ValueType(std::tuple<ArgTypes...>)> & in)
@@ -230,7 +232,7 @@ inline void GridObject<ValueType,GridTypes...>::fill_tuple(const std::function<V
     std::function<ValueType(ArgTypes...)> f1 = [&](ArgTypes... in1)->ValueType{return in(std::make_tuple(in1...)); };
     this->fill(f1);
 }
-
+*/
 
 /*
 template <typename ValueType, typename ...GridTypes> 
@@ -241,6 +243,29 @@ inline void GridObject<ValueType,GridTypes...>::fill(const Filler<ValueType, Arg
     ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::set(*_data,_grids,in);
 }
 */
+
+template <typename ValueType, typename ...GridTypes> 
+template <typename U, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type>
+RealType GridObject<ValueType,GridTypes...>::diff(const GridObject<ValueType,GridTypes...>& rhs) const
+{
+    auto outObj = (*this)-rhs;
+    outObj*=outObj.conj();
+    RealType norm = 1.0;
+    for (auto v : _dims) { norm*=v; };
+    return std::real(outObj.sum())/norm;
+}
+
+template <typename ValueType, typename ...GridTypes> 
+template <typename U, typename std::enable_if<std::is_same<U, RealType>::value, int>::type>
+RealType GridObject<ValueType,GridTypes...>::diff(const GridObject<ValueType,GridTypes...>& rhs) const
+{
+    auto outObj = (*this)-rhs;
+    outObj*=outObj;
+    RealType norm = 1.0;
+    for (auto v : _dims) norm*=v;
+    return std::real(outObj.sum())/norm;
+}
+
 
 template <typename ValueType, typename ...GridTypes> 
 template <typename U, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type>
@@ -256,6 +281,81 @@ inline ValueType GridObject<ValueType,GridTypes...>::sum()
 {
     return _data->sum();
 }
+
+template <typename ValueType, typename ...GridTypes> 
+template <typename ...ArgTypes> 
+GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::shift(ArgTypes... args) const
+{
+    return this->shift(std::forward_as_tuple(args...));
+}
+
+
+template <typename ValueType, typename ...GridTypes> 
+template <typename ...ArgTypes> 
+ValueType GridObject<ValueType,GridTypes...>::__get_f(const std::tuple<ArgTypes...>& in) const
+{
+    std::function<ValueType(ArgTypes...)> f1 = [&](ArgTypes... in1)->ValueType{return this->_f(in1...); };
+    __caller<ValueType,ArgTypes...> t = {in,f1};
+    return t.call();
+}
+
+template <typename ValueType, typename ...GridTypes> 
+template <typename ...ArgTypes> 
+GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::shift(const std::tuple<ArgTypes...>& shift_args) const
+{
+    GridObject<ValueType,GridTypes...> out(_grids);
+    auto ShiftFunction = [&](PointTupleType args1)->ValueType { 
+        PointTupleType out_args = this->_shiftArgs(args1, shift_args);
+        return (*this)(out_args);
+        };
+    PointFunctionType fillF = __fun_traits<PointFunctionType>::getFromTupleF(ShiftFunction);
+    out.fill(fillF);
+    
+    auto ShiftAnalyticF = [&](const ArgTupleType& in)->ValueType {
+        ArgTupleType out_args = _shiftArgs(in,shift_args); 
+        return __get_f(out_args);
+    };
+    
+    FunctionType tailF = __fun_traits<FunctionType>::getFromTupleF(ShiftAnalyticF);
+    out._f = tailF;
+    
+    return out;
+}
+
+/*
+template <typename ValueType, typename ...GridTypes> 
+    template <typename OrigArg1, typename ...OrigArgs, typename ArgType1, typename ...ArgTypes, 
+        typename std::enable_if<sizeof...(OrigArgs)==sizeof...(ArgTypes)>,  
+        typename std::enable_if<sizeof...(OrigArgs)!=0> > 
+std::tuple<OrigArg1, OrigArgs...> GridObject<ValueType,GridTypes...>::_shiftArgs(const std::tuple<OrigArg1, OrigArgs...>&in, const std::tuple<ArgType1, ArgTypes...>& shift_args) const
+{
+    OrigArg1 arg1 = std::get<0>(in);
+    ArgType1 shift_arg1 = std::get<0>(shift_args);
+    OrigArg1 out1 = std::get<sizeof...(GridTypes)-sizeof...(ArgTypes)-1>(_grids).shift(arg1,shift_arg1); 
+
+
+    auto f_o = [&in](OrigArg1 arg1, OrigArgs... others)->std::tuple<OrigArgs...>{ return std::forward_as_tuple(others...);};
+    auto f_s = [&shift_args](ArgType1 arg1, ArgTypes... others)->std::tuple<ArgTypes...>{ return std::forward_as_tuple(others...);};
+
+    __caller<std::tuple<OrigArgs...>,OrigArg1,OrigArgs...> t_o = {in,f_o};
+    std::tuple<OrigArgs...> other_orig_args(t_o.call());
+
+    __caller<std::tuple<ArgTypes...>,ArgType1,ArgTypes...> t_s = {shift_args,f_s};
+    std::tuple<ArgTypes...> other_shift_args(t_s.call());
+
+    return std::tuple_cat(std::forward_as_tuple(out1),this->_shiftArgs(other_orig_args,other_shift_args));
+}
+*/
+template <typename ValueType, typename ...GridTypes> 
+template <typename OrigArg1, typename ArgType1> 
+std::tuple<OrigArg1> GridObject<ValueType,GridTypes...>::_shiftArgs(const std::tuple<OrigArg1>&in, const std::tuple<ArgType1>& shift_args) const
+{
+    OrigArg1 arg1 = std::get<0>(in);
+    ArgType1 shift_arg1 = std::get<0>(shift_args);
+    OrigArg1 out1 = std::get<sizeof...(GridTypes)-1>(_grids).shift(arg1,shift_arg1); 
+    return std::forward_as_tuple(out1);
+}
+
 
 template <typename ValueType, typename ...GridTypes> 
 inline void GridObject<ValueType,GridTypes...>::savetxt(const std::string& fname) const

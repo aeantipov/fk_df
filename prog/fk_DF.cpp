@@ -102,13 +102,13 @@ int main(int argc, char *argv[])
     #endif
     */
   
-    static const size_t lattice_size = 16;
+    static const size_t lattice_size = 3;
 
     CubicDMFTSC<FKImpuritySolver,2, lattice_size> SCDMFT(Solver, t);
     //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
     //DFLadder<FKImpuritySolver,2, 16> SC(Solver, FMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), BMatsubaraGrid(-2*n_dual_freq,2*n_dual_freq, beta), t);
     //DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
-    KMeshPatch qGrid(SCDMFT._kgrid,{{0}});
+    KMeshPatch qGrid(SCDMFT._kGrid,{{0}});
     std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }});
     DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(0,2, beta), qGrids, t);
 
@@ -121,11 +121,10 @@ int main(int argc, char *argv[])
             Delta = SCDMFT();
         else { 
             Delta = SCDual();
-        //    break; 
+            break; 
              }
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
-        auto diffG = Delta_new - Solver.Delta;
-        diff = std::real(grid.integrate(diffG.conj()*diffG));
+        diff = Delta_new.diff(Solver.Delta);
         INFO("diff = " << diff);
         Solver.Delta = Delta_new;
         }

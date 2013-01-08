@@ -22,7 +22,11 @@ public:
     /** A typedef for a tuple of grids. */
     typedef std::tuple<GridTypes...> GridTupleType;
     /** A typedef for a tuple of grid points. */
-    typedef typename GridPointTypeExtractor<ValueType, std::tuple<GridTypes...> >::arg_tuple_type PointTupleType;
+    typedef typename GridPointExtractor<ValueType, std::tuple<GridTypes...> >::arg_tuple_type PointTupleType;
+    /** A typedef for a tuple of grid points. */
+    typedef typename GridPointTypeExtractor<ValueType, std::tuple<GridTypes...> >::arg_tuple_type ArgTupleType;
+    /** A typedef for the values stored in the container. */
+    typedef ValueType ValType;
 protected:
     static const size_t N = sizeof...(GridTypes);
     /** Grids on which the data is defined. */
@@ -50,6 +54,9 @@ protected:
         static ValueType& get(Container<1, ValueType> &data, const std::tuple<GridTypes...> &grids, const ArgType1& arg1); 
         static void set(Container<1, ValueType> &data, const std::tuple<GridTypes...> &grids, const std::function<ValueType(ArgType1)> &f);
         };
+
+    /** Returns _f(in). */
+    template <typename ...ArgTypes> ValueType __get_f(const std::tuple<ArgTypes...>& in) const;
 public:
     /** This function returns the value of the object when the point is not in container. */
     FunctionType _f;
@@ -59,7 +66,7 @@ public:
     GridObject( const std::tuple<GridTypes...> &grids, const Container<sizeof...(GridTypes), ValueType>& data):
         _grids(grids),
         _data(new Container<sizeof...(GridTypes), ValueType>>(data)),
-        _f(__fun_traits<FunctionType>::constant(0.0)) {};
+        _f(__fun_traits<FunctionType>::constant(0.0)) { GetGridSizes<N>::TupleSizeToArray(_grids,_dims); };
     /** Copy constructor. */
     GridObject( const GridObject<ValueType, GridTypes...>& rhs);
     /** Move constructor. */
@@ -119,8 +126,19 @@ public:
     /** Returns the complex conjugate of this object, if it's complex valued. */
     template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type=0>
         GridObject conj();
+    /** Returns a norm of difference between two objects. */
+    template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type = 0>
+    RealType diff(const GridObject &rhs) const; 
+    template <typename U = ValueType, typename std::enable_if<std::is_same<U, RealType>::value, int>::type = 0>
+    RealType diff(const GridObject &rhs) const;
     /** Returns the sum of all elements in the container. */
     ValueType sum();
+
+    /** Returns an object with arguments, shifted by the given values.
+     * \param[in] args A pack of arguments to shift the object
+     */
+    template <typename ...ArgTypes> GridObject shift(ArgTypes... args) const;
+    template <typename ...ArgTypes> GridObject shift(const std::tuple<ArgTypes...>& arg_tuple) const;
     /** Save the data to the txt file. */
     void savetxt(const std::string& fname) const;
     /** Loads the data to the txt file. */
@@ -129,6 +147,31 @@ public:
     template <typename ValType, class ...GridTypes2> friend std::ostream& operator<<(std::ostream& lhs, const GridObject<ValType,GridTypes2...> &in);
     
     class exIOProblem : public std::exception { virtual const char* what() const throw(){return "IO problem.";} }; 
+private:
+    /** Returns a tuple of input args shifted by values from another tuple. */
+    template <typename OrigArg1, typename ...OrigArgs, typename ArgType1, typename ...ArgTypes, 
+        typename std::enable_if<sizeof...(OrigArgs)==sizeof...(ArgTypes), int>::type = 0,  
+        typename std::enable_if<sizeof...(OrigArgs)!=0, int>::type = 0 > 
+        std::tuple<OrigArg1, OrigArgs...> _shiftArgs(const std::tuple<OrigArg1, OrigArgs...>&in, const std::tuple<ArgType1, ArgTypes...>& shift_args) const {
+    OrigArg1 arg1 = std::get<0>(in);
+    ArgType1 shift_arg1 = std::get<0>(shift_args);
+    OrigArg1 out1 = std::get<sizeof...(GridTypes)-sizeof...(ArgTypes)-1>(_grids).shift(arg1,shift_arg1); 
+    auto f_o = [&in](OrigArg1 arg1, OrigArgs... others)->std::tuple<OrigArgs...>{ return std::forward_as_tuple(others...);};
+    auto f_s = [&shift_args](ArgType1 arg1, ArgTypes... others)->std::tuple<ArgTypes...>{ return std::forward_as_tuple(others...);};
+
+    __caller<std::tuple<OrigArgs...>,OrigArg1,OrigArgs...> t_o = {in,f_o};
+    std::tuple<OrigArgs...> other_orig_args(t_o.call());
+
+    __caller<std::tuple<ArgTypes...>,ArgType1,ArgTypes...> t_s = {shift_args,f_s};
+    std::tuple<ArgTypes...> other_shift_args(t_s.call());
+
+    return std::tuple_cat(std::forward_as_tuple(out1),this->_shiftArgs(other_orig_args,other_shift_args));
+}
+
+    /** Specialization of _shiftArgs for a tuple of 1 element. */
+    template <typename OrigArg1, typename ArgType1>
+        std::tuple<OrigArg1> _shiftArgs(const std::tuple<OrigArg1>&in, const std::tuple<ArgType1>& shift_args) const;
+
 };
 
 } // end of namespace FK

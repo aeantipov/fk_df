@@ -90,14 +90,14 @@ template <class Solver, size_t D, size_t ksize>
 inline CubicDMFTSC<Solver,D,ksize>::CubicDMFTSC ( const Solver &S, RealType t):
     SelfConsistency<Solver>(S),
     _t(t),
-    _kgrid(KMesh(ksize)),
-    _ek(CubicTraits<D,ksize>::getTuples(_kgrid)),
+    _kGrid(KMesh(ksize)),
+    _ek(CubicTraits<D,ksize>::getTuples(_kGrid)),
     _gloc(this->_S.w_grid)
 {
     std::cout << std::get<1>(_ek.getGrids()) << std::endl;
-    //CubicTraits<D,ksize>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kgrid);
-    CubicTraits<D,ksize>::template fillContainer<Container<D,ComplexType>>(_ek.getData(), _t, _kgrid);
-    //CubicTraits<D,ksize>::template fillContainer<EkStorage>(_ek, _t, _kgrid);
+    //CubicTraits<D,ksize>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kGrid);
+    CubicTraits<D,ksize>::template fillContainer<Container<D,ComplexType>>(_ek.getData(), _t, _kGrid);
+    //CubicTraits<D,ksize>::template fillContainer<EkStorage>(_ek, _t, _kGrid);
     _ek._f = CubicTraits<D,ksize>::template get_dispersion<typename EkStorage::FunctionType> (t); 
 }
 

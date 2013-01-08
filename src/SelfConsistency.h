@@ -36,7 +36,7 @@ protected:
     typedef typename ArgFunGenerator<D,GFType,RealType>::type ArgFunType;
 public:
     const RealType _t;
-    const KMesh _kgrid;
+    const KMesh _kGrid;
     mutable EkStorage _ek;
     GFType _gloc;
 
