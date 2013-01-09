@@ -12,6 +12,7 @@ GridTest
 ContainerTest
 GridObjectTest
 SolverTest
+ShiftTest
 CubicDMFTTest
 )
 
