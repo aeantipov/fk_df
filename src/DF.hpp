@@ -114,10 +114,8 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
     GLocalType Vertex4(_fGrid);
     GLocalType Chi0(_fGrid);
     INFO("Starting ladder dual fermion calculations")
-    const int n_sc = 10; 
-    RealType mix_df = 1.0;
     RealType diffGD = 1.0;
-    for (size_t nd_iter=0; nd_iter<n_sc && diffGD > 1e-8; ++nd_iter) { 
+    for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > 1e-8; ++nd_iter) { 
         INFO("DF iteration " << nd_iter);
         INFO("Evaluating Bethe-Salpeter equation");
 
@@ -152,14 +150,12 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                     GLocalType IrrVertex4_old(Vertex4);
                     INFO ("Caught divergence, evaluating BS equation self_consistently ");
                     RealType diffBS = 1.0;
-                    size_t niter = 10;
-                    RealType bs_mix = 0.5; 
-                    for (size_t n=0; n<niter && diffBS > 1e-8; ++n) { 
+                    for (size_t n=0; n<_n_BS_iter && diffBS > 1e-8; ++n) { 
                         //INFO("BS iteration " << n << " for iW = " << ComplexType(iW) << ", (qx,qy) = (" << RealType(qx) << "," << RealType(qy) << ").");
                         IrrVertex4 = Vertex4 + Vertex4*Chi0*IrrVertex4_old;
                         auto diffBS = IrrVertex4.diff(IrrVertex4_old);
                         INFO("vertex diff = " << diffBS);
-                        IrrVertex4_old = IrrVertex4*bs_mix+(1.0-bs_mix)*IrrVertex4_old;
+                        IrrVertex4_old = IrrVertex4*_BSmix+(1.0-_BSmix)*IrrVertex4_old;
                         }
                     }
                 else { 
@@ -186,7 +182,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
         GD = 1.0/(1.0/GD0 - SigmaD); // Dyson eq;
         diffGD = GD.diff(GD0);
         INFO("DF diff = " << diffGD);
-        GD=GD*mix_df + GD0*(1.0-mix_df);
+        GD=GD*_GDmix + GD0*(1.0-_GDmix);
     };
 
     // Finish - prepare all lattice quantities

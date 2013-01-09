@@ -23,6 +23,10 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
     const std::array<qGridType,D> _qGrids;
     GKType GD0;
     GKType SigmaD;
+    RealType _GDmix = 1.0;
+    size_t _n_GD_iter = 100;
+    RealType _BSmix = 1.0;
+    size_t _n_BS_iter = 100;
 public:
     DFLadder(const Solver &S, const FMatsubaraGrid& fGrid, const BMatsubaraGrid& bGrid, const std::array<qGridType,D>& qGrids, RealType t);
     template <typename ...KP> GLocalType getBubble(BMatsubaraGrid::point W, KP...kpoints) const;
