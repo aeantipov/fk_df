@@ -131,7 +131,7 @@ ComplexType CubicDMFTSC<Solver,D,ksize>::glat_val(MPoint w, ArgTypes... kpoints)
 template <class Solver, size_t D, size_t ksize>
 inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::operator()()
 {
-    INFO("Using DMFT self-consistency on a cubic lattice in " << D << " dimensions on a lattice of " << ksize << " atoms.");
+    INFO("Using DMFT self-consistency on a cubic lattice in " << D << " dimensions on a lattice of " << ksize << "^" << D << " atoms.");
     GFType out(this->_S.w_grid); 
     out=0.0; 
     for (auto w : _gloc.getGrid().getVals()) {
@@ -156,7 +156,7 @@ inline CubicInfDMFTSC<Solver> :: CubicInfDMFTSC(const Solver &S, RealType t, con
     _nominator(ComplW(realgrid))
 {
     std::function<ComplexType(RealType)> f1 = [=](RealType w){return std::exp(-1.0*w*w/t/t);};
-    _nominator = f1;
+    _nominator.fill(f1);
 }
 
 

@@ -12,85 +12,66 @@
 #include <array>
 
 using namespace FK;
-
-//typedef GridObject<ComplexType,FMatsubaraGrid> GF;
 typedef GFWrap GF;
-typedef GridObject<ComplexType,KMesh,FMatsubaraGrid> GF1d;
-typedef GridObject<ComplexType,KMesh,KMesh,FMatsubaraGrid> GF2d;
-typedef GridObject<ComplexType,KMesh,KMesh,KMesh,FMatsubaraGrid> GF3d;
 
-int f44(int a, int b, int c, int d) { return a+b+c+d; };
+template <typename F1, typename F2>
+bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
+{
+    return (std::abs(x-y)<tolerance);
+}
 
-template <typename...> struct map1;
-template<class T1, typename ...OtherArgs>  
-struct map1<T1,OtherArgs...> { 
-    std::function< int (OtherArgs...)> operator() (
-    std::function<int(T1,OtherArgs...)> &in, const T1& t1) { 
-        std::function<int(OtherArgs...)> out = [&](const OtherArgs&... other){return in(t1,other...);};
-        return out;
-        };
-};
-
-std::function<int(int,int,int,int)> f44_1 = f44;
-std::function<int(int,int,int)> f24;
 
 int main()
 {
-    
     INFO("Hi! Doing Falicov-Kimball. ");
     RealType U = 4.0;
-    RealType mu = U/2;
-    RealType e_d = 0.0;
+    RealType mu = 2.2;
+    RealType e_d = 0.1;
     RealType beta = 10;
-    RealType t = 0.5; 
-    size_t maxit = 100;
+    RealType t = 1.0; 
+    size_t maxit = 1000;
+    RealType mix = 0.5;
 
-    size_t n_freq = 10;
+    size_t n_freq = 256;
     Log.setDebugging(true);
     FMatsubaraGrid grid(-n_freq, n_freq, beta);
     GF Delta(grid);
     std::function<ComplexType(ComplexType)> f1;
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
     Delta.fill(f1);
-    //DEBUG(Delta);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
     CubicDMFTSC<FKImpuritySolver, 2, 32> SC(Solver, t);
 
-    DEBUG(SC.dispersion(0.0,PI/2.0));
-    
     for (int i=0; i<maxit && diff>1e-8; ++i) {
         INFO("Iteration " << i);
         Solver.run();
-        auto G1 = SC();
-        auto diffG = Solver.Delta - G1;
-        diff = std::real(grid.integrate(diffG.conj()*diffG));
+        auto Delta_new = SC();
+        diff = Delta_new.diff(Solver.Delta);
         INFO("diff = " << diff);
-        Solver.Delta = G1;
+        Solver.Delta = Delta_new*mix + (1.0-mix)*Solver.Delta;
         }
 
-    DEBUG(SC.glat(0.0,PI));
-    //DEBUG(SC.glat(Solver.gw, Solver.Delta,{{0.0,PI}}));
+    FMatsubaraGrid grid_half(0,n_freq*2,beta);
+    GF Delta_half(grid_half); 
+    Delta_half = Delta;
+    GF gw_half(grid_half); 
+    gw_half = Solver.gw;
+    GF sigma_half(grid_half); 
+    sigma_half = Solver.Sigma;
 
-    std::function<GF(RealType,RealType)> ff2 = [&](RealType k1, RealType k2){return SC.glat(k1,k2);};
-    std::function<GF(RealType,RealType,ComplexType)> ff2_2 = [&](RealType k1, RealType k2, ComplexType k3){return SC.glat(k1,k2);};
-    RecursiveGridIntegrator<KMesh, decltype(ff2)> t2;
-    auto t2_int = t2.integrate(SC._kGrid,ff2);
-    //auto t22_int = t2.integrate(SC._kgrid,ff2_2,ComplexType(0.0));
-    DEBUG(t2_int);
-    //DEBUG(t22_int);
-    //auto f1111 = std::bind(&CubicDMFTSC<2>::glat, SC);
+    sigma_half.savetxt("Sigma.dat");
+    gw_half.savetxt("Gw.dat");
+    Delta_half.savetxt("Delta.dat");
 
+    bool success = false;
 
-/*
-    RecursiveGridIntegrator<2,decltype(ff2)> t2;
-*/
+    std::vector<ComplexType> right_vals = {{ 1.901098273610857259e-02-2.130828360852165537e-01*I,2.161465786590606453e-02 -2.485358842730046314e-01*I }}; 
+
+    for (size_t t=0; t<right_vals.size(); ++t) { 
+        success = (is_equal(gw_half[t],right_vals[t],1e-3));
+        if (!success) { ERROR(gw_half[t] << " != " << right_vals[t]); return EXIT_FAILURE; };
+        };
+    
     return EXIT_SUCCESS;
- //std::function<ComplexType(ComplexType,ComplexType)> f1 = std::bind(g4, std::placeholders::_1, std::placeholders::_2);
-    //std::function<ComplexType(ComplexType,ComplexType)> f2 = std::bind(&FKImpuritySolver::getVertex4, Solver, std::placeholders::_1, std::placeholders::_2);
-    //GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> g44(std::make_tuple(grid,grid));
-    //g44.fill(f2);
-    //DEBUG(g44);
-
-
 }

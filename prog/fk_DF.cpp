@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
     Delta.savetxt("Delta_0.dat");
     
     FKImpuritySolver Solver(U,mu,e_d,Delta);
-    RealType diff=1.0;
     /*
     #if defined Bethe
         BetheSC<FKImpuritySolver> SC(Solver, t);
@@ -110,17 +109,19 @@ int main(int argc, char *argv[])
     //DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
     //KMeshPatch qGrid(SCDMFT._kGrid,{{0}});
     KMeshPatch qGrid(SCDMFT._kGrid);
-    DEBUG(qGrid);
     std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }}) ; 
     DFLadder<FKImpuritySolver, 2, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(0,n_dual_freq, beta), qGrids, t);
 
+    RealType diff=1.0;
+    bool calc_DMFT = true;
     for (int i=0; i<maxit && diff>1e-8 &&!interrupt; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
         //if (diff/mix>1e-3) Solver.run(true);
         if (i<4) Solver.run(true);
         else Solver.run(false);
-        if (i<5) 
+        if (calc_DMFT) {  
             Delta = SCDMFT();
+            }
         else { 
             Delta = SCDual();
             break; 
@@ -129,6 +130,7 @@ int main(int argc, char *argv[])
         diff = Delta_new.diff(Solver.Delta);
         INFO("diff = " << diff);
         Solver.Delta = Delta_new;
+        if (diff<=1e-8 && calc_DMFT) { diff = 1.0; calc_DMFT = false; }; // now continue with DF 
         }
    
     GF Delta_half(grid_half); Delta_half = Delta;

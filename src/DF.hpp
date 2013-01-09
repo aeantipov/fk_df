@@ -19,6 +19,7 @@ DFLadder<Solver,D,ksize>::DFLadder(const Solver &S, const FMatsubaraGrid& fGrid,
     _bGrid(bGrid),
     _qGrids(qGrids),
     GD0(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kGrid))),
+    GD(GD0.getGrids()),
     SigmaD(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kGrid)))
 {
 };
@@ -34,7 +35,7 @@ template <class Solver, size_t D, size_t ksize>
 typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::getBubble(const WQTupleType &in) const
 {
     GLocalType out(this->_fGrid);
-    GKType GD_shifted(GD0.shift(in)*GD0); // G(w+W,k+Q)
+    GKType GD_shifted(GD.shift(in)*GD); // G(w+W,k+Q)
 
     for (auto iw: _fGrid.getVals()) { 
         size_t iwn = size_t(iw);
@@ -73,18 +74,16 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
     SigmaD = 0.0;
     RealType beta = _fGrid._beta;
     RealType T = 1.0/beta;
-    GLocalType gw(_fGrid); 
+    GLocalType gw(_fGrid); // non-const method. Better copy.
     gw = _S.gw;
-    GLocalType Delta(_fGrid); 
+    GLocalType Delta(_fGrid); // non-const method. Better copy. 
     GLocalType GDLoc(_fGrid); 
     GLocalType GLatLoc(_fGrid); 
     Delta = _S.Delta;
     GLocalType Delta_out(_fGrid); Delta_out=0.0;
     auto wkgrids = std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kGrid));
     GKType GLatDMFT(wkgrids);
-    GKType GD(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kGrid)));
-    GKType GLat(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kGrid)));
-
+    GKType GLat(wkgrids);
     GLocalType GDsum(_fGrid);
 
     for (auto iw : _fGrid.getVals()) {
@@ -132,12 +131,8 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                 for (size_t i=0; i<D; ++i) { q[D-1-i]=_qGrids[i][(nq-offset)/(int(pow(nqpoints,i)))%nqpoints]; offset+=(int(pow(nqpoints,i)))*size_t(q[D-1-i]); };
                 WQTupleType Wq_args = std::tuple_cat(std::forward_as_tuple(iW),q);
                 
-                INFO_NONEWLINE(nq << "/" << totalqpts<< ". ");
+                INFO_NONEWLINE("\t" << nq << "/" << totalqpts<< ". ");
                 //DEBUG("qx = " << qx << ", qy = " << qy);
-                //typename ArgBackGenerator<D,KMesh::point,__caller,GLocalType,BMatsubaraGrid::point>::type chi0_caller; // aka __caller<GLocalType,w,q...>
-                //chi0_caller._params = Wq_args;
-                //chi0_caller._f = std::bind(&DFLadder2d::getBubble, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3); 
-                //Chi0 = this->getBubble(iW,qx,qy);
                 Chi0 = this->getBubble(Wq_args);
                 //DEBUG(Chi0);
                 GLocalType IrrVertex4(Vertex4);
@@ -145,10 +140,10 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                 std::function<RealType(FMatsubaraGrid::point)> f1 = [&](FMatsubaraGrid::point w)->RealType{return std::abs(Chi0(w)*Vertex4(w)); };
                 EVCheck.fill(f1);
                 RealType max_ev = *std::max_element(EVCheck.getData().begin(), EVCheck.getData().end());
-                INFO("Maximum EV of Chi0*gamma = " << max_ev);
+                INFO2("Maximum EV of Chi0*gamma = " << max_ev);
                 if (std::abs(max_ev-1.0) < 1e-6 || eval_BS_SC) {
                     GLocalType IrrVertex4_old(Vertex4);
-                    INFO ("Caught divergence, evaluating BS equation self_consistently ");
+                    INFO2 ("Caught divergence, evaluating BS equation self_consistently. ");
                     RealType diffBS = 1.0;
                     for (size_t n=0; n<_n_BS_iter && diffBS > 1e-8; ++n) { 
                         //INFO("BS iteration " << n << " for iW = " << ComplexType(iW) << ", (qx,qy) = (" << RealType(qx) << "," << RealType(qy) << ").");
@@ -159,7 +154,9 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                         }
                     }
                 else { 
-                    INFO("Evaluating BS equation using inversion");
+                    #ifndef NDEBUG
+                    DEBUG("Evaluating BS equation using inversion");
+                    #endif
                     IrrVertex4 = Vertex4/(1.0 - Chi0 * Vertex4);
                     //DEBUG(IrrVertex4);
                     }
@@ -183,6 +180,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
         diffGD = GD.diff(GD0);
         INFO("DF diff = " << diffGD);
         GD=GD*_GDmix + GD0*(1.0-_GDmix);
+        GD._f = GD0._f; // assume DMFT asymptotics are good 
     };
 
     // Finish - prepare all lattice quantities

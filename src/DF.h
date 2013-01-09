@@ -22,6 +22,7 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
     const BMatsubaraGrid _bGrid;
     const std::array<qGridType,D> _qGrids;
     GKType GD0;
+    GKType GD;
     GKType SigmaD;
     RealType _GDmix = 1.0;
     size_t _n_GD_iter = 100;

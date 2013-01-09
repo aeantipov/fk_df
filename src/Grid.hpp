@@ -63,6 +63,7 @@ typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::shift(point in,
     auto find_result = this->find(out._val);
     if (std::get<0>(find_result)) out._index = std::get<1>(find_result);
     else out._index = this->getSize();
+    DEBUG(in << "+" << shift_arg << " = " << out);
     return out;
 }
 
