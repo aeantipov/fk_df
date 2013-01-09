@@ -23,7 +23,7 @@ public:
     typedef std::tuple<GridTypes...> GridTupleType;
     /** A typedef for a tuple of grid points. */
     typedef typename GridPointExtractor<ValueType, std::tuple<GridTypes...> >::arg_tuple_type PointTupleType;
-    /** A typedef for a tuple of grid points. */
+    /** A typedef for a tuple of grid point values. */
     typedef typename GridPointTypeExtractor<ValueType, std::tuple<GridTypes...> >::arg_tuple_type ArgTupleType;
     /** A typedef for the values stored in the container. */
     typedef ValueType ValType;

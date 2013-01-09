@@ -92,6 +92,19 @@ struct __power<base,0> {
     enum { value = 1 };
 };
 
+/** A tool to wrap a call a class method from a tuple. */
+template<int ...> struct __seq {};
+template<int N, int ...S> struct __gens : __gens<N-1, N-1, S...> {};
+template<int ...S> struct __gens<0, S...>{ typedef __seq<S...> type; };
+
+template <typename ReturnType, typename ...Args> struct __caller { 
+    std::tuple<Args...> _params;
+    std::function<ReturnType(Args...)> _f;
+    template<int ...S> ReturnType _callf(__seq<S...>) { return _f(std::get<S>(_params)...); };
+    ReturnType call(){ return _callf(typename __gens<sizeof...(Args)>::type()); };
+};
+
+
 /** Function traits. */
 template <typename FunctionType> struct __fun_traits;
 template <typename ValType, typename ... ArgTypes> 
@@ -109,39 +122,33 @@ struct __fun_traits<std::function<ValType(ArgTypes...)> >
     { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
     static std::function<ValType(ArgTypes...)> getFromTupleF(const std::function<ValType(std::tuple<ArgTypes...>)>& f1)
     { return [f1](ArgTypes...in){return f1(std::forward_as_tuple(in...));};}
-};
-
-
-/** A tool to wrap a call a class method from a tuple. */
-template<int ...> struct __seq {};
-template<int N, int ...S> struct __gens : __gens<N-1, N-1, S...> {};
-template<int ...S> struct __gens<0, S...>{ typedef __seq<S...> type; };
-
-template <typename ReturnType, typename ...Args> struct __caller { 
-    std::tuple<Args...> _params;
-    std::function<ReturnType(Args...)> _f;
-    template<int ...S> ReturnType _callf(__seq<S...>) { return _f(std::get<S>(_params)...); };
-    ReturnType call(){ return _callf(typename __gens<sizeof...(Args)>::type()); };
+    static std::function<ValType(std::tuple<ArgTypes...>)> getTupleF(const std::function<ValType(ArgTypes...)>& f1)
+    { return [f1](std::tuple<ArgTypes...> in)->ValType{ __caller<ValType,ArgTypes...> t = {{in, f1}}; return t.call();};}
 };
 
 /** A tool to split a tuple from http://stackoverflow.com/questions/10626856/how-to-split-a-tuple. */
 template <typename Target, typename Tuple, int N, bool end >
-struct __split_tuple
+struct __split_tuple_struct
 {
     template < typename ... Args >
     static Target create(Tuple const& t, Args && ... args)
     {
-        return __split_tuple<Target,Tuple, N+1, std::tuple_size<Tuple>::value == N+1>::create(t, std::forward<Args>(args)..., std::get<N>(t));
+        return __split_tuple_struct<Target,Tuple, N+1, std::tuple_size<Tuple>::value == N+1>::create(t, std::forward<Args>(args)..., std::get<N>(t));
     }
 };
 
 template < typename Target, typename Tuple, int N >
-struct __split_tuple<Target,Tuple,N,true>
+struct __split_tuple_struct<Target,Tuple,N,true>
 {
     template < typename ... Args >
     static Target create(Tuple const& t, Args && ... args) { return Target(std::forward<Args>(args)...); }
 };
 
+template < typename Head, typename ... Tail >
+std::tuple<Tail...> __tuple_tail(std::tuple<Head,Tail...> const& tpl)
+{
+    return __split_tuple_struct<std::tuple<Tail...>, std::tuple<Head,Tail...>, 1, std::tuple_size<std::tuple<Head,Tail...>>::value == 1>::create(tpl);
+}
 } // end namespace FK
 
 #endif // endif::ifndef ___FK_FK_H___

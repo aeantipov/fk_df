@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     #endif
     */
   
-    static const size_t lattice_size = 5;
+    static const size_t lattice_size = 8;
 
     CubicDMFTSC<FKImpuritySolver,2, lattice_size> SCDMFT(Solver, t);
     //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
@@ -111,8 +111,8 @@ int main(int argc, char *argv[])
     //KMeshPatch qGrid(SCDMFT._kGrid,{{0}});
     KMeshPatch qGrid(SCDMFT._kGrid);
     DEBUG(qGrid);
-    std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }});
-    DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(0,10, beta), qGrids, t);
+    std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }}) ; 
+    DFLadder<FKImpuritySolver, 2, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(0,n_dual_freq, beta), qGrids, t);
 
     for (int i=0; i<maxit && diff>1e-8 &&!interrupt; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
