@@ -7,5 +7,16 @@ link_libraries(
     fk
 )
 
-add_executable(fk_DF fk_DF.cpp)
-install ( TARGETS fk_DF DESTINATION bin )
+set (execs 
+fk_DF
+#fk_DMFT_cubic
+#fk_DMFT_bethe
+#fk_DMFT_cubicinf
+)
+
+foreach (ex ${execs})
+    set(ex_src ${ex}.cpp)
+    add_executable(${ex} ${ex_src})
+    install ( TARGETS ${ex} DESTINATION bin )
+endforeach(ex)
+
