@@ -230,7 +230,7 @@ protected:
  */
 class FKOptionParser : public optparse {
 public:
-    //enum class SC : unsigned int { Bethe, Cubic1, Cubic2, C
+    enum class SC : size_t { Bethe, DMFTCubic1d, DMFTCubic2d, DMFTCubic3d, DMFTCubic4d, DMFTCubicInfd, DFCubic1d, DFCubic2d, DFCubic3d, DFCubic4d };
 	FK::RealType beta ;
 	FK::RealType U    ;
 	FK::RealType t    ;
@@ -241,10 +241,11 @@ public:
 	size_t n_dual_freq;
 	size_t n_iter;
 	std::string sc_type;
+    SC sc_index;
 	std::string help;
     //bool calc_vertex;
 
-	FKOptionParser() : beta(10), U(4.0), t(1.0), mu(2.0), e_d(0.0), mix(1.0), n_freq(1024), n_dual_freq(1024), n_iter(100), sc_type("Bethe"), help("") {}
+	FKOptionParser() : beta(10), U(4.0), t(1.0), mu(2.0), e_d(0.0), mix(1.0), n_freq(1024), n_dual_freq(1024), n_iter(100), sc_type("bethe"), sc_index(SC::Bethe), help("") {}
 
 	BEGIN_OPTION_MAP_INLINE()
 		ON_OPTION(SHORTOPT('b') || LONGOPT("beta"))
@@ -295,6 +296,16 @@ public:
 
         ON_OPTION(SHORTOPT('s') || LONGOPT("sc"))
             sc_type = arg;
+            if (sc_type == "bethe") sc_index = SC::Bethe;
+            else if (sc_type == "dmftcubic1d") sc_index = SC::DMFTCubic1d;
+            else if (sc_type == "dmftcubic2d") sc_index = SC::DMFTCubic2d;
+            else if (sc_type == "dmftcubic3d") sc_index = SC::DMFTCubic3d;
+            else if (sc_type == "dmftcubic4d") sc_index = SC::DMFTCubic4d;
+            else if (sc_type == "dmftcubicinfd") sc_index = SC::DMFTCubicInfd;
+            else if (sc_type == "dfcubic1d") sc_index = SC::DFCubic1d;
+            else if (sc_type == "dfcubic2d") sc_index = SC::DFCubic2d;
+            else if (sc_type == "dfcubic3d") sc_index = SC::DFCubic3d;
+            else if (sc_type == "dfcubic4d") sc_index = SC::DFCubic4d;
             used_args = 1;
 
         ON_OPTION(SHORTOPT('h') || LONGOPT("help"))
@@ -303,8 +314,9 @@ public:
             std::cout << "-b     --beta        : The value of inverse temperature. Default: " << beta << std::endl;
             std::cout << "-U     --U           : The value of U. Default: " << U << std::endl;
             std::cout << "-t     --t           : The value of t. Default: " << t << std::endl;
-            std::cout << "--mu                 : The value of mu. When not specified mu=U/2. Default: " << mu << std::endl;
+            
             std::cout << "--ed                 : The value of e_d. Default: " << e_d << std::endl;
+            std::cout << "--sc                 : The type of self-consistency. Default: " << sc_type << std::endl;
             std::cout << "-m     --matsubaras  : Amount of Matsubara frequencies. Default: " << n_freq<< std::endl;
             std::cout << "--ndfreq             : Amount of Matsubara frequencies for DF calc. Default: " << n_dual_freq<< std::endl;
             std::cout << "-n     --niter       : Amount of Matsubara frequencies. Default: " << n_iter<< std::endl;

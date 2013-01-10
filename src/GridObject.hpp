@@ -253,7 +253,6 @@ RealType GridObject<ValueType,GridTypes...>::diff(const GridObject<ValueType,Gri
     outObj*=outObj.conj();
     RealType norm = 1.0;
     for (auto v : _dims) { norm*=v; };
-    DEBUG("!!!");
     return std::real(outObj.sum())/norm;
 }
 

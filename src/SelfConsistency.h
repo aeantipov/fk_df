@@ -13,7 +13,7 @@ struct SelfConsistency
     typedef typename Solver::GFType GFType;
     const Solver &_S;
     SelfConsistency(const Solver &S):_S(S){};
-    GFType operator()() const;
+    virtual GFType operator()() = 0;
 };
 
 template <class Solver>
@@ -22,7 +22,7 @@ struct BetheSC : public SelfConsistency<Solver>
     typedef typename Solver::GFType GFType;
     const RealType _t;
     BetheSC(const Solver &S, RealType t);
-    GFType operator()() const;
+    GFType operator()();
 };
 
 template <class Solver, size_t D, size_t ksize=32> struct CubicDMFTSC : public SelfConsistency<Solver>
@@ -89,7 +89,7 @@ public:
     ComplW _nominator;
 
     CubicInfDMFTSC(const Solver &S, RealType t, const RealGrid& realgrid);
-    GFType operator()() const;
+    GFType operator()();
 };
 
 } // end of namespace FK

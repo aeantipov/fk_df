@@ -6,7 +6,7 @@ FKImpuritySolver::FKImpuritySolver(RealType U, RealType mu, RealType e_d, GFType
     _v_mult(0.0),
     U(U), mu(mu), e_d(e_d),
     w_grid(Delta.getGrid()), 
-    half_grid(0,std::max(w_grid._w_max,int(beta)*10),w_grid._beta),
+    half_grid(0,std::max(w_grid._w_max*2,int(beta)*10),w_grid._beta),
     beta(w_grid._beta), 
     Delta(Delta), 
     gw(GFType(w_grid)), K0(GFType(w_grid)), K1(GFType(w_grid)), Sigma(GFType(w_grid))
@@ -64,6 +64,7 @@ ComplexType FKImpuritySolver::getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::
 template <> 
 ComplexType FKImpuritySolver::getVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point> (BMatsubaraGrid::point wB, FMatsubaraGrid::point wF) const 
 {
+    DEBUG(_v_mult);
     auto w2 = w_grid.shift(wF,wB);
     /*int bindex=BMatsubaraGrid(0,0,w_grid._beta).getNumber(wB);
     FMatsubaraGrid::point w2;

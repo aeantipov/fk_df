@@ -9,9 +9,7 @@ link_libraries(
 
 set (execs 
 fk_DF
-#fk_DMFT_cubic
-#fk_DMFT_bethe
-#fk_DMFT_cubicinf
+fk_DMFT
 )
 
 foreach (ex ${execs})

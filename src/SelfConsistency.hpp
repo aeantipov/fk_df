@@ -13,7 +13,7 @@ inline BetheSC<Solver>::BetheSC(const Solver &S, RealType t):SelfConsistency<Sol
 }
 
 template <class Solver>
-inline typename BetheSC<Solver>::GFType BetheSC<Solver>::operator()() const
+inline typename BetheSC<Solver>::GFType BetheSC<Solver>::operator()()
 {
     INFO("Using DMFT self-consistency on a Bethe lattice in infinite dimensions");
     return (this->_S.gw)*(_t*_t);
@@ -197,7 +197,7 @@ inline CubicInfDMFTSC<Solver> :: CubicInfDMFTSC(const Solver &S, RealType t, con
 
 
 template <class Solver>
-inline typename CubicInfDMFTSC<Solver>::GFType CubicInfDMFTSC<Solver>::operator()() const 
+inline typename CubicInfDMFTSC<Solver>::GFType CubicInfDMFTSC<Solver>::operator()() 
 {
 
     INFO("Using DMFT self-consistency on a hybercubic lattice in infinite dimensions");
