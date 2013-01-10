@@ -13,7 +13,11 @@ ContainerTest
 GridObjectTest
 SolverTest
 ShiftTest
-CubicDMFTTest
+DMFTCubicTest
+DMFTBetheTest
+DMFTCubicSuscTest
+DMFT_DFCubicTest01
+DMFT_DFCubicTest02
 )
 
 foreach (test ${tests})
