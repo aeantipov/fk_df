@@ -92,11 +92,11 @@ GridObject<ValueType,GridTypes...>::GridObject( const GridObject<ValueType, Grid
 
 template <typename ValueType, typename ...GridTypes> 
 GridObject<ValueType,GridTypes...>::GridObject( GridObject<ValueType,GridTypes...> && rhs):
-    _grids(rhs._grids),
-    _f(rhs._f)
+    _grids(rhs._grids)
 {
     _data.swap(rhs._data);
     _dims.swap(rhs._dims);
+    _f.swap(rhs._f);
 }
 
 template <typename ValueType, typename ...GridTypes> 
@@ -147,8 +147,9 @@ template <typename ...ArgTypes>
 inline ValueType GridObject<ValueType,GridTypes...>::operator()(const std::tuple<ArgTypes...>& in) const
 {
     static_assert(sizeof...(ArgTypes) == sizeof...(GridTypes), "GridObject call, number of input parameters mismatch."); 
-    std::function<ValueType(ArgTypes...)> f1 = [&](ArgTypes... in1)->ValueType{return this->operator()(in1...); };// ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::get(*_data,_grids,in...);};
+    std::function<ValueType(ArgTypes...)> f1 = [&](ArgTypes... in1)->ValueType{return this->template operator()<ArgTypes...>(in1...); };// ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::get(*_data,_grids,in...);};
     __caller<ValueType,ArgTypes...> t = {in,f1};
+    t.call();
 
     return t.call();
 }
@@ -252,6 +253,7 @@ RealType GridObject<ValueType,GridTypes...>::diff(const GridObject<ValueType,Gri
     outObj*=outObj.conj();
     RealType norm = 1.0;
     for (auto v : _dims) { norm*=v; };
+    DEBUG("!!!");
     return std::real(outObj.sum())/norm;
 }
 
@@ -434,7 +436,7 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
 {
     //static_assert(rhs._grids == _grids, "Grid mismatch");
     *_data+=*(rhs._data);
-    _f=__fun_traits<FunctionType>::add(_f, rhs._f);
+    //_f=__fun_traits<FunctionType>::add(_f, rhs._f);
     return *this;
 }
 
@@ -443,7 +445,7 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
     const ValueType & rhs)
 {
     *_data+=rhs;
-    _f=__fun_traits<FunctionType>::add(_f, __fun_traits<FunctionType>::constant(rhs));
+    //_f=__fun_traits<FunctionType>::add(_f, __fun_traits<FunctionType>::constant(rhs));
     return *this;
 }
 
@@ -454,7 +456,7 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
 {
     //static_assert(rhs._grids == _grids, "Grid mismatch");
     *_data*=*(rhs._data);
-    _f=__fun_traits<FunctionType>::multiply(_f, rhs._f);
+    //_f=__fun_traits<FunctionType>::multiply(_f, rhs._f);
     return *this;
 }
 
@@ -463,7 +465,7 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
     const ValueType & rhs)
 {
     *_data*=rhs;
-    _f=__fun_traits<FunctionType>::multiply(_f, __fun_traits<FunctionType>::constant(rhs));
+    //_f=__fun_traits<FunctionType>::multiply(_f, __fun_traits<FunctionType>::constant(rhs));
     return *this;
 }
 
@@ -474,7 +476,7 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
 {
     //static_assert(rhs._grids == _grids, "Grid mismatch");
     *_data/=*(rhs._data);
-    _f=__fun_traits<FunctionType>::divide(_f, rhs._f);
+    //_f=__fun_traits<FunctionType>::divide(_f, rhs._f);
     return *this;
 }
 
@@ -483,7 +485,7 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
     const ValueType & rhs)
 {
     *_data/=rhs;
-    _f=__fun_traits<FunctionType>::divide(_f, __fun_traits<FunctionType>::constant(rhs));
+    //_f=__fun_traits<FunctionType>::divide(_f, __fun_traits<FunctionType>::constant(rhs));
     return *this;
 }
 
@@ -494,7 +496,7 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
 {
     //static_assert(rhs._grids == _grids, "Grid mismatch");
     *_data-=*(rhs._data);
-    _f=__fun_traits<FunctionType>::subtract(_f, rhs._f);
+    //_f=__fun_traits<FunctionType>::subtract(_f, rhs._f);
     return *this;
 }
 
@@ -503,7 +505,7 @@ inline GridObject<ValueType,GridTypes...>& GridObject<ValueType,GridTypes...>::o
     const ValueType & rhs)
 {
     *_data-=rhs;
-    _f=__fun_traits<FunctionType>::subtract(_f, __fun_traits<FunctionType>::constant(rhs));
+    //_f=__fun_traits<FunctionType>::subtract(_f, __fun_traits<FunctionType>::constant(rhs));
     return *this;
 }
 

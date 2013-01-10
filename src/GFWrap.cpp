@@ -5,7 +5,7 @@
 namespace FK {
 
 GFWrap::GFWrap(const FMatsubaraGrid& in):
-    GridObject<ComplexType, FMatsubaraGrid>(in) 
+    GridObject<ComplexType, FMatsubaraGrid>(in)
 {
 }
 
@@ -13,9 +13,11 @@ GFWrap::GFWrap(const std::tuple<FMatsubaraGrid> & in):GFWrap(std::get<0>(in))
 {
 }
 
-GFWrap::GFWrap(GFWrap&& in):GridObject<ComplexType,FMatsubaraGrid>(in._grids)
+GFWrap::GFWrap(GFWrap&& rhs):GridObject<ComplexType,FMatsubaraGrid>(rhs._grids)
 {
-    _data.swap(in._data);
+    _data.swap(rhs._data);
+    _dims.swap(rhs._dims);
+    _f.swap(rhs._f);
 }
 
 GFWrap::GFWrap(const GFWrap& in):GridObject<ComplexType,FMatsubaraGrid>(in)

@@ -20,7 +20,8 @@ DFLadder<Solver,D,ksize>::DFLadder(const Solver &S, const FMatsubaraGrid& fGrid,
     _qGrids(qGrids),
     GD0(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kGrid))),
     GD(GD0.getGrids()),
-    SigmaD(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kGrid)))
+    SigmaD(GD0.getGrids()), 
+    GLat(GD0.getGrids())
 {
 };
 
@@ -35,7 +36,10 @@ template <class Solver, size_t D, size_t ksize>
 typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::getBubble(const WQTupleType &in) const
 {
     GLocalType out(this->_fGrid);
-    GKType GD_shifted(GD.shift(in)*GD); // G(w+W,k+Q)
+    GKType GD_shifted(GD.getGrids());
+    GD_shifted = GD.shift(in);
+    GD_shifted*=GD;
+    //GKType GD_shifted(GD.shift(in)*GD); // G(w+W,k+Q)
 
     for (auto iw: _fGrid.getVals()) { 
         size_t iwn = size_t(iw);
@@ -43,8 +47,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::getBubbl
     }
 
     RealType T = 1.0/(this->_fGrid._beta);
-    out*=(-T);
-    return out;
+    return (-T)*out;
 }
 
 /*
@@ -82,28 +85,22 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
     Delta = _S.Delta;
     GLocalType Delta_out(_fGrid); Delta_out=0.0;
     auto wkgrids = std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kGrid));
-    GKType GLatDMFT(wkgrids);
-    GKType GLat(wkgrids);
+    GKType GLatDMFT = CubicDMFTSC<Solver, D, ksize>::getGLat(_fGrid);
     GLocalType GDsum(_fGrid);
 
     for (auto iw : _fGrid.getVals()) {
         size_t iwn = size_t(iw);
-        GLatDMFT[iwn] = 1.0/(1.0/gw(iw)+Delta(iw)-_ek.getData());
         GD0[iwn] = GLatDMFT[iwn] - gw(iw);
         GDsum[iwn] = GD0[iwn].sum()/RealType(__power<ksize,D>::value);
     };
 
     typedef typename GKType::ArgTupleType wkTupleType;
-    auto glatdmft_f = [&](const wkTupleType &in)->ComplexType{
-        ComplexType w = std::get<0>(in);
-        auto ktuple = __tuple_tail(in);
-        return (_S.mu - _S.Sigma._f(w)-_ek(ktuple))/std::abs(w*w)+1.0/w;
-        };
-    GLatDMFT._f = __fun_traits<typename GKType::FunctionType>::getFromTupleF(glatdmft_f);
     auto gd_f = [&](const wkTupleType &in)->ComplexType{
             ComplexType w = std::get<0>(in);
             auto ktuple = __tuple_tail(in);
-            return (-_ek(ktuple))/std::abs(w*w) + I*imag(Delta._f(w))/std::abs(w*w)-(_ek(ktuple)*_ek(ktuple) - 2.0*_ek(ktuple)*(_S.mu - _S.Sigma._f(w)))/w/std::abs(w*w); };
+            ComplexType e = _ek(ktuple);
+            auto tmp = (-e)/std::abs(w*w) -(e*e-_t*_t*2*RealType(D) - 2.0*e*(_S.mu - _S.Sigma._f(w)))/w/std::abs(w*w); 
+            return tmp;};
     GD0._f = __fun_traits<typename GKType::FunctionType>::getFromTupleF(gd_f);
 
     GDsum.savetxt("GDsum.dat");
@@ -120,8 +117,9 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
 
         for (auto iW : _bGrid.getVals()) {
             INFO("iW = " << iW);
-            std::function<ComplexType(FMatsubaraGrid::point)> f1 = std::bind(&FKImpuritySolver::getVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(_S), iW, std::placeholders::_1);
-            Vertex4.fill(f1);
+            std::function<ComplexType(FMatsubaraGrid::point)> Vertexf = 
+                std::bind(&FKImpuritySolver::getVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(_S), iW, std::placeholders::_1);
+            Vertex4.fill(Vertexf);
 
             size_t nqpoints = _qGrids[0].getSize();
             size_t totalqpts = int(pow(nqpoints,D));
@@ -134,13 +132,20 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                 INFO_NONEWLINE("\t" << nq << "/" << totalqpts<< ". ");
                 //DEBUG("qx = " << qx << ", qy = " << qy);
                 Chi0 = this->getBubble(Wq_args);
-                //DEBUG(Chi0);
                 GLocalType IrrVertex4(Vertex4);
                 GridObject<RealType,FMatsubaraGrid> EVCheck(_fGrid); 
-                std::function<RealType(FMatsubaraGrid::point)> f1 = [&](FMatsubaraGrid::point w)->RealType{return std::abs(Chi0(w)*Vertex4(w)); };
-                EVCheck.fill(f1);
+                GridObject<RealType,FMatsubaraGrid> EVCheckRe(_fGrid); 
+                GridObject<RealType,FMatsubaraGrid> EVCheckIm(_fGrid); 
+                std::function<RealType(FMatsubaraGrid::point)> absEVf = [&](FMatsubaraGrid::point w)->RealType{return std::abs(Chi0(w)*Vertex4(w)); };
+                std::function<RealType(FMatsubaraGrid::point)> reEVf = [&](FMatsubaraGrid::point w)->RealType{return std::real(Chi0(w)*Vertex4(w)); };
+                std::function<RealType(FMatsubaraGrid::point)> imEVf = [&](FMatsubaraGrid::point w)->RealType{return std::imag(Chi0(w)*Vertex4(w)); };
+                EVCheck.fill(absEVf);
+                EVCheckRe.fill(reEVf);
+                EVCheckIm.fill(imEVf);
                 RealType max_ev = *std::max_element(EVCheck.getData().begin(), EVCheck.getData().end());
-                INFO2("Maximum EV of Chi0*gamma = " << max_ev);
+                RealType max_ev_re = *std::max_element(EVCheckRe.getData().begin(), EVCheckRe.getData().end());
+                RealType max_ev_im = *std::max_element(EVCheckIm.getData().begin(), EVCheckIm.getData().end());
+                INFO2("Maximum EV of Chi0*gamma = " << max_ev << "|" << max_ev_re << "|" << max_ev_im);
                 if (std::abs(max_ev-1.0) < 1e-6 || eval_BS_SC) {
                     GLocalType IrrVertex4_old(Vertex4);
                     INFO2 ("Caught divergence, evaluating BS equation self_consistently. ");
@@ -171,7 +176,6 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                 tmp.fill(SigmaF);
                 //DEBUG("Vertex4 = " << Vertex4);
                 //DEBUG("IrrVertex4 = " << IrrVertex4);
-                //DEBUG("Chi0 = " << Chi0);
                 SigmaD+=tmp*T/2.0/totalqpts;
                 } // end of q loop
         }; //end of iW loop
@@ -182,6 +186,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
         GD=GD*_GDmix + GD0*(1.0-_GDmix);
         GD._f = GD0._f; // assume DMFT asymptotics are good 
     };
+    INFO("Finished DF iterations");
 
     // Finish - prepare all lattice quantities
     for (auto iw : _fGrid.getVals()) {
@@ -191,6 +196,9 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
         GLatLoc[iwn] = GLat[iwn].sum()/RealType(__power<ksize,D>::value);
     }
     Delta_out = Delta + 1.0/gw * GDLoc / GLatLoc;
+    // Assume DMFT asymptotics
+    //Delta_out._f = __fun_traits<decltype(Delta_out._f)>::constant(0);// 
+    Delta_out._f = std::bind([&](ComplexType w)->ComplexType{return _t*_t*2*RealType(D)*((_S.mu-_S.w_1*_S.U)/std::abs(w*w) + 1.0/w);}, std::placeholders::_1);
     return Delta_out;
 }
 

@@ -61,10 +61,12 @@ typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::shift(point in,
     point out;
     out._val = in._val + ValueType(shift_arg);
     auto find_result = this->find(out._val);
-    if (std::get<0>(find_result)) out._index = std::get<1>(find_result);
-    else out._index = this->getSize();
-    DEBUG(in << "+" << shift_arg << " = " << out);
-    return out;
+    if (std::get<0>(find_result)) { out._index = std::get<1>(find_result); return (*this)[out._index]; }
+    else { out._index = this->getSize(); 
+           #ifndef NDEBUG
+           ERROR("Returning point with an invalid index after shift.");
+           #endif
+           return out; };
 }
 
 template <typename ValueType, class Derived>
@@ -193,7 +195,7 @@ template <bool F>
 inline int MatsubaraGrid<F>::getNumber(ComplexType in) const
 {
     assert (std::abs(real(in))<std::numeric_limits<RealType>::epsilon());
-    return (imag(in)/_spacing-F)/2;
+    return std::lround(imag(in)/_spacing-F)/2;
 };
 
 template <bool F>
@@ -304,7 +306,7 @@ inline KMesh::KMesh(KMesh &&rhs):Grid(rhs._vals),_points(rhs._points)
 inline std::tuple <bool, size_t, RealType> KMesh::find (RealType in) const
 {
     assert(in>=0 && in < 2.0*PI);
-    int n = in/2.0/PI*_points;
+    int n = std::lround(in/2.0/PI*_points);
     if (n<0) { ERROR("KMesh point is out of bounds, " << in << "<" << 0); return std::make_tuple(0,0,0); };
     if (n>=_points) { ERROR("KMesh point is out of bounds, " << in << "> 2*PI"); return std::make_tuple(0,_points,0); };
     RealType weight=in/2.0/PI*_points-RealType(n);
@@ -352,10 +354,10 @@ inline auto KMesh::integrate(const Obj &in, OtherArgTypes... Args) const -> decl
 template <class ArgType>
 inline RealType KMesh::shift(RealType in, ArgType shift_arg) const
 {
-    assert (in>0 && in < 2.0*PI);
+    assert (in>=0 && in < 2.0*PI);
     RealType out;
     out = in + RealType(shift_arg); 
-    out-= int(out/(2.0*PI))*2.0*PI; 
+    out-= std::floor(out/(2.0*PI))*2.0*PI;
     return out;
 }
 
@@ -368,7 +370,7 @@ inline typename KMesh::point KMesh::shift(point in, ArgType shift_arg) const
     auto find_result = this->find(out._val);
     if (!std::get<0>(find_result)) throw (exWrongIndex());
     out._index = std::get<1>(find_result);
-    return out;
+    return (*this)[out._index];
 }
 
 //

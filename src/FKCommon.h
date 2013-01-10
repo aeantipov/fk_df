@@ -112,18 +112,18 @@ struct __fun_traits<std::function<ValType(ArgTypes...)> >
 {
     static std::function<ValType(ArgTypes...)> constant(const ValType &c) 
     { return [c](ArgTypes...in){return c;};}
-    static std::function<ValType(ArgTypes...)> add(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    static std::function<ValType(ArgTypes...)> add(const std::function<ValType(ArgTypes...)> &f1, const std::function<ValType(ArgTypes...)>& f2)
     { return [f1,f2](ArgTypes... in){return f1(in...)+f2(in...);}; }
-    static std::function<ValType(ArgTypes...)> multiply(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    static std::function<ValType(ArgTypes...)> multiply(const std::function<ValType(ArgTypes...)> &f1, const std::function<ValType(ArgTypes...)> &f2)
     { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
-    static std::function<ValType(ArgTypes...)> subtract(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    static std::function<ValType(ArgTypes...)> subtract(const std::function<ValType(ArgTypes...)> &f1, const std::function<ValType(ArgTypes...)> &f2)
     { return [f1,f2](ArgTypes... in){return f1(in...)-f2(in...);}; }
-    static std::function<ValType(ArgTypes...)> divide(std::function<ValType(ArgTypes...)> f1, std::function<ValType(ArgTypes...)> f2)
+    static std::function<ValType(ArgTypes...)> divide(const std::function<ValType(ArgTypes...)> &f1, const std::function<ValType(ArgTypes...)> &f2)
     { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
     static std::function<ValType(ArgTypes...)> getFromTupleF(const std::function<ValType(std::tuple<ArgTypes...>)>& f1)
     { return [f1](ArgTypes...in){return f1(std::forward_as_tuple(in...));};}
     static std::function<ValType(std::tuple<ArgTypes...>)> getTupleF(const std::function<ValType(ArgTypes...)>& f1)
-    { return [f1](std::tuple<ArgTypes...> in)->ValType{ __caller<ValType,ArgTypes...> t = {{in, f1}}; return t.call();};}
+    { return [f1](const std::tuple<ArgTypes...> &in)->ValType{ __caller<ValType,ArgTypes...> t; t = {in, f1}; return t.call();};}
 };
 
 /** A tool to split a tuple from http://stackoverflow.com/questions/10626856/how-to-split-a-tuple. */

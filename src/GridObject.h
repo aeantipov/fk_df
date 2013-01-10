@@ -57,6 +57,7 @@ protected:
 
     /** Returns _f(in). */
     template <typename ...ArgTypes> ValueType __get_f(const std::tuple<ArgTypes...>& in) const;
+
 public:
     /** This function returns the value of the object when the point is not in container. */
     FunctionType _f;

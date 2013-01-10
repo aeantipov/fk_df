@@ -21,6 +21,8 @@ void FKImpuritySolver::run(bool calc_weight)
     iw.fill(iw_f);
     K0 = 1.0/(iw+mu-Delta);
     K1 = 1.0/(iw+mu-Delta-U);
+    K0._f = [this](ComplexType w)->ComplexType{return 1.0/(w+mu-Delta._f(w));};
+    K1._f = [this](ComplexType w)->ComplexType{return 1.0/(w+mu-Delta._f(w)-U);};
    
     if (calc_weight) {
         std::function<RealType(FMatsubaraGrid::point)> tempF = [this](FMatsubaraGrid::point w){
@@ -62,14 +64,17 @@ ComplexType FKImpuritySolver::getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::
 template <> 
 ComplexType FKImpuritySolver::getVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point> (BMatsubaraGrid::point wB, FMatsubaraGrid::point wF) const 
 {
-    int bindex=BMatsubaraGrid(0,0,w_grid._beta).getNumber(wB);
+    auto w2 = w_grid.shift(wF,wB);
+    /*int bindex=BMatsubaraGrid(0,0,w_grid._beta).getNumber(wB);
     FMatsubaraGrid::point w2;
     w2._val=wF._val+wB._val;
     if (-bindex<int(wF)) {
         w2._index=wF._index+bindex;
         return -this->getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>(wF,w2);
         }
-    else return -_v_mult*K0(wF)*K0(ComplexType(wF)+ComplexType(wB))*K1(wF)*K1(ComplexType(wF)+ComplexType(wB));
+    else*/ 
+    return -this->getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>(wF,w2);
+    //return -_v_mult*K0(wF)*K0(ComplexType(wF)+ComplexType(wB))*K1(wF)*K1(ComplexType(wF)+ComplexType(wB));
 }
 
 

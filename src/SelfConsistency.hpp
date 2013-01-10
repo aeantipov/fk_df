@@ -94,7 +94,6 @@ inline CubicDMFTSC<Solver,D,ksize>::CubicDMFTSC ( const Solver &S, RealType t):
     _ek(CubicTraits<D,ksize>::getTuples(_kGrid)),
     _gloc(this->_S.w_grid)
 {
-    std::cout << std::get<1>(_ek.getGrids()) << std::endl;
     //CubicTraits<D,ksize>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kGrid);
     CubicTraits<D,ksize>::template fillContainer<Container<D,ComplexType>>(_ek.getData(), _t, _kGrid);
     //CubicTraits<D,ksize>::template fillContainer<EkStorage>(_ek, _t, _kGrid);
@@ -112,6 +111,17 @@ inline RealType CubicDMFTSC<Solver,D,ksize>::dispersion(ArgTypes... kpoints) con
 
 template <class Solver, size_t D, size_t ksize>
 template <typename ...ArgTypes>
+inline RealType CubicDMFTSC<Solver,D,ksize>::dispersion(const std::tuple<ArgTypes...>& kpoints) const
+{
+    static_assert(sizeof...(ArgTypes) == D, "Number of points mismatch!" );
+    typename EkStorage::PointFunctionType f1 = [&](ArgTypes... kpoints)->RealType{return dispersion(kpoints...);};
+    auto f2 =__fun_traits<typename EkStorage::PointFunctionType>::getTupleF(f1); 
+    return std::real(f2(kpoints));
+}
+
+
+template <class Solver, size_t D, size_t ksize>
+template <typename ...ArgTypes>
 inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::glat(ArgTypes... kpoints) const
 {
     static_assert(sizeof...(ArgTypes) == D,"!");
@@ -126,6 +136,32 @@ template <typename MPoint, typename ...ArgTypes>
 ComplexType CubicDMFTSC<Solver,D,ksize>::glat_val(MPoint w, ArgTypes... kpoints) const
 {
     return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-dispersion(kpoints...));
+}
+
+template <class Solver, size_t D, size_t ksize>
+typename CubicDMFTSC<Solver,D,ksize>::GKType CubicDMFTSC<Solver,D,ksize>::getGLat(const FMatsubaraGrid& fGrid) const
+{
+    std::array<KMesh,D> kgrids;
+    kgrids.fill(_kGrid);
+    GKType out(std::tuple_cat(std::forward_as_tuple(fGrid),kgrids));
+    //for (auto iw : fGrid.getVals()) {
+    auto f1 = [&](const typename GKType::PointTupleType& in)->ComplexType {
+        FMatsubaraGrid::point w = std::get<0>(in);
+        auto ktuple = __tuple_tail(in);
+        typename ArgBackGenerator<D,KMesh::point,__caller,RealType>::type t1; //( {{in, &dispersion}});
+        return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek(ktuple));
+    };
+    typename GKType::PointFunctionType f2 = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(f1);
+    out.fill(f2);
+
+    auto glatdmft_f = [&](const typename GKType::ArgTupleType &in)->ComplexType{
+        ComplexType w = std::get<0>(in);
+        auto ktuple = __tuple_tail(in);
+        return (_S.mu - _S.Sigma._f(w)-_ek(ktuple))/std::abs(w*w)+1.0/w;
+        };
+    out._f = __fun_traits<typename GKType::FunctionType>::getFromTupleF(glatdmft_f);
+
+    return out;
 }
 
 template <class Solver, size_t D, size_t ksize>

@@ -36,8 +36,10 @@ protected:
 public:
     typedef typename std::vector<ValueType>::iterator iterator;
     typedef typename std::vector<ValueType>::const_iterator const_iterator;
-    typename Grid<ValueType, Derived>::iterator begin() const { return _vals.begin(); };
-    typename Grid<ValueType, Derived>::iterator end() const { return _vals.end(); };
+    //typename Grid<ValueType, Derived>::iterator begin() const { return _vals.begin(); };
+    //typename Grid<ValueType, Derived>::iterator end() const { return _vals.end(); };
+    typename Grid<ValueType, Derived>::const_iterator begin() const { return _vals.begin(); };
+    typename Grid<ValueType, Derived>::const_iterator end() const { return _vals.end(); };
     /** Empty constructor. */
     Grid();
     /** Copy from vector. */
