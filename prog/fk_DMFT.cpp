@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
         std::cout << "t                    : " << opt.t    << std::endl;
         std::cout << "mu                   : " << opt.mu   << std::endl;
         std::cout << "e_d                  : " << opt.e_d << std::endl;
+        std::coit << "Selfconsistency      : " << opt.sc_type << std::endl;
         std::cout << "Number Of Matsubaras : " << opt.n_freq << std::endl;
         std::cout << "Max number of iterations : " << opt.n_iter << std::endl;
     } catch (const optparse::unrecognized_option& e) {
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
     size_t n_freq = opt.n_freq;
     size_t maxit = opt.n_iter;
     RealType mix = opt.mix;
-    auto sc_index = opt.sc_index;
+    auto sc_switch = opt.sc_index;
     
     static const size_t KPOINTS = 64;
 
@@ -89,7 +90,7 @@ int main(int argc, char *argv[])
 
     std::unique_ptr<SelfConsistency<FKImpuritySolver>> SC_ptr;
     typedef FKOptionParser::SC enumSC;
-    switch (sc_index) {
+    switch (sc_switch) {
         case enumSC::Bethe:       SC_ptr.reset(new BetheSC<FKImpuritySolver>(Solver, t)); break;
         case enumSC::DMFTCubic1d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,1, KPOINTS>(Solver, t)); break;
         case enumSC::DMFTCubic2d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2, KPOINTS>(Solver, t)); break;

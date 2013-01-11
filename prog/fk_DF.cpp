@@ -69,61 +69,64 @@ int main(int argc, char *argv[])
     size_t n_dual_freq = opt.n_dual_freq;
     size_t maxit = opt.n_iter;
     RealType mix = opt.mix;
-    std::string sc_type = opt.sc_type;
+    auto sc_switch = opt.sc_index;
+
+    size_t D;
+    static const size_t KPOINTS = 8;
+    KMesh kGrid(KPOINTS);
 
     Log.setDebugging(true);
 
-    FMatsubaraGrid grid(-n_freq, n_freq, beta);
-    FMatsubaraGrid grid_half(0, n_freq, beta);
-    GF Delta(grid);
+    FMatsubaraGrid gridF(-n_freq, n_freq, beta);
+    FMatsubaraGrid gridF_half(0, 2*n_freq, beta);
+
+    GF Delta(gridF);
     std::function<ComplexType(ComplexType)> f1, f2;
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
-
     try { Delta.loadtxt("Delta_full.dat"); } 
     catch (std::exception &e) { Delta.fill(f1); };
-
     Delta.savetxt("Delta_0.dat");
     
     FKImpuritySolver Solver(U,mu,e_d,Delta);
-    /*
-    #if defined Bethe
-        BetheSC<FKImpuritySolver> SC(Solver, t);
-    #elif defined CubicDMFTInf
-        CubicInfDMFTSC<FKImpuritySolver> SC(Solver,t,RealGrid(-6.0,6.0,1024));
-    #elif defined CubicDMFT1
-        CubicDMFTSC<FKImpuritySolver,1, 16> SC(Solver, t);
-    #elif defined CubicDMFT2
-        CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
-    #elif defined CubicDMFT3
-        CubicDMFTSC<FKImpuritySolver,3, 16> SC(Solver, t);
-    #else 
-        BetheSC<FKImpuritySolver> SC(Solver, t);
-    #endif
-    */
+    
+    std::unique_ptr<SelfConsistency<FKImpuritySolver>> SC_DF_ptr, SC_DMFT_ptr;
+    typedef FKOptionParser::SC enumSC;
+    KMeshPatch qGrid(kGrid);
+    switch (sc_switch) {
+        case enumSC::DFCubic1d: 
+            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,1, KPOINTS>(Solver, t));
+            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 1, KPOINTS>(Solver, gridF, BMatsubaraGrid(0,n_dual_freq, beta), {{qGrid}}, t)); 
+            D=1; break;
+        case enumSC::DFCubic2d: 
+            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2, KPOINTS>(Solver, t));
+            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 2, KPOINTS>(Solver, gridF, BMatsubaraGrid(0,n_dual_freq, beta), {{qGrid,qGrid}}, t)); 
+            D=2; break;
+        case enumSC::DFCubic3d: 
+            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, KPOINTS>(Solver, t));
+            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 3, KPOINTS>(Solver, gridF, BMatsubaraGrid(0,n_dual_freq, beta), {{qGrid,qGrid,qGrid}}, t)); 
+            D=3; break;
+        case enumSC::DFCubic4d: 
+            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,4, KPOINTS>(Solver, t));
+            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 4, KPOINTS>(Solver, gridF, BMatsubaraGrid(0,n_dual_freq, beta), {{qGrid,qGrid,qGrid,qGrid}}, t)); 
+            D=4; break;
+        default:
+            ERROR("Couldn't find the desired SC type. Exiting.");
+            exit(0);
+    };
+    auto &SC_DMFT = *SC_DMFT_ptr;
+    auto &SC_DF   = *SC_DF_ptr;
   
-    static const size_t lattice_size = 8;
-
-    CubicDMFTSC<FKImpuritySolver,2, lattice_size> SCDMFT(Solver, t);
-    //CubicDMFTSC<FKImpuritySolver,2, 16> SC(Solver, t);
-    //DFLadder<FKImpuritySolver,2, 16> SC(Solver, FMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), BMatsubaraGrid(-2*n_dual_freq,2*n_dual_freq, beta), t);
-    //DFLadder2d<FKImpuritySolver, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(-n_dual_freq,n_dual_freq, beta), t);
-    //KMeshPatch qGrid(SCDMFT._kGrid,{{0}});
-    KMeshPatch qGrid(SCDMFT._kGrid);
-    std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }}) ; 
-    DFLadder<FKImpuritySolver, 2, lattice_size> SCDual(Solver, grid, BMatsubaraGrid(0,n_dual_freq, beta), qGrids, t);
-
     RealType diff=1.0;
     bool calc_DMFT = true;
     for (int i=0; i<maxit && diff>1e-8 &&!interrupt; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
-        //if (diff/mix>1e-3) Solver.run(true);
-        if (i<4) Solver.run(true);
+        if (diff/mix>1e-3) Solver.run(true);
         else Solver.run(false);
         if (calc_DMFT) {  
-            Delta = SCDMFT();
+            Delta = SC_DMFT();
             }
         else { 
-            Delta = SCDual();
+            Delta = SC_DF();
             break; 
              }
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
@@ -133,22 +136,25 @@ int main(int argc, char *argv[])
         if (diff<=1e-8 && calc_DMFT) { diff = 1.0; calc_DMFT = false; }; // now continue with DF 
         }
    
-    GF Delta_half(grid_half); Delta_half = Delta;
-    GF gw_half(grid_half); gw_half = Solver.gw;
-    GF sigma_half(grid_half); sigma_half = Solver.Sigma;
+    GF Delta_half(gridF_half); Delta_half = Delta;
+    GF gw_half(gridF_half); gw_half = Solver.gw;
+    GF sigma_half(gridF_half); sigma_half = Solver.Sigma;
     sigma_half.savetxt("Sigma.dat");
     gw_half.savetxt("Gw.dat");
     Delta_half.savetxt("Delta.dat");
     Solver.Delta.savetxt("Delta_full.dat");
+
+    SC_DMFT_ptr.release(); 
+    SC_DF_ptr.release();
 }
 
 /*
-    DEBUG(Delta(FMatsubara(grid._w_max-1, beta)));
-    DEBUG(Delta(FMatsubara(grid._w_max, beta)));
-    DEBUG(Solver.gw(FMatsubara(grid._w_max-1, beta)));
-    DEBUG(Solver.gw(FMatsubara(grid._w_max, beta)));
-    DEBUG(Solver.Sigma(FMatsubara(grid._w_max-1, beta)));
-    DEBUG(Solver.Sigma(FMatsubara(grid._w_max, beta)));
+    DEBUG(Delta(FMatsubara(gridF._w_max-1, beta)));
+    DEBUG(Delta(FMatsubara(gridF._w_max, beta)));
+    DEBUG(Solver.gw(FMatsubara(gridF._w_max-1, beta)));
+    DEBUG(Solver.gw(FMatsubara(gridF._w_max, beta)));
+    DEBUG(Solver.Sigma(FMatsubara(gridF._w_max-1, beta)));
+    DEBUG(Solver.Sigma(FMatsubara(gridF._w_max, beta)));
 */
    // exit(0);
  

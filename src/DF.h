@@ -36,7 +36,8 @@ public:
     GKType getGLat() const { return GLat; };
     GLocalType getBubble(const WQTupleType& in) const;
     //template <typename ...KP> ComplexType getBubble2(BMatsubaraGrid::point W, KP...kpoints, FMatsubaraGrid::point w1) const;
-    GLocalType operator()(bool eval_BS_SC = false);
+    GLocalType operator()(bool eval_BS_SC);
+    GLocalType operator()() { return this->operator()(false); };
 };
 
 } // end of namespace FK
