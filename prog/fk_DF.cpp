@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
         std::cout << "t                    : " << opt.t    << std::endl;
         std::cout << "mu                   : " << opt.mu   << std::endl;
         std::cout << "e_d                  : " << opt.e_d << std::endl;
+        std::cout << "Selfconsistency      : " << opt.sc_type << std::endl;
         std::cout << "Number Of Matsubaras : " << opt.n_freq << std::endl;
         std::cout << "Max number of iterations : " << opt.n_iter << std::endl;
     } catch (const optparse::unrecognized_option& e) {
@@ -72,7 +73,19 @@ int main(int argc, char *argv[])
     auto sc_switch = opt.sc_index;
 
     size_t D;
-    static const size_t KPOINTS = 8;
+    #ifdef K8
+        static const size_t KPOINTS = 8;
+    #elif K16
+        static const size_t KPOINTS = 16;
+    #elif K32
+        static const size_t KPOINTS = 32;
+    #elif K64
+        static const size_t KPOINTS = 64;
+    #else 
+        static const size_t KPOINTS = 16;
+    #endif
+    
+        
     KMesh kGrid(KPOINTS);
 
     Log.setDebugging(true);

@@ -145,7 +145,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                 RealType max_ev = *std::max_element(EVCheck.getData().begin(), EVCheck.getData().end());
                 RealType max_ev_re = *std::max_element(EVCheckRe.getData().begin(), EVCheckRe.getData().end());
                 RealType max_ev_im = *std::max_element(EVCheckIm.getData().begin(), EVCheckIm.getData().end());
-                INFO2("Maximum EV of Chi0*gamma = " << max_ev << "|" << max_ev_re << "|" << max_ev_im);
+                INFO("Maximum EV of Chi0*gamma = " << max_ev << "|" << max_ev_re << "|" << max_ev_im);
                 if (std::abs(max_ev-1.0) < 1e-6 || eval_BS_SC) {
                     GLocalType IrrVertex4_old(Vertex4);
                     INFO2 ("Caught divergence, evaluating BS equation self_consistently. ");
@@ -169,7 +169,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                 typename GKType::PointFunctionType SigmaF;
                 auto SigmaF2 = [&](wkTupleType in)->ComplexType { 
                     ComplexType w = std::get<0>(in);
-                    return Vertex4(w)*Chi0(w)*GD_shift(in)*IrrVertex4(w);
+                    return 0.5*Vertex4(w)*Chi0(w)*GD_shift(in)*IrrVertex4(w);
                     };
                 SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
                 GKType tmp(this->SigmaD.getGrids());

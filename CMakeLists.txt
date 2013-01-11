@@ -16,8 +16,8 @@ set(CMAKE_CXX_FLAGS "-Wall -std=c++11")
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     execute_process(
         COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
-    if (NOT (GCC_VERSION VERSION_GREATER 4.7 OR GCC_VERSION VERSION_EQUAL 4.7))
-        message(FATAL_ERROR "${PROJECT_NAME} requires g++ 4.7 or greater.")
+    if (NOT (GCC_VERSION VERSION_GREATER 4.6 OR GCC_VERSION VERSION_EQUAL 4.6))
+        message(FATAL_ERROR "${PROJECT_NAME} requires g++ 4.6 or greater.")
     endif ()
 elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
@@ -26,8 +26,18 @@ else ()
 endif ()
 #end :: C++11 check
 
+#kpoints
+if(DEFINED KPOINTS)
+    message(STATUS "Using ${KPOINTS} kpoints")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DK${KPOINTS}")
+endif()
+
+
+
+# begin :: doxygen
 set(DOXYFILE_SOURCE_DIR "./src")
 include(UseDoxygen)
+# end :: doxygen
 
 #find_package (Boost COMPONENTS python)
 #find_package (HDF5 COMPONENTS CXX)

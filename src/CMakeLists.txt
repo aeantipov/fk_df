@@ -9,7 +9,7 @@ set (fk_src
     GFWrap.h GFWrap.cpp
     Solver.h Solver.cpp
     SelfConsistency.h SelfConsistency.hpp
-    Bubble.h Bubble.hpp
+#    Bubble.h Bubble.hpp
     DF.h DF.hpp
     )
 add_library(fk SHARED ${fk_src})

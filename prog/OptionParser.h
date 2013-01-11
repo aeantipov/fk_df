@@ -317,6 +317,7 @@ public:
             
             std::cout << "--ed                 : The value of e_d. Default: " << e_d << std::endl;
             std::cout << "--sc                 : The type of self-consistency. Default: " << sc_type << std::endl;
+            std::cout << "Possible values: bethe; dmftcubic1d; dmftcubic2d; dmftcubic3d; dmftcubic4d; dmftcubicinfd; dfcubic1d; dfcubic2d; dfcubic3d; dfcubic4d " << sc_type << std::endl;
             std::cout << "-m     --matsubaras  : Amount of Matsubara frequencies. Default: " << n_freq<< std::endl;
             std::cout << "--ndfreq             : Amount of Matsubara frequencies for DF calc. Default: " << n_dual_freq<< std::endl;
             std::cout << "-n     --niter       : Amount of Matsubara frequencies. Default: " << n_iter<< std::endl;

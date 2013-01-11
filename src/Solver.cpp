@@ -58,13 +58,13 @@ void FKImpuritySolver::run(bool calc_weight)
 template <> 
 ComplexType FKImpuritySolver::getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point> (FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) const 
 {
-    return _v_mult*K0(w1)*K0(w2)*K1(w1)*K1(w2);
+    //return _v_mult*K0(w1)*K0(w2)*K1(w1)*K1(w2)/(gw(w1)*gw(w1)*gw(w2)*gw(w2));
+    return beta*w_0/w_1/(1.0/Sigma(w1) + gw(w1))/(1.0/Sigma(w2) + gw(w2));
 }
  
 template <> 
 ComplexType FKImpuritySolver::getVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point> (BMatsubaraGrid::point wB, FMatsubaraGrid::point wF) const 
 {
-    DEBUG(_v_mult);
     auto w2 = w_grid.shift(wF,wB);
     /*int bindex=BMatsubaraGrid(0,0,w_grid._beta).getNumber(wB);
     FMatsubaraGrid::point w2;
