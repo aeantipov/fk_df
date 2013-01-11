@@ -19,19 +19,70 @@
 
 using namespace FK;
 
-//typedef GridObject<ComplexType,FMatsubaraGrid> GF;
+#ifdef K8
+    static const size_t KPOINTS = 8;
+#elif K16
+    static const size_t KPOINTS = 16;
+#elif K32
+    static const size_t KPOINTS = 32;
+#elif K64
+    static const size_t KPOINTS = 64;
+#else 
+    static const size_t KPOINTS = 16;
+#endif
+RealType beta;
+size_t D = 0;
+
 typedef GFWrap GF;
-typedef GridObject<ComplexType,KMesh,FMatsubaraGrid> GF1d;
-typedef GridObject<ComplexType,KMesh,KMesh,FMatsubaraGrid> GF2d;
-typedef GridObject<ComplexType,KMesh,KMesh,KMesh,FMatsubaraGrid> GF3d;
+
+template <typename F1, typename F2>
+bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
+{
+    return (std::abs(x-y)<tolerance);
+}
 
 bool interrupt = false;
-
 void sighandler(int signal)
 {
     INFO("Caught interrupt, signal " << signal <<". Exiting...")
     interrupt = true;
 }
+
+template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid& gridF)
+{
+    assert(D);
+    INFO("Calculating additional statistics.");
+    const auto &Solver = SC._S;
+    RealType beta = Solver.beta;
+    RealType T=1.0/beta;
+    size_t n_b_freq = 40; // std::max(30,int(beta));
+    BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
+    auto glat = SC.getGLat();
+    GF iw_gf(gridF); 
+    iw_gf.fill([](ComplexType w){return w;});
+    GridObject<RealType,BMatsubaraGrid> chi0_q0(gridB), chi0_qPI(gridB);
+    for (auto iW : gridB.getVals()) {
+        INFO("iW = " << iW);
+        std::array<KMesh::point,SCType::NDim> a0, api;
+        a0.fill(SC._kGrid[0]);
+        api.fill(SC._kGrid[KPOINTS/2]);
+        auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),a0);
+        auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),api);
+        auto glat_shift = glat.shift(args_0);
+        auto glat_shift_pi = glat.shift(args_pi);
+        chi0_q0[size_t(iW)] = -T*std::real((glat*glat_shift).sum()/RealType(pow(KPOINTS,D)));
+        chi0_qPI[size_t(iW)] = -T*std::real((glat*glat_shift_pi).sum()/RealType(pow(KPOINTS,D)));
+        };
+
+    chi0_q0.savetxt("Chi0q0.dat");
+    chi0_qPI.savetxt("Chi0qPI.dat");
+
+    RealType chi0_q0_0 = T*chi0_q0.sum();
+    RealType chi0_qPI_0 = T*chi0_qPI.sum();
+    INFO("Chi0(q=0) sum  = " << chi0_q0_0);
+    INFO("Chi0(q=pi) sum = " << chi0_qPI_0);
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -64,28 +115,15 @@ int main(int argc, char *argv[])
     RealType U = opt.U;
     RealType mu = opt.mu;
     RealType e_d = opt.e_d;
-    RealType beta = opt.beta;
+    beta = opt.beta;
     RealType t = opt.t; 
     size_t n_freq = opt.n_freq;
     size_t n_dual_freq = opt.n_dual_freq;
     size_t maxit = opt.n_iter;
     RealType mix = opt.mix;
     auto sc_switch = opt.sc_index;
+    bool extra_ops = opt.extra_ops;
 
-    size_t D;
-    #ifdef K8
-        static const size_t KPOINTS = 8;
-    #elif K16
-        static const size_t KPOINTS = 16;
-    #elif K32
-        static const size_t KPOINTS = 32;
-    #elif K64
-        static const size_t KPOINTS = 64;
-    #else 
-        static const size_t KPOINTS = 16;
-    #endif
-    
-        
     KMesh kGrid(KPOINTS);
 
     Log.setDebugging(true);
@@ -140,7 +178,7 @@ int main(int argc, char *argv[])
             }
         else { 
             Delta = SC_DF();
-            break; 
+//            break; 
              }
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         diff = Delta_new.diff(Solver.Delta);
@@ -156,6 +194,25 @@ int main(int argc, char *argv[])
     gw_half.savetxt("Gw.dat");
     Delta_half.savetxt("Delta.dat");
     Solver.Delta.savetxt("Delta_full.dat");
+
+    if (extra_ops && D) {
+        switch (sc_switch) {
+            case enumSC::DFCubic1d: 
+                getGwBubble(*(static_cast<DFLadder<FKImpuritySolver,1, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                break;
+            case enumSC::DFCubic2d: 
+                getGwBubble(*(static_cast<DFLadder<FKImpuritySolver,2, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                break;
+            case enumSC::DFCubic3d: 
+                getGwBubble(*(static_cast<DFLadder<FKImpuritySolver,3, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                break;
+            case enumSC::DFCubic4d: 
+                getGwBubble(*(static_cast<DFLadder<FKImpuritySolver,4, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                break;
+            default: break;
+            }; 
+        };
+
 
     SC_DMFT_ptr.release(); 
     SC_DF_ptr.release();

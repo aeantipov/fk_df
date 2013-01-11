@@ -9,6 +9,7 @@ namespace FK {
 template <class Solver, size_t D, size_t ksize=32>
 struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
 
+    using CubicDMFTSC<Solver,D,ksize>::NDim;
     using typename CubicDMFTSC<Solver,D,ksize>::EkStorage;
     typedef typename Solver::GFType GLocalType;
     typedef KMeshPatch qGridType;
@@ -27,6 +28,7 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
     GKType GLat;
     RealType _GDmix = 1.0;
     size_t _n_GD_iter = 100;
+    bool _eval_BS_SC = false;
     RealType _BSmix = 1.0;
     size_t _n_BS_iter = 100;
 public:
@@ -34,10 +36,10 @@ public:
     template <typename ...KP> GLocalType getBubble(BMatsubaraGrid::point W, KP...kpoints) const;
     GKType getGLatDMFT() const { return CubicDMFTSC<Solver,D,ksize>::getGLat(_fGrid); };
     GKType getGLat() const { return GLat; };
+    GKType getGLat(const FMatsubaraGrid &gridF ) const;
     GLocalType getBubble(const WQTupleType& in) const;
     //template <typename ...KP> ComplexType getBubble2(BMatsubaraGrid::point W, KP...kpoints, FMatsubaraGrid::point w1) const;
-    GLocalType operator()(bool eval_BS_SC);
-    GLocalType operator()() { return this->operator()(false); };
+    GLocalType operator()();
 };
 
 } // end of namespace FK

@@ -242,30 +242,44 @@ public:
 	size_t n_iter;
 	std::string sc_type;
     SC sc_index;
+    bool extra_ops;
 	std::string help;
-    //bool calc_vertex;
 
-	FKOptionParser() : beta(10), U(4.0), t(1.0), mu(2.0), e_d(0.0), mix(1.0), n_freq(1024), n_dual_freq(1024), n_iter(100), sc_type("bethe"), sc_index(SC::Bethe), help("") {}
+	FKOptionParser() : 
+          beta(10), 
+          U(4.0), 
+          t(1.0), 
+          mu(2.0), 
+          e_d(0.0),
+          mix(1.0), 
+          n_freq(1024), 
+          n_dual_freq(128), 
+          n_iter(1000), 
+          sc_type("bethe"), 
+          sc_index(SC::Bethe), 
+          extra_ops(false),
+          help("") 
+          {}
 
 	BEGIN_OPTION_MAP_INLINE()
-		ON_OPTION(SHORTOPT('b') || LONGOPT("beta"))
+		ON_OPTION_WITH_ARG(SHORTOPT('b') || LONGOPT("beta"))
 			beta = std::atof(arg);
             //n_freq = (int)std::fabs(beta+0.5);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
-        ON_OPTION(SHORTOPT('U') || LONGOPT("U"))
+        ON_OPTION_WITH_ARG(SHORTOPT('U') || LONGOPT("U"))
 			U = std::atof(arg);
             mu = U/2;
             //n_freq = (int)std::fabs(beta+0.5);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
-        ON_OPTION(SHORTOPT('t') || LONGOPT("t"))
+        ON_OPTION_WITH_ARG(SHORTOPT('t') || LONGOPT("t"))
 			t = std::atof(arg);
             //n_freq = (int)std::fabs(beta+0.5);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
 
-        ON_OPTION(LONGOPT("mu"))
+        ON_OPTION_WITH_ARG(LONGOPT("mu"))
 			mu = std::atof(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
         
@@ -293,6 +307,13 @@ public:
 			n_dual_freq = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
+
+        ON_OPTION(LONGOPT("extraops"))
+            extra_ops = true;
+			used_args = 1;	// Notify the parser of a consumption of argument.
+			// no need of the notification: used_args variable will be set to 1.
+
+
 
         ON_OPTION(SHORTOPT('s') || LONGOPT("sc"))
             sc_type = arg;

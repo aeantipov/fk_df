@@ -71,7 +71,18 @@ ComplexType DFLadder<Solver,D,ksize>::getBubble2(BMatsubaraGrid::point W, KP... 
 }*/
 
 template <class Solver, size_t D, size_t ksize>
-typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator()(bool eval_BS_SC)
+typename DFLadder<Solver,D,ksize>::GKType DFLadder<Solver,D,ksize>::getGLat(const FMatsubaraGrid &gridF ) const
+{
+    GKType out(std::tuple_cat(std::forward_as_tuple(gridF), CubicTraits<D,ksize>::getTuples(_kGrid)));
+    auto f1 = [&](const typename GKType::PointTupleType &in){return this->GLat(in);};
+    auto f2 = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(f1);
+    out.fill(f1);
+    out._f = GLat._f;
+    return out;
+}
+
+template <class Solver, size_t D, size_t ksize>
+typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator()()
 {
     INFO("Using DF Ladder self-consistency in " << D << " dimensions on a cubic lattice of " << ksize << "^" << D <<" atoms.");
     SigmaD = 0.0;
@@ -146,7 +157,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                 RealType max_ev_re = *std::max_element(EVCheckRe.getData().begin(), EVCheckRe.getData().end());
                 RealType max_ev_im = *std::max_element(EVCheckIm.getData().begin(), EVCheckIm.getData().end());
                 INFO("Maximum EV of Chi0*gamma = " << max_ev << "|" << max_ev_re << "|" << max_ev_im);
-                if (std::abs(max_ev-1.0) < 1e-6 || eval_BS_SC) {
+                if (std::abs(max_ev-1.0) < 1e-6 || _eval_BS_SC) {
                     GLocalType IrrVertex4_old(Vertex4);
                     INFO2 ("Caught divergence, evaluating BS equation self_consistently. ");
                     RealType diffBS = 1.0;
@@ -197,7 +208,6 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
     }
     Delta_out = Delta + 1.0/gw * GDLoc / GLatLoc;
     // Assume DMFT asymptotics
-    //Delta_out._f = __fun_traits<decltype(Delta_out._f)>::constant(0);// 
     Delta_out._f = std::bind([&](ComplexType w)->ComplexType{return _t*_t*2*RealType(D)*((_S.mu-_S.w_1*_S.U)/std::abs(w*w) + 1.0/w);}, std::placeholders::_1);
     return Delta_out;
 }

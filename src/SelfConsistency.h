@@ -36,6 +36,7 @@ template <class Solver, size_t D, size_t ksize=32> struct CubicDMFTSC : public S
 protected:
     typedef typename ArgFunGenerator<D,GFType,RealType>::type ArgFunType;
 public:
+    static const size_t NDim = D;
     const RealType _t;
     const KMesh _kGrid;
     mutable EkStorage _ek;
