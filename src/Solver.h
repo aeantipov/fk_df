@@ -38,22 +38,15 @@ public:
     template <typename Arg1, typename Arg2, 
               typename std::enable_if<std::is_convertible<Arg1, ComplexType>::value, int>::type=0, 
               typename std::enable_if<std::is_convertible<Arg2, ComplexType>::value, int>::type=0> 
-        ComplexType getVertex4(Arg1, Arg2) const;
-    //ComplexType getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>(FMatsubaraGrid::point, FMatsubaraGrid::point) const;
- //{return _v_mult*K0(wF)*K0(ComplexType(wF)+ComplexType(WB))*K1(wF)*K1(ComplexType(wF)+ComplexType(WB));};
-};
-
-struct ImpurityVertex4 { 
-private:
-    FKImpuritySolver& _parent;
-    const ComplexType mult = _parent.U*_parent.U*_parent.w_0*_parent.w_1*_parent.beta;
-public:
-    ImpurityVertex4(FKImpuritySolver& in):_parent(in){};
-    //decltype(_parent.gw[0]) operator()(ComplexType w1, ComplexType w2) const
-    ComplexType operator()(ComplexType w1, ComplexType w2) const /// -> ComplexType // decltype(_parent.gw[0])
-    {
-        return mult*_parent.K0(w1)*_parent.K0(w2)*_parent.K1(w1)*_parent.K1(w2);
-    }
+        ComplexType getFVertex4(Arg1 w1, Arg2 w2) const 
+        { return _v_mult*K0(w1)*K0(w2)*K1(w1)*K1(w2)/(gw(w1)*gw(w1)*gw(w2)*gw(w2)); };
+    template <typename Arg1, typename Arg2, 
+              typename std::enable_if<std::is_convertible<Arg1, ComplexType>::value, int>::type=0, 
+              typename std::enable_if<std::is_convertible<Arg2, ComplexType>::value, int>::type=0> 
+        ComplexType getBVertex4(Arg1 O1, Arg2 w1) const { 
+        auto w2 = w_grid.shift(w1,O1);
+        return -this->getFVertex4(w1,w2);
+        };
 };
 
 } // end of namespace FK

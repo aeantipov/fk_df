@@ -42,6 +42,7 @@ protected:
     template <size_t Nc, typename ArgType1, typename ...ArgTypes> struct ContainerExtractor {
         /** Gets the data by values. */
         static ValueType& get(Container<Nc, ValueType> &data, const std::tuple<GridTypes...> &grids, const ArgType1& arg1, const ArgTypes&... args);
+        static ValueType& get(Container<Nc, ValueType> &data, const std::tuple<GridTypes...> &grids, const std::tuple<ArgType1, ArgTypes...>& args); 
         /** Fills the container from function
          * \param[in] data Container to fill
          * \param[in] grids Grids, on which the data is defined. 
@@ -52,6 +53,7 @@ protected:
     /** Specialization of ContainerExtractor for 1-dim container. */
     template <typename ArgType1> struct ContainerExtractor<1,ArgType1> {
         static ValueType& get(Container<1, ValueType> &data, const std::tuple<GridTypes...> &grids, const ArgType1& arg1); 
+        static ValueType& get(Container<1, ValueType> &data, const std::tuple<GridTypes...> &grids, const std::tuple<ArgType1>& arg1); 
         static void set(Container<1, ValueType> &data, const std::tuple<GridTypes...> &grids, const std::function<ValueType(ArgType1)> &f);
         };
 
@@ -94,6 +96,7 @@ public:
 
     /** Return the value by grid values. */
     template <typename ...ArgTypes> ValueType& get(const ArgTypes&... in);
+    template <typename ...ArgTypes> ValueType& get(const std::tuple<ArgTypes...>& in);
     template <typename ...ArgTypes> ValueType operator()(const ArgTypes&... in) const;
     template <typename ...ArgTypes> ValueType operator()(const std::tuple<ArgTypes...>& in) const;
     //template <typename ...ArgTypes> auto operator()(const ArgType1& in)->decltype() const;

@@ -55,29 +55,6 @@ void FKImpuritySolver::run(bool calc_weight)
     //DEBUG("Sigma = " << Sigma);
 }
 
-template <> 
-ComplexType FKImpuritySolver::getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point> (FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) const 
-{
-    //return _v_mult*K0(w1)*K0(w2)*K1(w1)*K1(w2)/(gw(w1)*gw(w1)*gw(w2)*gw(w2));
-    return beta*w_0/w_1/(1.0/Sigma(w1) + gw(w1))/(1.0/Sigma(w2) + gw(w2));
-}
- 
-template <> 
-ComplexType FKImpuritySolver::getVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point> (BMatsubaraGrid::point wB, FMatsubaraGrid::point wF) const 
-{
-    auto w2 = w_grid.shift(wF,wB);
-    /*int bindex=BMatsubaraGrid(0,0,w_grid._beta).getNumber(wB);
-    FMatsubaraGrid::point w2;
-    w2._val=wF._val+wB._val;
-    if (-bindex<int(wF)) {
-        w2._index=wF._index+bindex;
-        return -this->getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>(wF,w2);
-        }
-    else*/ 
-    return -this->getVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>(wF,w2);
-    //return -_v_mult*K0(wF)*K0(ComplexType(wF)+ComplexType(wB))*K1(wF)*K1(ComplexType(wF)+ComplexType(wB));
-}
-
 
 } // end of namespace FK
 

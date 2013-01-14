@@ -82,7 +82,7 @@ template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid&
     INFO("Chi0(q=0) sum  = " << chi0_q0_0);
     INFO("Chi0(q=pi) sum = " << chi0_qPI_0);
 
-    n_b_freq = 40;;
+    n_b_freq = 40;
     auto gridB2 = BMatsubaraGrid(-n_b_freq, n_b_freq+1, beta);
     auto chi0_q0_2 = GridObject<RealType,BMatsubaraGrid>(gridB2); 
     auto chi0_qPI_2 = GridObject<RealType,BMatsubaraGrid>(gridB2); 
