@@ -37,6 +37,7 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize>, DFBase {
     GKType GD;
     GKType SigmaD;
     GKType GLat;
+    GLocalType GLatLoc; 
     SuscType LatticeSusc;
 public:
     DFLadder(const Solver &S, const FMatsubaraGrid& fGrid, const BMatsubaraGrid& bGrid, RealType t);
@@ -47,7 +48,6 @@ public:
     GKType getGLat(const FMatsubaraGrid &gridF ) const;
     //template <typename ...KP> ComplexType getBubble2(BMatsubaraGrid::point W, KP...kpoints, FMatsubaraGrid::point w1) const;
     GLocalType operator()();
-    void calculateStatistics(const std::vector<std::array<KMesh::point,D>> qpts, const BMatsubaraGrid& gridB = _gridB);
 };
 
 } // end of namespace FK

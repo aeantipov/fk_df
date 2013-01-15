@@ -55,32 +55,32 @@ template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid&
     const auto &Solver = SC._S;
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
-    size_t n_b_freq = 40; // std::max(30,int(beta));
-    BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
+    auto gridB = SC._bGrid;
+
     auto glat = SC.getGLat();
+    auto gloc = SC.GLatLoc;
+    
     GF iw_gf(gridF); 
     iw_gf.fill([](ComplexType w){return w;});
-    GridObject<RealType,BMatsubaraGrid> chi0_q0(gridB), chi0_qPI(gridB);
+    GridObject<ComplexType,BMatsubaraGrid> chi_q0(gridB), chi_qPI(gridB);
+
+    std::array<KMesh::point,SCType::NDim> q_0, q_PI;
+    q_0.fill(SC._kGrid[0]);
+    q_PI.fill(SC._kGrid[KPOINTS/2]);
+
     for (auto iW : gridB.getVals()) {
-        INFO("iW = " << iW);
-        std::array<KMesh::point,SCType::NDim> a0, api;
-        a0.fill(SC._kGrid[0]);
-        api.fill(SC._kGrid[KPOINTS/2]);
-        auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),a0);
-        auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),api);
-        auto glat_shift = glat.shift(args_0);
-        auto glat_shift_pi = glat.shift(args_pi);
-        chi0_q0[size_t(iW)] = -T*std::real((glat*glat_shift).sum()/RealType(pow(KPOINTS,D)));
-        chi0_qPI[size_t(iW)] = -T*std::real((glat*glat_shift_pi).sum()/RealType(pow(KPOINTS,D)));
+        auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),q_0);
+        auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),q_PI);
+        chi_q0[size_t(iW)] = SC.LatticeSusc(args_0);
+        chi_qPI[size_t(iW)] = SC.LatticeSusc(args_pi);
         };
 
-    chi0_q0.savetxt("Chi0q0.dat");
-    chi0_qPI.savetxt("Chi0qPI.dat");
-
-    RealType chi0_q0_0 = T*chi0_q0.sum();
-    RealType chi0_qPI_0 = T*chi0_qPI.sum();
-    INFO("Chi0(q=0) sum  = " << chi0_q0_0);
-    INFO("Chi0(q=pi) sum = " << chi0_qPI_0);
+    chi_q0.savetxt("Chiq0.dat");
+    chi_qPI.savetxt("ChiqPI.dat");
+    auto chi_q0_0 = T*chi_q0.sum();
+    auto chi_qPI_0 = T*chi_qPI.sum();
+    INFO("Chi0(q=0) sum  = " << chi_q0_0);
+    INFO("Chi0(q=pi) sum = " << chi_qPI_0);
 }
 
 
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
     size_t n_dual_freq = opt.n_dual_freq;
     RealType mix = opt.mix;
     auto sc_switch = opt.sc_index;
-    bool extra_ops = opt.extra_ops;
+    //bool extra_ops = opt.extra_ops;
     size_t n_dmft_iter = opt.n_dmft_iter;
     size_t n_df_iter = opt.n_df_iter;
     size_t n_df_sc_iter = opt.n_df_sc_iter;
@@ -156,6 +156,7 @@ int main(int argc, char *argv[])
             typedef DFLadder<FKImpuritySolver, 2, KPOINTS> DFSCType;
             SC_DF_ptr.reset(new DFSCType(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
             static_cast<DFSCType*> (SC_DF_ptr.get())->_n_GD_iter = n_df_sc_iter;
+            static_cast<DFSCType*> (SC_DF_ptr.get())->_GDmix = opt.df_sc_mix;
             D=2; break;
         case enumSC::DFCubic3d: 
 //            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, KPOINTS>(Solver, t));
@@ -178,8 +179,9 @@ int main(int argc, char *argv[])
     size_t i_dmft = 0; 
     size_t i_df = 0;
 
-    for (; i_dmft<n_dmft_iter && i_df<n_df_iter && diff>1e-8 &&!interrupt; (calc_DMFT)?i_dmft++:i_df++) {
+    for (; i_dmft<n_dmft_iter && i_df<=n_df_iter && diff>1e-8 &&!interrupt; (calc_DMFT)?i_dmft++:i_df++) {
         INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
+        DEBUG(i_dmft << "|" << i_df);
         if (diff/mix>1e-3) Solver.run(true);
         else Solver.run(false);
         if (calc_DMFT) {  
@@ -192,7 +194,7 @@ int main(int argc, char *argv[])
         diff = Delta_new.diff(Solver.Delta);
         INFO("diff = " << diff);
         Solver.Delta = Delta_new;
-        if ((diff<=1e-8 || i_dmft>=n_dmft_iter) && calc_DMFT) { diff = 1.0; calc_DMFT = false; mix = 1.0; }; // now continue with DF 
+        if (diff<=1e-8 && calc_DMFT) { diff = 1.0; calc_DMFT = false; mix = 1.0; }; // now continue with DF 
         }
    
     GF Delta_half(gridF_half); Delta_half = Delta;
@@ -203,7 +205,7 @@ int main(int argc, char *argv[])
     Delta_half.savetxt("Delta.dat");
     Solver.Delta.savetxt("Delta_full.dat");
 
-    if (extra_ops && D) {
+    if (D) {
         switch (sc_switch) {
             case enumSC::DFCubic1d: 
                 getGwBubble(*(static_cast<DFLadder<FKImpuritySolver,1, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
@@ -226,13 +228,3 @@ int main(int argc, char *argv[])
     SC_DF_ptr.release();
 }
 
-/*
-    DEBUG(Delta(FMatsubara(gridF._w_max-1, beta)));
-    DEBUG(Delta(FMatsubara(gridF._w_max, beta)));
-    DEBUG(Solver.gw(FMatsubara(gridF._w_max-1, beta)));
-    DEBUG(Solver.gw(FMatsubara(gridF._w_max, beta)));
-    DEBUG(Solver.Sigma(FMatsubara(gridF._w_max-1, beta)));
-    DEBUG(Solver.Sigma(FMatsubara(gridF._w_max, beta)));
-*/
-   // exit(0);
- 

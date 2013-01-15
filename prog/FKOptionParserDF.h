@@ -22,6 +22,7 @@ public:
 	size_t n_dmft_iter;
 	size_t n_df_iter;
 	size_t n_df_sc_iter;
+    FK::RealType df_sc_mix;
 	std::string sc_type;
     SC sc_index;
     bool extra_ops;
@@ -39,7 +40,8 @@ public:
           n_dmft_iter(1000), 
           n_df_iter(100), 
           n_df_sc_iter(10), 
-          sc_type("bethe"), 
+          df_sc_mix(1.0),
+          sc_type(""), 
           sc_index(SC::DFCubic1d), 
           extra_ops(false),
           help("") 
@@ -78,17 +80,18 @@ public:
         ON_OPTION_WITH_ARG(LONGOPT("ndmftiter"))
 			n_dmft_iter = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
-			// no need of the notification: used_args variable will be set to 1.
 
         ON_OPTION_WITH_ARG(LONGOPT("ndfiter"))
 			n_df_iter = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
-			// no need of the notification: used_args variable will be set to 1.
 
         ON_OPTION_WITH_ARG(LONGOPT("ndfsciter"))
 			n_df_sc_iter = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
-			// no need of the notification: used_args variable will be set to 1.
+
+        ON_OPTION_WITH_ARG(LONGOPT("dfscmix"))
+		    df_sc_mix = std::atof(arg);
+			used_args = 1;	// Notify the parser of a consumption of argument.
 
 		ON_OPTION_WITH_ARG(SHORTOPT('m') || LONGOPT("nfreq"))
 			n_freq = std::atoi(arg);
