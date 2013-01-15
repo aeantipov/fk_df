@@ -12,13 +12,13 @@ DFDiagrams<D>::DFDiagrams(const FMatsubaraGrid& fGrid, const KMesh& kGrid):_fGri
 
 template <size_t D>
 template <typename ...KP>
-typename DFDiagrams<D>::GLocalType DFDiagrams<D>::getBubble(const GKType& GF, BMatsubaraGrid::point W, KP... q) const
+inline typename DFDiagrams<D>::GLocalType DFDiagrams<D>::getBubble(const GKType& GF, BMatsubaraGrid::point W, KP... q) const
 {
     return this->getBubble(GF, std::forward_as_tuple(W,q...));
 }
 
 template <size_t D>
-typename DFDiagrams<D>::GLocalType DFDiagrams<D>::getBubble(const GKType& GF, const WQTupleType &in) const
+inline typename DFDiagrams<D>::GLocalType DFDiagrams<D>::getBubble(const GKType& GF, const WQTupleType &in) const
 {
     GLocalType out(this->_fGrid);
     GKType GF_shifted(GF.getGrids());
@@ -45,18 +45,18 @@ VertexType DFDiagrams<D>::BS(const VertexType& Chi0, const VertexType &IrrVertex
 {
     VertexType Vertex4_out(IrrVertex4);
     GridObject<RealType,FMatsubaraGrid> EVCheck(_fGrid); 
-    GridObject<RealType,FMatsubaraGrid> EVCheckRe(_fGrid); 
-    GridObject<RealType,FMatsubaraGrid> EVCheckIm(_fGrid); 
+    //GridObject<RealType,FMatsubaraGrid> EVCheckRe(_fGrid); 
+    //GridObject<RealType,FMatsubaraGrid> EVCheckIm(_fGrid); 
     std::function<RealType(FMatsubaraGrid::point)> absEVf = [&](FMatsubaraGrid::point w)->RealType{return std::abs(Chi0(w)*IrrVertex4(w)); };
-    std::function<RealType(FMatsubaraGrid::point)> reEVf = [&](FMatsubaraGrid::point w)->RealType{return std::real(Chi0(w)*IrrVertex4(w)); };
-    std::function<RealType(FMatsubaraGrid::point)> imEVf = [&](FMatsubaraGrid::point w)->RealType{return std::imag(Chi0(w)*IrrVertex4(w)); };
+    //std::function<RealType(FMatsubaraGrid::point)> reEVf = [&](FMatsubaraGrid::point w)->RealType{return std::real(Chi0(w)*IrrVertex4(w)); };
+    //std::function<RealType(FMatsubaraGrid::point)> imEVf = [&](FMatsubaraGrid::point w)->RealType{return std::imag(Chi0(w)*IrrVertex4(w)); };
     EVCheck.fill(absEVf);
-    EVCheckRe.fill(reEVf);
-    EVCheckIm.fill(imEVf);
+    //EVCheckRe.fill(reEVf);
+    //EVCheckIm.fill(imEVf);
     RealType max_ev = *std::max_element(EVCheck.getData().begin(), EVCheck.getData().end());
-    RealType max_ev_re = *std::max_element(EVCheckRe.getData().begin(), EVCheckRe.getData().end());
-    RealType max_ev_im = *std::max_element(EVCheckIm.getData().begin(), EVCheckIm.getData().end());
-    INFO("Maximum EV of Chi0*gamma = " << max_ev << "|" << max_ev_re << "|" << max_ev_im);
+    //RealType max_ev_re = *std::max_element(EVCheckRe.getData().begin(), EVCheckRe.getData().end());
+    //RealType max_ev_im = *std::max_element(EVCheckIm.getData().begin(), EVCheckIm.getData().end());
+    INFO("Maximum EV of Chi0*gamma = " << max_ev); // << "|" << max_ev_re << "|" << max_ev_im);
     if (std::abs(max_ev-1.0) < 1e-6 || eval_SC) {
         VertexType Vertex4_old(IrrVertex4);
         INFO2 ("Caught divergence, evaluating BS equation self_consistently. ");

@@ -7,8 +7,18 @@
 
 namespace FK {
 
+struct DFBase
+{
+    RealType _GDmix = 1.0;
+    size_t _n_GD_iter = 100;
+
+    bool _eval_BS_SC = false;
+    RealType _BSmix = 1.0;
+    size_t _n_BS_iter = 100;
+};
+
 template <class Solver, size_t D, size_t ksize=32>
-struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
+struct DFLadder : CubicDMFTSC<Solver,D,ksize>, DFBase {
 
     using CubicDMFTSC<Solver,D,ksize>::NDim;
     using typename CubicDMFTSC<Solver,D,ksize>::EkStorage;
@@ -28,11 +38,6 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
     GKType SigmaD;
     GKType GLat;
     SuscType LatticeSusc;
-    RealType _GDmix = 1.0;
-    size_t _n_GD_iter = 100;
-    bool _eval_BS_SC = false;
-    RealType _BSmix = 1.0;
-    size_t _n_BS_iter = 100;
 public:
     DFLadder(const Solver &S, const FMatsubaraGrid& fGrid, const BMatsubaraGrid& bGrid, RealType t);
     template <typename ...KP> GLocalType getBubble(const typename DFLadder<Solver,D,ksize>::GKType& GF, BMatsubaraGrid::point W, KP...kpoints) const;
@@ -42,6 +47,7 @@ public:
     GKType getGLat(const FMatsubaraGrid &gridF ) const;
     //template <typename ...KP> ComplexType getBubble2(BMatsubaraGrid::point W, KP...kpoints, FMatsubaraGrid::point w1) const;
     GLocalType operator()();
+    void calculateStatistics(const std::vector<std::array<KMesh::point,D>> qpts, const BMatsubaraGrid& gridB = _gridB);
 };
 
 } // end of namespace FK
