@@ -151,8 +151,8 @@ public:
     template <typename ValType, class ...GridTypes2> friend std::ostream& operator<<(std::ostream& lhs, const GridObject<ValType,GridTypes2...> &in);
     
     class exIOProblem : public std::exception { virtual const char* what() const throw(){return "IO problem.";} }; 
-private:
-    /** Returns a tuple of input args shifted by values from another tuple. */
+    
+/** Returns a tuple of input args shifted by values from another tuple. */
     template <typename OrigArg1, typename ...OrigArgs, typename ArgType1, typename ...ArgTypes, 
         typename std::enable_if<sizeof...(OrigArgs)==sizeof...(ArgTypes), int>::type = 0,  
         typename std::enable_if<sizeof...(OrigArgs)!=0, int>::type = 0 > 

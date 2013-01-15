@@ -22,7 +22,7 @@ DFLadder<Solver,D,ksize>::DFLadder(const Solver &S, const FMatsubaraGrid& fGrid,
     GD(GD0.getGrids()),
     SigmaD(GD0.getGrids()), 
     GLat(GD0.getGrids()),
-    ChiLat(std::tuple_cat(std::make_tuple(_bGrid),CubicTraits<D,ksize>::getTuples(_kGrid))) 
+    LatticeSusc(std::tuple_cat(std::make_tuple(_bGrid),CubicTraits<D,ksize>::getTuples(_kGrid))) 
 {
 };
 
@@ -81,8 +81,10 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
         size_t iwn = size_t(iw);
         GD0[iwn] = GLat[iwn] - gw(iw);
         GDsum[iwn] = GD0[iwn].sum()/RealType(__power<ksize,D>::value);
-        Lwk[iwn] = GLat[iwn]/GD0[iwn]*(-1.0);
     };
+
+    Lwk = GLat/GD0*(-1.0);
+    Lwk._f = __fun_traits<typename GKType::FunctionType>::constant(-1.0);
 
 
     typedef typename GKType::ArgTupleType wkTupleType;
@@ -91,9 +93,9 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
             auto ktuple = __tuple_tail(in);
             ComplexType e = _ek(ktuple);
             return (-e)/std::abs(w*w) -(e*e-_t*_t*2*RealType(D) - 2.0*e*(_S.mu - _S.Sigma._f(w)))/w/std::abs(w*w); 
+            //return (-e)/std::abs(w*w) -(e*e-_t*_t*2*RealType(D) - 2.0*e*(_S.mu - _S.w_1*_S.U))/w/std::abs(w*w); 
             };
     GD0._f = __fun_traits<typename GKType::FunctionType>::getFromTupleF(gd_f);
-    Lwk._f = __fun_traits<typename GKType::FunctionType>::constant(-1.0);
 
 
     GDsum.savetxt("GDsum.dat");
@@ -102,12 +104,13 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
     // Put here operations with GD
     GLocalType Vertex4(_fGrid);
     GLocalType Chi0(_fGrid);
-    GKType LLGG(wkgrids);
 
     INFO("Starting ladder dual fermion calculations")
     RealType diffGD = 1.0;
     for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > 1e-8; ++nd_iter) { 
         INFO("DF iteration " << nd_iter);
+        auto GDL = GD*Lwk;
+        GKType addSigma(this->SigmaD.getGrids());
         INFO("Evaluating Bethe-Salpeter equation");
 
         for (auto iW : _bGrid.getVals()) {
@@ -127,41 +130,28 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                 WQTupleType Wq_args = std::tuple_cat(std::forward_as_tuple(iW),q);
                 
                 INFO_NONEWLINE("\t" << nq << "/" << totalqpts<< ". ");
-                DEBUG("qx = " << q[0] << ", qy = " << q[1]);
+                //DEBUG("qx = " << q[0] << ", qy = " << q[1]);
 
                 // Bethe-Salpeter vertex
                 Chi0 = Diagrams.getBubble(GD, Wq_args);
                 auto FullDualVertex4 = Diagrams.BS(Chi0, Vertex4, _eval_BS_SC, _n_BS_iter, _BSmix);
-                auto ChiLat0 = Diagrams.getBubble(GLat, Wq_args);
+                GLocalType ChiLat0 = Diagrams.getBubble(GLat, Wq_args);
                 
-                // At this moment the irreducible dual vertex is calculated - now dual sigma can be updated and lattice quantities can be estimated.
-                auto GD_shift = GD.shift(Wq_args);
                 // Lattice susceptibility
-                auto L_shift_Wq = Lwk.shift(Wq_args);
-                auto LLGG = Lwk*GD*L_shift_Wq*GD_shift; 
-                GLocalType LLGG_w(this->_fGrid);
-                typename GLocalType::PointFunctionType LLGG_w_f = [&](FMatsubaraGrid::point w1){return LLGG[size_t(w1)].sum()/RealType(__power<ksize,D>::value);};
-                LLGG_w.fill(LLGG_w_f);
-                auto ChiL = LLGG_w*FullDualVertex4*LLGG_w;
-                //DEBUG(ChiL);
-                auto ChiVal = -T*ChiL.sum();
-                auto ChiVal0 = ChiLat0.sum();
-                DEBUG(ChiVal);
-                DEBUG(ChiVal0);
-                ChiLat.get(Wq_args) = ChiVal+ChiVal0;
-                //DEBUG(ChiLat);
+                auto GDL_chi0 = Diagrams.getBubble(GDL, Wq_args);
+                auto ChiLat = GDL_chi0*FullDualVertex4*GDL_chi0 + ChiLat0;
+                auto ChiVal = -T*ChiLat.sum();
+                LatticeSusc.get(Wq_args) = ChiVal;
                 // Sigma
+                auto GD_shift = GD.shift(Wq_args);
                 typename GKType::PointFunctionType SigmaF;
                 auto SigmaF2 = [&](wkTupleType in)->ComplexType { 
                     ComplexType w = std::get<0>(in);
                     return 0.5*Vertex4(w)*Chi0(w)*GD_shift(in)*FullDualVertex4(w);
                     };
                 SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
-                GKType tmp(this->SigmaD.getGrids());
-                tmp.fill(SigmaF);
-                //DEBUG("Vertex4 = " << Vertex4);
-                //DEBUG("FullDualVertex4 = " << FullDualVertex4);
-                SigmaD+=tmp*T/2.0/totalqpts;
+                addSigma.fill(SigmaF);
+                SigmaD+=addSigma*T/2.0/totalqpts;
                 } // end of q loop
         }; //end of iW loop
 
@@ -177,8 +167,6 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
             };
     };
     INFO("Finished DF iterations");
-    DEBUG(ChiLat);
-    exit(0);
 
     // Finish - prepare all lattice quantities
     for (auto iw : _fGrid.getVals()) {

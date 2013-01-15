@@ -21,8 +21,8 @@ void FKImpuritySolver::run(bool calc_weight)
     iw.fill(iw_f);
     K0 = 1.0/(iw+mu-Delta);
     K1 = 1.0/(iw+mu-Delta-U);
-    K0._f = [this](ComplexType w)->ComplexType{return 1.0/(w+mu-Delta._f(w));};
-    K1._f = [this](ComplexType w)->ComplexType{return 1.0/(w+mu-Delta._f(w)-U);};
+    K0._f = [=](ComplexType w)->ComplexType{return 1.0/(w+mu-Delta._f(w));};
+    K1._f = [=](ComplexType w)->ComplexType{return 1.0/(w+mu-Delta._f(w)-U);};
    
     if (calc_weight) {
         std::function<RealType(FMatsubaraGrid::point)> tempF = [this](FMatsubaraGrid::point w){
@@ -49,9 +49,9 @@ void FKImpuritySolver::run(bool calc_weight)
     INFO("w_0 = " << w_0 << "; w_1 = " << w_1 );
     gw = K0*w_0 + K1*w_1;
     Sigma = U*U*w_1*w_0/(1.0/K0-w_0*U) + w_1*U; 
-    Sigma._f = std::bind([this](ComplexType w){return w_1*U + w_0*w_1*U*U/w;}, std::placeholders::_1);
+    Sigma._f = std::bind([=](ComplexType w){return w_1*U + w_0*w_1*U*U/w + w_0*w_1*U*U*(mu-w_0*U)/std::abs(w*w);}, std::placeholders::_1);
     //gw._f = std::bind([=](ComplexType w){return (mu-w_1*U-real(Delta._f(w)))/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
-    gw._f = std::bind([this](ComplexType w){return (mu-w_1*U)/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
+    gw._f = std::bind([=](ComplexType w){return (mu-w_1*U)/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
     //DEBUG("Sigma = " << Sigma);
 }
 

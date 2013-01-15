@@ -145,20 +145,21 @@ int main(int argc, char *argv[])
     KMeshPatch qGrid(kGrid);
     switch (sc_switch) {
         case enumSC::DFCubic1d: 
-            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,1, KPOINTS>(Solver, t));
-            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 1, KPOINTS>(Solver, gridF, BMatsubaraGrid(0,n_dual_freq, beta), {{qGrid}}, t)); 
+  //          SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,1, KPOINTS>(Solver, t));
+  //          SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 1, KPOINTS>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
             D=1; break;
         case enumSC::DFCubic2d: 
             SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2, KPOINTS>(Solver, t));
-            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 2, KPOINTS>(Solver, gridF, BMatsubaraGrid(0,n_dual_freq, beta), {{qGrid,qGrid}}, t)); 
+            //SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 2, KPOINTS>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 2, KPOINTS>(Solver, gridF, BMatsubaraGrid(1,2, beta), t)); 
             D=2; break;
         case enumSC::DFCubic3d: 
-            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, KPOINTS>(Solver, t));
-            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 3, KPOINTS>(Solver, gridF, BMatsubaraGrid(0,n_dual_freq, beta), {{qGrid,qGrid,qGrid}}, t)); 
+//            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, KPOINTS>(Solver, t));
+//            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 3, KPOINTS>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
             D=3; break;
         case enumSC::DFCubic4d: 
-            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,4, KPOINTS>(Solver, t));
-            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 4, KPOINTS>(Solver, gridF, BMatsubaraGrid(0,n_dual_freq, beta), {{qGrid,qGrid,qGrid,qGrid}}, t)); 
+//            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,4, KPOINTS>(Solver, t));
+//            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 4, KPOINTS>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
             D=4; break;
         default:
             ERROR("Couldn't find the desired SC type. Exiting.");

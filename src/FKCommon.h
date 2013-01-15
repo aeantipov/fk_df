@@ -110,9 +110,9 @@ template <typename FunctionType> struct __fun_traits;
 template <typename ValType, typename ... ArgTypes> 
 struct __fun_traits<std::function<ValType(ArgTypes...)> >
 {
-    static std::function<ValType(ArgTypes...)> constant(const ValType &c) 
+    static std::function<ValType(ArgTypes...)> constant(ValType c) 
     { return [c](ArgTypes...in){return c;};}
-    static std::function<ValType(ArgTypes...)> add(const std::function<ValType(ArgTypes...)> &f1, const std::function<ValType(ArgTypes...)>& f2)
+    /*static std::function<ValType(ArgTypes...)> add(const std::function<ValType(ArgTypes...)> &f1, const std::function<ValType(ArgTypes...)>& f2)
     { return [f1,f2](ArgTypes... in){return f1(in...)+f2(in...);}; }
     static std::function<ValType(ArgTypes...)> multiply(const std::function<ValType(ArgTypes...)> &f1, const std::function<ValType(ArgTypes...)> &f2)
     { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
@@ -120,9 +120,10 @@ struct __fun_traits<std::function<ValType(ArgTypes...)> >
     { return [f1,f2](ArgTypes... in){return f1(in...)-f2(in...);}; }
     static std::function<ValType(ArgTypes...)> divide(const std::function<ValType(ArgTypes...)> &f1, const std::function<ValType(ArgTypes...)> &f2)
     { return [f1,f2](ArgTypes... in){return f1(in...)*f2(in...);}; }
-    static std::function<ValType(ArgTypes...)> getFromTupleF(const std::function<ValType(std::tuple<ArgTypes...>)>& f1)
+    */
+    static std::function<ValType(ArgTypes...)> getFromTupleF(std::function<ValType(std::tuple<ArgTypes...>)> f1)
     { return [f1](ArgTypes...in){return f1(std::forward_as_tuple(in...));};}
-    static std::function<ValType(std::tuple<ArgTypes...>)> getTupleF(const std::function<ValType(ArgTypes...)>& f1)
+    static std::function<ValType(std::tuple<ArgTypes...>)> getTupleF(std::function<ValType(ArgTypes...)> f1)
     { return [f1](const std::tuple<ArgTypes...> &in)->ValType{ __caller<ValType,ArgTypes...> t; t = {in, f1}; return t.call();};}
 };
 

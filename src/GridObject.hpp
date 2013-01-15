@@ -282,8 +282,10 @@ template <typename ValueType, typename ...GridTypes>
 template <typename U, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type>
 RealType GridObject<ValueType,GridTypes...>::diff(const GridObject<ValueType,GridTypes...>& rhs) const
 {
-    auto outObj = (*this)-rhs;
-    outObj*=outObj.conj();
+    GridObject outObj(_grids);
+    auto f1 = [&](PointTupleType in){return std::abs((*this)(in) - rhs(in));};
+    PointFunctionType f = __fun_traits<PointFunctionType>::getFromTupleF(f1); 
+    outObj.fill(f);
     RealType norm = 1.0;
     for (auto v : _dims) { norm*=v; };
     return std::real(outObj.sum())/norm;
@@ -293,10 +295,12 @@ template <typename ValueType, typename ...GridTypes>
 template <typename U, typename std::enable_if<std::is_same<U, RealType>::value, int>::type>
 RealType GridObject<ValueType,GridTypes...>::diff(const GridObject<ValueType,GridTypes...>& rhs) const
 {
-    auto outObj = (*this)-rhs;
-    outObj*=outObj;
+    GridObject outObj(_grids);
+    auto f1 = [&](PointTupleType in){return std::abs((*this)(in) - rhs(in));};
+    PointFunctionType f = __fun_traits<PointFunctionType>::getFromTupleF(f1); 
+    outObj.fill(f);
     RealType norm = 1.0;
-    for (auto v : _dims) norm*=v;
+    for (auto v : _dims) { norm*=v; };
     return std::real(outObj.sum())/norm;
 }
 
@@ -345,7 +349,8 @@ GridObject<ValueType,GridTypes...> GridObject<ValueType,GridTypes...>::shift(con
     PointFunctionType fillF = __fun_traits<PointFunctionType>::getFromTupleF(ShiftFunction);
     out.fill(fillF);
     
-    auto ShiftAnalyticF = [&](const ArgTupleType& in)->ValueType {
+    static std::function<ValueType(ArgTupleType)> ShiftAnalyticF;
+    ShiftAnalyticF = [this, shift_args](const ArgTupleType& in)->ValueType {
         ArgTupleType out_args = _shiftArgs(in,shift_args); 
         return __get_f(out_args);
     };

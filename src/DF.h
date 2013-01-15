@@ -27,7 +27,7 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize> {
     GKType GD;
     GKType SigmaD;
     GKType GLat;
-    SuscType ChiLat;
+    SuscType LatticeSusc;
     RealType _GDmix = 1.0;
     size_t _n_GD_iter = 100;
     bool _eval_BS_SC = false;

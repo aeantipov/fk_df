@@ -158,6 +158,7 @@ typename CubicDMFTSC<Solver,D,ksize>::GKType CubicDMFTSC<Solver,D,ksize>::getGLa
         ComplexType w = std::get<0>(in);
         auto ktuple = __tuple_tail(in);
         return (_S.mu - _S.Sigma._f(w)-_ek(ktuple))/std::abs(w*w)+1.0/w;
+        //return (_S.mu - _S.w_1*_S.U-_ek(ktuple))/std::abs(w*w)+1.0/w;
         };
     out._f = __fun_traits<typename GKType::FunctionType>::getFromTupleF(glatdmft_f);
 

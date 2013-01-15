@@ -24,6 +24,10 @@ typename DFDiagrams<D>::GLocalType DFDiagrams<D>::getBubble(const GKType& GF, co
     GKType GF_shifted(GF.getGrids());
     GF_shifted = GF.shift(in);
     GF_shifted*=GF;
+    //auto f1= [ &GF, in](typename GKType::ArgTupleType x){return GF._f(GF._shiftArgs(x,in))*GF._f(x);};
+    //GF_shifted._f=__fun_traits< 
+    
+
     //GKType GD_shifted(GD.shift(in)*GD); // G(w+W,k+Q)
 
     for (auto iw: _fGrid.getVals()) { 

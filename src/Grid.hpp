@@ -259,7 +259,7 @@ inline std::tuple <bool, size_t, RealType> RealGrid::find (RealType in) const
     DEBUG("Invoking find");
     #endif
     if (in<_min) { ERROR("Point to find is out of bounds, " << in << "<" << _min ); return std::make_tuple(0,0,0); };
-    if (in>_max) { ERROR("Point to find is out of bounds, " << in << ">" << _max ); return std::make_tuple(0,_vals.size(),0); };
+    if (in>=_max) { ERROR("Point to find is out of bounds, " << in << ">" << _max ); return std::make_tuple(0,_vals.size(),0); };
     auto out = std::lower_bound (_vals.begin(), _vals.end(), in);
     size_t i = size_t(out-_vals.begin());
     RealType val_i = _vals[i];
