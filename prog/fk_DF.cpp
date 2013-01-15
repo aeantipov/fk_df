@@ -9,7 +9,7 @@
 #include "SelfConsistency.h"
 #include "DF.h"
 
-#include "OptionParser.h"
+#include "FKOptionParserDF.h"
 
 #include <iostream>
 #include <ctime>
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
   std::signal(SIGTERM, &sighandler);
   std::signal(SIGINT , &sighandler);
 
-  FKOptionParser opt;
+  FKOptionParserDF opt;
    try {
         opt.parse(&argv[1], argc-1); // Skip argv[0].
         INFO("Hi! Doing Falicov-Kimball. ");
@@ -103,7 +103,8 @@ int main(int argc, char *argv[])
         std::cout << "e_d                  : " << opt.e_d << std::endl;
         std::cout << "Selfconsistency      : " << opt.sc_type << std::endl;
         std::cout << "Number Of Matsubaras : " << opt.n_freq << std::endl;
-        std::cout << "Max number of iterations : " << opt.n_iter << std::endl;
+        std::cout << "Max number of DMFT iterations : " << opt.n_dmft_iter << std::endl;
+        std::cout << "Max number of DF   iterations : " << opt.n_df_iter << std::endl;
     } catch (const optparse::unrecognized_option& e) {
         std::cout << "unrecognized option: " << e.what() << std::endl;
         return 1;
@@ -119,10 +120,12 @@ int main(int argc, char *argv[])
     RealType t = opt.t; 
     size_t n_freq = opt.n_freq;
     size_t n_dual_freq = opt.n_dual_freq;
-    size_t maxit = opt.n_iter;
     RealType mix = opt.mix;
     auto sc_switch = opt.sc_index;
     bool extra_ops = opt.extra_ops;
+    size_t n_dmft_iter = opt.n_dmft_iter;
+    size_t n_df_iter = opt.n_df_iter;
+    size_t n_df_sc_iter = opt.n_df_sc_iter;
 
     KMesh kGrid(KPOINTS);
 
@@ -141,7 +144,7 @@ int main(int argc, char *argv[])
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     
     std::unique_ptr<SelfConsistency<FKImpuritySolver>> SC_DF_ptr, SC_DMFT_ptr;
-    typedef FKOptionParser::SC enumSC;
+    typedef FKOptionParserDF::SC enumSC;
     KMeshPatch qGrid(kGrid);
     switch (sc_switch) {
         case enumSC::DFCubic1d: 
@@ -150,8 +153,9 @@ int main(int argc, char *argv[])
             D=1; break;
         case enumSC::DFCubic2d: 
             SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2, KPOINTS>(Solver, t));
-            //SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 2, KPOINTS>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
-            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 2, KPOINTS>(Solver, gridF, BMatsubaraGrid(1,2, beta), t)); 
+            typedef DFLadder<FKImpuritySolver, 2, KPOINTS> DFSCType;
+            SC_DF_ptr.reset(new DFSCType(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            static_cast<DFSCType*> (SC_DF_ptr.get())->_n_GD_iter = n_df_sc_iter;
             D=2; break;
         case enumSC::DFCubic3d: 
 //            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, KPOINTS>(Solver, t));
@@ -170,8 +174,12 @@ int main(int argc, char *argv[])
   
     RealType diff=1.0;
     bool calc_DMFT = true;
-    for (int i=0; i<maxit && diff>1e-8 &&!interrupt; ++i) {
-        INFO("Iteration " << i <<". Mixing = " << mix);
+
+    size_t i_dmft = 0; 
+    size_t i_df = 0;
+
+    for (; i_dmft<n_dmft_iter && i_df<n_df_iter && diff>1e-8 &&!interrupt; (calc_DMFT)?i_dmft++:i_df++) {
+        INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
         if (diff/mix>1e-3) Solver.run(true);
         else Solver.run(false);
         if (calc_DMFT) {  
@@ -179,13 +187,12 @@ int main(int argc, char *argv[])
             }
         else { 
             Delta = SC_DF();
-//            break; 
              }
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         diff = Delta_new.diff(Solver.Delta);
         INFO("diff = " << diff);
         Solver.Delta = Delta_new;
-        if (diff<=1e-8 && calc_DMFT) { diff = 1.0; calc_DMFT = false; }; // now continue with DF 
+        if ((diff<=1e-8 || i_dmft>=n_dmft_iter) && calc_DMFT) { diff = 1.0; calc_DMFT = false; mix = 1.0; }; // now continue with DF 
         }
    
     GF Delta_half(gridF_half); Delta_half = Delta;

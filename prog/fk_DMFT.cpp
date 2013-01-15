@@ -9,7 +9,7 @@
 #include "SelfConsistency.h"
 #include "DF.h"
 
-#include "OptionParser.h"
+#include "FKOptionParserDMFT.h"
 
 #include <iostream>
 #include <ctime>
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   std::signal(SIGTERM, &sighandler);
   std::signal(SIGINT , &sighandler);
 
-  FKOptionParser opt;
+  FKOptionParserDMFT opt;
    try {
         opt.parse(&argv[1], argc-1); // Skip argv[0].
         INFO("Hi! Doing Falicov-Kimball. ");
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
     FKImpuritySolver Solver(U,mu,e_d,Delta);
 
     std::unique_ptr<SelfConsistency<FKImpuritySolver>> SC_ptr;
-    typedef FKOptionParser::SC enumSC;
+    typedef FKOptionParserDMFT::SC enumSC;
     switch (sc_switch) {
         case enumSC::Bethe:       SC_ptr.reset(new BetheSC<FKImpuritySolver>(Solver, t)); break;
         case enumSC::DMFTCubic1d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,1, KPOINTS>(Solver, t)); D=1; break;
