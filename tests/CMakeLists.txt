@@ -18,6 +18,7 @@ DMFTBetheTest
 DMFTCubicSuscTest
 DMFT_DFCubicTest01
 DMFT_DFCubicTest02
+DMFT_DFCubicTest03
 )
 
 foreach (test ${tests})

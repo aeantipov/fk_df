@@ -150,6 +150,8 @@ int main()
     if (!is_equal(chiDF0_q0.diff(chiDF1_q0),0,1e-5)) { ERROR("Susceptibilities don't match with DF value"); return EXIT_FAILURE; }
     DEBUG(chiDF0_qPI);
     DEBUG(chiDF1_qPI);
+    DEBUG(chiDF1_qPI-chiDF0_qPI);
+    
     DEBUG(chiDF1_qPI.diff(chiDF0_qPI));
     if (!is_equal(chiDF0_qPI.diff(chiDF1_qPI),0,1e-5)) { ERROR("Susceptibilities don't match with DF value"); return EXIT_FAILURE; }
     

@@ -65,4 +65,9 @@ int main()
     fV = std::bind(&FKImpuritySolver::getBVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(Solver), iW, std::placeholders::_1); 
     VertexG.fill(fV);
 
+    auto &Gw = Solver.gw;
+    auto Gw_shift = Solver.gw.shift(gridB[3]);
+    DEBUG(Gw_shift(FMatsubara(grid.getSize()-1,beta)));
+    DEBUG(Gw._f(FMatsubara(grid.getSize(),beta)));
+
 }
