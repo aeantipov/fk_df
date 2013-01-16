@@ -48,14 +48,15 @@ void sighandler(int signal)
     interrupt = true;
 }
 
-template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid& gridF)
+template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& gridF)
 {
     assert(D);
     INFO("Calculating additional statistics.");
     const auto &Solver = SC._S;
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
-    auto gridB = SC._bGrid;
+    size_t n_b_freq = std::max(15,int(beta));
+    BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
 
     auto glat = SC.getGLat();
     auto gloc = SC.GLatLoc;
@@ -63,6 +64,8 @@ template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid&
     GF iw_gf(gridF); 
     iw_gf.fill([](ComplexType w){return w;});
     GridObject<ComplexType,BMatsubaraGrid> chi_q0(gridB), chi_qPI(gridB);
+
+    SC.calculateLatticeData(gridB); // Heavy operation
 
     std::array<KMesh::point,SCType::NDim> q_0, q_PI;
     q_0.fill(SC._kGrid[0]);
@@ -77,10 +80,12 @@ template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid&
 
     chi_q0.savetxt("Chiq0.dat");
     chi_qPI.savetxt("ChiqPI.dat");
-    auto chi_q0_0 = T*chi_q0.sum();
-    auto chi_qPI_0 = T*chi_qPI.sum();
+    auto chi_q0_0 = -T*chi_q0.sum();
+    auto chi_qPI_0 = -T*chi_qPI.sum();
     INFO("Chi0(q=0) sum  = " << chi_q0_0);
     INFO("Chi0(q=pi) sum = " << chi_qPI_0);
+
+    SC.GLatLoc.savetxt("gloc.dat");
 }
 
 
@@ -208,16 +213,16 @@ int main(int argc, char *argv[])
     if (D) {
         switch (sc_switch) {
             case enumSC::DFCubic1d: 
-                getGwBubble(*(static_cast<DFLadder<FKImpuritySolver,1, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,1, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic2d: 
-                getGwBubble(*(static_cast<DFLadder<FKImpuritySolver,2, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,2, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic3d: 
-                getGwBubble(*(static_cast<DFLadder<FKImpuritySolver,3, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,3, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic4d: 
-                getGwBubble(*(static_cast<DFLadder<FKImpuritySolver,4, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,4, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
                 break;
             default: break;
             }; 

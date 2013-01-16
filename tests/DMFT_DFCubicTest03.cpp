@@ -68,7 +68,7 @@ int main()
     DFLadder<FKImpuritySolver, 2, KPOINTS> SC_DF(Solver, gridF, gridB, t);
     SC_DF._n_GD_iter = 1;
     SC_DF._GDmix = 0.0;
-    SC_DF();
+    SC_DF.calculateLatticeData(gridB);
   
     /* Checking the charge susc as opposed to a pure DMFT value. */ 
     auto iW = gridB[0];
@@ -107,7 +107,9 @@ int main()
         ERROR("Full lattice susc doesn't correspond to the analytical value at q=0");
         return EXIT_FAILURE;
         };
-    auto ChiVal = -T*SuscDMFT.sum();
+    auto ChiVal = T*SuscDMFT.sum();
+    DEBUG(ChiVal);
+    DEBUG(SC_DF.LatticeSusc(gridB[0],0,0));
     if (!is_equal(SC_DF.LatticeSusc(gridB[0],0,0), ChiVal)) { 
         ERROR("Full lattice susc doesn't correspond to the analytical value at q=0");
         return EXIT_FAILURE;

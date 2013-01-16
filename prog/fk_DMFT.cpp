@@ -7,7 +7,6 @@
 #include "GFWrap.h"
 #include "Solver.h"
 #include "SelfConsistency.h"
-#include "DF.h"
 
 #include "FKOptionParserDMFT.h"
 
