@@ -3,6 +3,8 @@
 
 #include "Diagrams.h"
 
+#include <Eigen/LU>
+
 namespace FK {
 
 template <class Solver>
@@ -26,29 +28,37 @@ inline typename SelfConsistency<Solver>::GFType SelfConsistency<Solver>::getLatt
 template <class Solver>
 inline GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> SelfConsistency<Solver>::getStaticLatticeDMFTVertex4() const
 {
-    INFO2("Obtaining vertex from Solver");
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4(std::forward_as_tuple(_S.w_grid,_S.w_grid)); 
-    typename decltype(Vertex4)::PointFunctionType VertexFillf = 
-        std::bind(&FKImpuritySolver::getFVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(_S), std::placeholders::_1, std::placeholders::_2); 
-    typename decltype(Vertex4)::FunctionType Vertexf = 
-        std::bind(&FKImpuritySolver::getFVertex4<ComplexType, ComplexType>, std::cref(_S), std::placeholders::_1, std::placeholders::_2); 
-    Vertex4.fill(VertexFillf);
-    Vertex4._f = Vertexf;
+    INFO_NONEWLINE("\tObtaining vertex from Solver and static 2-freq susceptibility...");
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4_out(std::forward_as_tuple(_S.w_grid,_S.w_grid)); 
+    decltype(Vertex4_out)::PointFunctionType Chi0fillF = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.gw(w1)*_S.gw(w2);};
 
-    INFO2("Obtaining static 2-freq susceptibility");
-    decltype(Vertex4) Chi0(Vertex4.getGrids());
-    decltype(Vertex4)::PointFunctionType Chi0fillF = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.gw(w1)*_S.gw(w2);};
-    Chi0.fill(Chi0fillF);
+    size_t size = _S.w_grid.getSize();
+
+    MatrixType<ComplexType> Vertex4(size,size);
+    MatrixType<ComplexType> Chi0(size,size);
+    for (auto w1:_S.w_grid.getVals()) { 
+        for (auto w2 : _S.w_grid.getVals()) {
+            Chi0(size_t(w1),size_t(w2)) = Chi0fillF(w1,w2);
+            Vertex4(size_t(w1),size_t(w2)) = _S.getFVertex4(w1,w2); 
+            };
+        };
+    INFO("done");
 
     INFO_NONEWLINE("\tRunning inverse BS equation...");
-    auto Vertex4_out = Diagrams::BS(Chi0, Vertex4);
+    Vertex4 *= (Chi0 * Vertex4+decltype(Vertex4)::Identity(size,size)).inverse();
     INFO2("done");
+    
+    INFO_NONEWLINE("\tFilling output vertex...");
+    typename decltype(Vertex4_out)::PointFunctionType VertexFillf = [&Vertex4](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) 
+        { return Vertex4(size_t(w1),size_t(w2)); }; 
+    Vertex4_out.fill(VertexFillf);
+    INFO("done.");
     return Vertex4_out;
 }
 
 template <class Solver>
 template <typename MPoint>
-inline typename SelfConsistency<Solver>::GFType SelfConsistency<Solver>::getBubblePI(MPoint in)
+inline typename SelfConsistency<Solver>::GFType SelfConsistency<Solver>::getBubblePI(MPoint in) const
 {
     GFType out(this->_S.w_grid);
     GFType gw_shift(_S.gw), Sigma_shift(_S.Sigma);
@@ -250,6 +260,29 @@ inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>:
     return out;
 }
 
+template <class Solver, size_t D, size_t ksize>
+template <typename MPoint>
+inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::getBubble0(MPoint in) const
+{
+    std::array<KMesh::point,D> q;
+    auto q1 = _kGrid.findClosest(0.0);
+    q.fill(q1);
+    auto args = std::tuple_cat(std::forward_as_tuple(in),q);
+    return Diagrams::getBubble(this->getGLat(_S.w_grid),args);
+}
+
+template <class Solver, size_t D, size_t ksize>
+template <typename MPoint>
+inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::getBubblePI(MPoint in) const
+{
+    std::array<KMesh::point,D> q;
+    auto q1 = _kGrid.findClosest(PI);
+    q.fill(q1);
+    auto args = std::tuple_cat(std::forward_as_tuple(in),q);
+    return Diagrams::getBubble(this->getGLat(_S.w_grid),args);
+}
+
+
 //
 // CubicInfDMFTSC
 //
@@ -284,6 +317,17 @@ inline typename CubicInfDMFTSC<Solver>::GFType CubicInfDMFTSC<Solver>::operator(
     }; 
     return out;
 }
+
+template <class Solver>
+template <typename MPoint>
+inline typename CubicInfDMFTSC<Solver>::GFType CubicInfDMFTSC<Solver>::getBubble0(MPoint in) const
+{
+    auto T = 1.0/_S.w_grid._beta;
+    GFType iwn(_S.w_grid);
+    iwn.fill([](ComplexType w){return w;});
+    return 2.0*T/_t/_t*(1.0-(iwn+_S.mu-_S.Sigma)*_S.gw);
+} 
+
 
 
 } // end of namespace FK

@@ -70,6 +70,14 @@ typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::shift(point in,
 }
 
 template <typename ValueType, class Derived>
+typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::findClosest(ValueType in) const
+{
+    auto find_result = find(in);
+    if (!std::get<0>(find_result)) { ERROR("Couldn't find the closest point"); throw (exWrongIndex()); };
+    return point(std::get<1>(find_result),in);
+} 
+
+template <typename ValueType, class Derived>
 template <class ArgType>
 ValueType Grid<ValueType,Derived>::shift(ValueType in, ArgType shift_arg) const
 {

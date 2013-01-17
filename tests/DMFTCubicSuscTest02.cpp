@@ -25,7 +25,7 @@ int main()
 {
     INFO("Hi! Doing Falicov-Kimball. ");
     RealType U = 4.0;
-    RealType mu = 2.0;
+    RealType mu = U/2;
     RealType e_d = 0.0;
     RealType beta = 10;
     RealType T = 1.0/beta;
@@ -60,8 +60,8 @@ int main()
     bool success = false;
 
     INFO("Static susc");
-    auto Bubbleq0 = SC.getBubblePI(0.0);
-    auto BubbleqPI = SC.getBubblePI(0.0)*(-1.0); 
+    auto Bubbleq0 = SC.getBubble0(0.0);
+    auto BubbleqPI = SC.getBubblePI(0.0); 
     auto StaticV4 = SC.getStaticLatticeDMFTVertex4();
     GF susc0(gridF), suscPI(gridF);
     for (auto w1: gridF.getVals()) { 

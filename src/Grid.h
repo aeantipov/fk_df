@@ -74,6 +74,8 @@ public:
     /** Returns a tuple of left closest index, weight, right closest index and weight, which are the closest to input value. */
     std::tuple <bool, size_t, RealType> find (ValueType in) const 
         { return static_cast<const Derived*>(this)->find(in); };
+    /** Returns the closest point to the given value. */
+    point findClosest(ValueType in) const;
     /** Integrate over grid. */
     template <class Obj> auto integrate(const Obj &in) const ->decltype(in[_vals[0]]) 
         { return static_cast<const Derived*>(this)->integrate(in); };

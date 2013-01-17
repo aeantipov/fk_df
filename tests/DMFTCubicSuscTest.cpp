@@ -115,11 +115,11 @@ int main()
     if (!success) {ERROR("Gw out of solver != sum_k glat."); return EXIT_FAILURE; };
 
 
-    GridObject<RealType,BMatsubaraGrid> chi0_q0_vals(gridB), chi0_q0_vals_2(gridB), chi0_qPI_vals(gridB), chi0_qPI_vals_2(gridB);
+    GridObject<RealType,BMatsubaraGrid> chi0_q0_vals(gridB), chi0_q0_dmft_vals(gridB), chi0_qPI_vals(gridB), chi0_qPI_dmft_vals(gridB);
     GridObject<RealType,BMatsubaraGrid> chi_q0_vals(gridB), chi_qPI_vals(gridB), chi_q0_dmft_vals(gridB), chi_qPI_dmft_vals(gridB);
     GF iw_gf(gridF); 
     iw_gf.fill([](ComplexType w){return w;});
-    decltype(chi0_q0_vals_2)::PointFunctionType chi0_q0_vals_f = [&](BMatsubaraGrid::point in)->RealType { 
+    decltype(chi0_q0_dmft_vals)::PointFunctionType chi0_q0_vals_f = [&](BMatsubaraGrid::point in)->RealType { 
             auto g_shift = Solver.gw.shift(in);
             auto sigma_shift = Solver.Sigma.shift(in);
             if (is_equal(ComplexType(in),0.0)) return (-T)*std::real((glat*glat).sum()/RealType(__power<KPOINTS,D>::value));
@@ -132,8 +132,8 @@ int main()
             return -T*std::real(((Solver.gw + g_shift)/(2*iw_gf + ComplexType(in)+ 2*mu - Solver.Sigma - sigma_shift)).sum());
         };
 
-    chi0_q0_vals_2.fill(chi0_q0_vals_f);
-    chi0_qPI_vals_2.fill(chi0_qPI_vals_f);
+    chi0_q0_dmft_vals.fill(chi0_q0_vals_f);
+    chi0_qPI_dmft_vals.fill(chi0_qPI_vals_f);
 
     for (auto iW : gridB.getVals()) {
         INFO("iW = " << iW);
@@ -155,22 +155,22 @@ int main()
         };
 
     INFO("Chi0[q=0]     = " << chi0_q0_vals);
-    INFO("Chi0DMFT[q=0] = " << chi0_q0_vals_2);
-    INFO("Chi0, q=0 diff = " << chi0_q0_vals.diff(chi0_q0_vals_2));
+    INFO("Chi0DMFT[q=0] = " << chi0_q0_dmft_vals);
+    INFO("Chi0, q=0 diff = " << chi0_q0_vals.diff(chi0_q0_dmft_vals));
     
     INFO("Chi0[q=PI]     = " << chi0_qPI_vals);
-    INFO("Chi0DMFT[q=PI] = " << chi0_qPI_vals_2);
-    INFO("Chi0, q=pi diff = " << chi0_qPI_vals.diff(chi0_qPI_vals_2));
+    INFO("Chi0DMFT[q=PI] = " << chi0_qPI_dmft_vals);
+    INFO("Chi0, q=pi diff = " << chi0_qPI_vals.diff(chi0_qPI_dmft_vals));
 
 
     INFO("Chi[q=0]     = " << chi_q0_vals);
     INFO("Chi0DMFT[q=0] = " << chi_q0_dmft_vals);
     INFO("Full Chi, q=0 diff = " << chi_q0_vals.diff(chi_q0_dmft_vals));
     
-    success = is_equal((chi0_q0_vals.diff(chi0_q0_vals_2)),0.0,1e-4);
+    success = is_equal((chi0_q0_vals.diff(chi0_q0_dmft_vals)),0.0,1e-4);
     if (!success) {ERROR("Numerical q=0 susc != Analytical q=0 susc."); return EXIT_FAILURE; };
 
-    success = is_equal((chi0_qPI_vals.diff(chi0_qPI_vals_2)),0.0,3e-4);
+    success = is_equal((chi0_qPI_vals.diff(chi0_qPI_dmft_vals)),0.0,3e-4);
     if (!success) {ERROR("Numerical q=PI susc != Analytical q=PI susc."); return EXIT_FAILURE; };
 
     success = is_equal((chi_q0_vals.diff(chi_q0_dmft_vals)),0.0,1e-4);

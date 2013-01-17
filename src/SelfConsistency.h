@@ -15,8 +15,8 @@ struct SelfConsistency
     SelfConsistency(const Solver &S):_S(S){};
     virtual GFType operator()() = 0;
     template <typename MPoint> GFType getLatticeDMFTVertex4(MPoint in) const;
-    template <typename MPoint> GFType getBubblePI(MPoint in);
-    //template <typename MPoint> GFType getBubble0(MPoint in);
+    template <typename MPoint> GFType getBubblePI(MPoint in) const;
+    template <typename MPoint> GFType getBubble0(MPoint in) const;
    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getStaticLatticeDMFTVertex4() const;
 };
 
@@ -54,11 +54,14 @@ public:
     GKType getGLat(const FMatsubaraGrid& in) const;
     GFType operator()();
     
+    /*
     template <typename MPoint, typename ...QPoints>
     RealType getLatticeSusceptibility(MPoint w, QPoints ...qpts) const;
     template <typename MPoint, typename ...QPoints>
-    RealType getLatticeSusceptibility(const std::tuple<MPoint,QPoints...> & qpts) const;
+    RealType getLatticeSusceptibility(const std::tuple<MPoint,QPoints...> & qpts) const;*/
     
+    template <typename MPoint> GFType getBubble0(MPoint in) const;
+    template <typename MPoint> GFType getBubblePI(MPoint in) const;
 };
     
 template <size_t M, size_t ksize> 
@@ -105,6 +108,8 @@ public:
     GFType operator()();
         //template <typename MPoint, typename ...QPoints>
     //RealType getLatticeSusceptibility(MPoint w, bool zeroOrPi) const;
+    using SelfConsistency<Solver>::getBubblePI;
+    template <typename MPoint> GFType getBubble0(MPoint in) const;
 };
 
 } // end of namespace FK

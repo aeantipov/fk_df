@@ -62,7 +62,10 @@ struct __num_format {
     T _v;
     __num_format(T v):_v(v){};
     operator T(){return _v;};
-    void savetxt(const std::string& filename) { std::ofstream out; out.open(filename.c_str()); out << *this; out.close(); }; 
+    void savetxt(const std::string& filename) { 
+        std::cout << "Saving " << typeid(*this).name() << " to " << filename << std::endl;
+        std::ofstream out; out.open(filename.c_str()); out << *this; out.close(); 
+    }; 
     friend std::ostream& operator<<(std::ostream& lhs, const __num_format<T> &in){lhs << std::setprecision(in._prec) << in._v; return lhs;};
     friend std::istream& operator>>(std::istream& lhs, __num_format<T> &out){lhs >> out._v; return lhs;};
 };

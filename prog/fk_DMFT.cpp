@@ -49,60 +49,72 @@ void sighandler(int signal)
 
 template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid& gridF)
 {
-    assert(D);
-    INFO("Calculating additional statistics.");
     const auto &Solver = SC._S;
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
-    size_t n_b_freq = std::max(100,int(beta));
+    INFO("Calculating additional statistics.");
+    INFO("Static susceptibility");
+    auto Bubbleq0 = SC.getBubble0(0.0);
+    auto BubbleqPI = SC.getBubblePI(0.0); 
+    auto StaticV4 = SC.getStaticLatticeDMFTVertex4();
+    GF susc0(gridF), suscPI(gridF);
+    for (auto w1: gridF.getVals()) { 
+        susc0[size_t(w1)]+=Bubbleq0(w1);
+        suscPI[size_t(w1)]+=BubbleqPI(w1);
+        for (auto w2: gridF.getVals()) {
+            susc0[size_t(w1)]+=Bubbleq0(w1)*StaticV4(w1,w2)*Bubbleq0(w2); 
+            suscPI[size_t(w1)]+=BubbleqPI(w1)*StaticV4(w1,w2)*BubbleqPI(w2); 
+            }
+        };
+    INFO("T = " << T);
+    RealType susc0_val = std::real(susc0.sum());
+    RealType suscPI_val = std::real(suscPI.sum());
+    INFO("Static q=0 susc = " << susc0_val);
+    INFO("Static q=PI susc = " << suscPI_val);
+    __num_format<RealType>(susc0_val).savetxt("StaticChiq0.dat");
+    __num_format<RealType>(suscPI_val).savetxt("StaticChiqPI.dat");
+
+    INFO("Dynamic susceptibility");
+    size_t n_b_freq = std::min(Solver.w_grid._w_max/2,int(2*beta));
     BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
-    auto glat = SC.getGLat(gridF);
-    GF iw_gf(gridF); 
-    iw_gf.fill([](ComplexType w){return w;});
-    GridObject<RealType,BMatsubaraGrid> chi0_q0(gridB), chi0_qPI(gridB);
-    decltype(chi0_q0)::PointFunctionType chi0_q0_f = [&](BMatsubaraGrid::point in)->RealType { 
-            auto g_shift = Solver.gw.shift(in);
-            auto sigma_shift = Solver.Sigma.shift(in);
-            if (is_equal(ComplexType(in),0.0)) return (-T)*std::real((glat*glat).sum()/RealType(pow(KPOINTS,D))); 
-            return -T*std::real(((Solver.gw - g_shift)/(ComplexType(in)+Solver.Sigma - sigma_shift)).sum());
-        };
-    decltype(chi0_qPI)::PointFunctionType chi0_qPI_f = [&](BMatsubaraGrid::point in)->RealType { 
-            auto g_shift = Solver.gw.shift(in);
-            auto sigma_shift = Solver.Sigma.shift(in);
-            return -T*std::real(((Solver.gw + g_shift)/(2*iw_gf + ComplexType(in)+ 2*Solver.mu - Solver.Sigma - sigma_shift)).sum());
-        };
-    chi0_q0.fill(chi0_q0_f);
-    chi0_qPI.fill(chi0_qPI_f);
+    GridObject<RealType,BMatsubaraGrid> chi0_q0_vals(gridB), chi0_qPI_vals(gridB);
+    GridObject<RealType,BMatsubaraGrid> chi_q0_vals(gridB), chi_qPI_vals(gridB), chi_q0_dmft_vals(gridB), chi_qPI_dmft_vals(gridB);
+    auto gw = SC._S.gw;
+    auto Sigma = SC._S.Sigma;
 
-    chi0_q0.savetxt("Chi0q0.dat");
-    chi0_qPI.savetxt("Chi0qPI.dat");
-    RealType chi0_q0_0 = T*chi0_q0.sum();
-    RealType chi0_qPI_0 = T*chi0_qPI.sum();
-    INFO("Chi0(q=0) sum  = " << chi0_q0_0);
-    INFO("Chi0(q=pi) sum = " << chi0_qPI_0);
-
-    n_b_freq = 40;
-    auto gridB2 = BMatsubaraGrid(-n_b_freq, n_b_freq+1, beta);
-    auto chi0_q0_2 = GridObject<RealType,BMatsubaraGrid>(gridB2); 
-    auto chi0_qPI_2 = GridObject<RealType,BMatsubaraGrid>(gridB2); 
-    for (auto iW : gridB2.getVals()) {
+    for (auto iW : gridB.getVals()) {
         INFO("iW = " << iW);
-        std::array<KMesh::point,SCType::NDim> a0, api;
-        a0.fill(SC._kGrid[0]);
-        api.fill(SC._kGrid[KPOINTS/2]);
-        auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),a0);
-        auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),api);
-        auto glat_shift = glat.shift(args_0);
-        auto glat_shift_pi = glat.shift(args_pi);
-        chi0_q0_2[size_t(iW)] = -T*std::real((glat*glat_shift).sum()/RealType(pow(KPOINTS,D)));
-        chi0_qPI_2[size_t(iW)] = -T*std::real((glat*glat_shift_pi).sum()/RealType(pow(KPOINTS,D)));
+        size_t iwn = size_t(iW);
+        auto Chi0q0 = SC.getBubble0(iW); 
+        auto Chiq0 = Diagrams::getSusc(Chi0q0, Diagrams::BS(Chi0q0,SC.getLatticeDMFTVertex4(iW)));
+        auto Chi0qPI = SC.getBubblePI(iW);
+        auto ChiqPI = Diagrams::getSusc(Chi0qPI, Diagrams::BS(Chi0qPI,SC.getLatticeDMFTVertex4(iW))); 
+        chi_q0_vals[iwn] = std::real(Chiq0.sum());
+        chi0_q0_vals[iwn] = std::real(Chi0q0.sum());
+        chi0_qPI_vals[iwn] = std::real(Chi0qPI.sum());
+        chi_qPI_vals[iwn] = std::real(ChiqPI.sum());
+        auto chiq0_dmft = -T/ComplexType(iW)*(gw-gw.shift(iW)).sum();
+        chi_q0_dmft_vals[size_t(iW)] = std::real(chiq0_dmft); 
+        if (is_equal(ComplexType(iW),0.0)) { 
+            INFO("Static val = " << chi_q0_vals[size_t(iW)])
+        //    chi_q0_vals[size_t(iW)] += susc0_val;
+        //    chi_qPI_vals[size_t(iW)] += suscPI_val;
+            chi_q0_dmft_vals[size_t(iW)] = 0; //chi_q0_vals[size_t(iW)]; 
+            //chi_qPI_dmft_vals[size_t(iW)] += suscPI_val;
+            };
         };
-    chi0_q0_2.savetxt("Chi0q0Numeric.dat");
-    chi0_qPI_2.savetxt("Chi0qPINumeric.dat");
-    RealType chi0_q0_0_2 = T*chi0_q0_2.sum();
-    RealType chi0_qPI_0_2 = T*chi0_qPI_2.sum();
-    INFO("Chi0(q=0) numeric sum  = " << chi0_q0_0_2);
-    INFO("Chi0(q=pi) numeric sum = " << chi0_qPI_0_2);
+
+    INFO("Chi0[q=0]     = " << chi0_q0_vals);
+    INFO("Chi0[q=PI]     = " << chi0_qPI_vals);
+
+    INFO("Chi[q=0]     = " << chi_q0_vals);
+    INFO("Chi0DMFT[q=0] = " << chi_q0_dmft_vals);
+    INFO("Full Chi, q=0 diff = " << chi_q0_vals.diff(chi_q0_dmft_vals));
+
+    chi0_q0_vals.savetxt("DynamicChi0q0.dat");
+    chi0_qPI_vals.savetxt("DynamicChi0qPI.dat");
+    chi_q0_vals.savetxt("DynamicChiq0.dat");
+    chi_qPI_vals.savetxt("DynamicChiqPI.dat");
 }
 
 int main(int argc, char *argv[])
@@ -167,7 +179,7 @@ int main(int argc, char *argv[])
         case enumSC::DMFTCubic2d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2, KPOINTS>(Solver, t)); D=2; break;
         case enumSC::DMFTCubic3d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, KPOINTS>(Solver, t)); D=3; break;
         case enumSC::DMFTCubic4d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,4, KPOINTS>(Solver, t)); D=4; break;
-        case enumSC::DMFTCubicInfd: SC_ptr.reset(new CubicInfDMFTSC<FKImpuritySolver>(Solver,t,RealGrid(-6.0*t,6.0*t,1024))); D=100;
+        case enumSC::DMFTCubicInfd: SC_ptr.reset(new CubicInfDMFTSC<FKImpuritySolver>(Solver,t,RealGrid(-6.0*t,6.0*t,1024)));
         default:                  SC_ptr.reset(new BetheSC<FKImpuritySolver>(Solver, t)); break;
     };
     auto &SC = *SC_ptr;
@@ -207,6 +219,10 @@ int main(int argc, char *argv[])
             case enumSC::DMFTCubic4d: 
                 getGwBubble(*(static_cast<CubicDMFTSC<FKImpuritySolver,4, KPOINTS>*> (SC_ptr.get())), gridF); 
                 break;
+            case enumSC::DMFTCubicInfd: 
+                getGwBubble(*(static_cast<CubicInfDMFTSC<FKImpuritySolver>*> (SC_ptr.get())), gridF); 
+                break;
+ 
             default: break;
             }; 
         };
