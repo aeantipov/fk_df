@@ -34,7 +34,7 @@ int main()
     size_t maxit = 1000;
     RealType mix = 0.5;
 
-    size_t n_freq = 128;
+    size_t n_freq = 256;
     size_t n_b_freq = 2;
 
     static const size_t KPOINTS=16;
@@ -68,7 +68,8 @@ int main()
     DFLadder<FKImpuritySolver, 2, KPOINTS> SC_DF(Solver, gridF, gridB, t);
     SC_DF._n_GD_iter = 1;
     SC_DF._GDmix = 0.0;
-    SC_DF.calculateLatticeData(gridB);
+    auto data_out = SC_DF.calculateLatticeData(gridB);
+    auto LatticeSusc = std::get<0>(data_out);
   
     /* Checking the charge susc as opposed to a pure DMFT value. */ 
     auto iW = gridB[0];
@@ -77,7 +78,7 @@ int main()
     GF Gw_shift = Solver.gw.shift(iW);
     GF Sigma_shift = Solver.Sigma.shift(iW);
     auto GLat = SC_DF.GLat;
-    auto ChiLat0 = SC_DF.Diagrams.getBubble(GLat,std::forward_as_tuple(iW,kGrid[0],kGrid[0]));
+    auto ChiLat0 = Diagrams::getBubble(GLat,std::make_tuple(iW,kGrid[0],kGrid[0]));
 
     if (!is_equal(Gw_shift(FMatsubara(gridF.getSize()-2,beta)), Gw(FMatsubara(gridF.getSize()-1,beta)))) {
         ERROR("Error in shifted gw");
@@ -107,10 +108,10 @@ int main()
         ERROR("Full lattice susc doesn't correspond to the analytical value at q=0");
         return EXIT_FAILURE;
         };
-    auto ChiVal = T*SuscDMFT.sum();
+    auto ChiVal = SuscDMFT.sum();
     DEBUG(ChiVal);
-    DEBUG(SC_DF.LatticeSusc(gridB[0],0,0));
-    if (!is_equal(SC_DF.LatticeSusc(gridB[0],0,0), ChiVal)) { 
+    DEBUG(LatticeSusc(gridB[0],0,0));
+    if (!is_equal(LatticeSusc(gridB[0],0,0), ChiVal)) { 
         ERROR("Full lattice susc doesn't correspond to the analytical value at q=0");
         return EXIT_FAILURE;
     }

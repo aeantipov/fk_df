@@ -1,48 +1,53 @@
 #ifndef __FK_DFDIAGRAMS_HPP__
 #define __FK_DFDIAGRAMS_HPP__
 
-#include "DFDiagrams.h"
+#include "Diagrams.h"
 
 namespace FK {
 
-template <size_t D>
-DFDiagrams<D>::DFDiagrams(const FMatsubaraGrid& fGrid, const KMesh& kGrid):_fGrid(fGrid),_kGrid(kGrid),_ksize(_kGrid.getSize()),_knorm(pow(_ksize,D))
+template <typename GKType, typename ... ArgTypes>
+inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, ArgTypes... args)
 {
+    return getBubble(GF,std::forward_as_tuple(args...));
 }
 
-template <size_t D>
-template <typename ...KP>
-inline typename DFDiagrams<D>::GLocalType DFDiagrams<D>::getBubble(const GKType& GF, BMatsubaraGrid::point W, KP... q) const
+template <typename GKType, typename ... ArgTypes>
+inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const std::tuple<ArgTypes...>& args)
 {
-    return this->getBubble(GF, std::forward_as_tuple(W,q...));
-}
-
-template <size_t D>
-inline typename DFDiagrams<D>::GLocalType DFDiagrams<D>::getBubble(const GKType& GF, const WQTupleType &in) const
-{
-    GLocalType out(this->_fGrid);
+    static_assert(GKType::N==sizeof...(ArgTypes), "Argument size mismatch");
+    const auto _fGrid = std::get<0>(GF.getGrids()); 
+    GLocalType out(_fGrid);
     GKType GF_shifted(GF.getGrids());
-    GF_shifted = GF.shift(in);
+    GF_shifted = GF.shift(args);
     GF_shifted*=GF;
-    //auto f1= [ &GF, in](typename GKType::ArgTupleType x){return GF._f(GF._shiftArgs(x,in))*GF._f(x);};
-    //GF_shifted._f=__fun_traits< 
-    
 
-    //GKType GD_shifted(GD.shift(in)*GD); // G(w+W,k+Q)
+    RealType knorm = 1;
+    for (auto val : GF._dims) knorm*=val; 
+    knorm/=GF._dims[0];
 
     for (auto iw: _fGrid.getVals()) { 
         size_t iwn = size_t(iw);
-        out[iwn] = GF_shifted[iwn].sum()/RealType(_knorm); 
+        out[iwn] = GF_shifted[iwn].sum()/RealType(knorm); 
     }
 
-    RealType T = 1.0/(this->_fGrid._beta);
+    RealType T = 1.0/(_fGrid._beta);
     return (-T)*out;
 }
 
-template <size_t D>
-template <typename VertexType>
-inline VertexType DFDiagrams<D>::BS(const VertexType& Chi0, const VertexType &IrrVertex4, bool eval_SC, size_t n_iter, RealType mix) const
+template <typename ArgType>
+inline typename Diagrams::GLocalType Diagrams::getBubble(const GLocalType &GF, ArgType arg)
 {
+    GLocalType out = GF.shift(arg)*GF;
+    RealType T = 1.0/(std::get<0>(GF.getGrids())._beta);
+    return (-T)*out;
+}
+
+
+
+template <typename VertexType>
+inline VertexType Diagrams::BS(const VertexType& Chi0, const VertexType &IrrVertex4, bool eval_SC, size_t n_iter, RealType mix)
+{
+    const auto _fGrid = std::get<0>(IrrVertex4.getGrids());
     VertexType Vertex4_out(IrrVertex4);
     GridObject<RealType,FMatsubaraGrid> EVCheck(_fGrid); 
     //GridObject<RealType,FMatsubaraGrid> EVCheckRe(_fGrid); 
@@ -78,9 +83,8 @@ inline VertexType DFDiagrams<D>::BS(const VertexType& Chi0, const VertexType &Ir
     return Vertex4_out;
 }
 
-template <size_t D>
 template <typename VertexType>
-inline static VertexType DFDiagrams<D>::getSusc(const VertexType& Chi0, const VertexType &FullVertex4)
+inline VertexType Diagrams::getSusc(const VertexType& Chi0, const VertexType &FullVertex4)
 {
     return Chi0 + Chi0*FullVertex4*Chi0;
 }

@@ -3,7 +3,7 @@
 
 #include "FKCommon.h"
 #include "SelfConsistency.h"
-#include "DFDiagrams.h"
+#include "Diagrams.h"
 
 namespace FK {
 
@@ -33,7 +33,6 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize>, DFBase {
     using CubicDMFTSC<Solver,D,ksize>::_ek;
     const FMatsubaraGrid _fGrid;
     const BMatsubaraGrid _bGrid;
-    const DFDiagrams<D> Diagrams;
     GKType GD0;
     GKType GD;
     GKType SigmaD;

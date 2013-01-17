@@ -126,13 +126,13 @@ GridObject<ValueType,GridTypes...>::GridObject( GridObject<ValueType,GridTypes..
 }
 
 template <typename ValueType, typename ...GridTypes> 
-const std::tuple<GridTypes...> GridObject<ValueType,GridTypes...>::getGrids() const 
+inline const std::tuple<GridTypes...> GridObject<ValueType,GridTypes...>::getGrids() const 
 { 
     return _grids; 
 };
 
 template <typename ValueType, typename ...GridTypes> 
-auto GridObject<ValueType,GridTypes...>::operator[](size_t i)->decltype((*_data)[i])
+inline auto GridObject<ValueType,GridTypes...>::operator[](size_t i)->decltype((*_data)[i])
 {
     return (*_data)[i];
 }
@@ -218,11 +218,6 @@ inline void GridObject<ValueType,GridTypes...>::fill(const std::function<ValueTy
     ContainerExtractor<sizeof...(GridTypes), ArgTypes...>::set(*_data,_grids,in);
 }
 
-template <class F> struct PointFToF;
-template <typename ValueType, typename ... PointTypes > 
-struct PointFToF<std::function<ValueType(PointTypes...)>> {
-    template <typename ...ArgTypes> static std::function<ValueType(ArgTypes...)> convert(const std::function<ValueType(PointTypes...)>& in);
-};
 /*
 template <size_t N, template <size_t, typename ...> class, typename ... > struct __genContainerExtractor;
 template <size_t N, template <size_t, typename ...> class T, template <typename ...> class B, typename GridType1, typename ... GridTypes, typename ...ArgTypes> 

@@ -17,7 +17,6 @@ DFLadder<Solver,D,ksize>::DFLadder(const Solver &S, const FMatsubaraGrid& fGrid,
     CubicDMFTSC<Solver,D,ksize>(S,t),
     _fGrid(fGrid),
     _bGrid(bGrid),
-    Diagrams(DFDiagrams<D>(_fGrid,_kGrid)),
     GD0(std::tuple_cat(std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))),
     GD(GD0.getGrids()),
     SigmaD(GD0.getGrids()), 
@@ -97,7 +96,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
     _initialize();
 
     // Put here operations with GD
-    GLocalType Vertex4(_fGrid);
+    GLocalType Vertex4(_fGrid), FullDualVertex4(_fGrid);
     GLocalType Chi0(_fGrid);
 
     INFO2("Starting ladder dual fermion calculations")
@@ -105,7 +104,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
     RealType diffGD = 1.0;
     for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > 1e-8; ++nd_iter) { 
         INFO2("DF iteration " << nd_iter);
-        GKType addSigma(this->SigmaD.getGrids());
+        GKType addSigma(this->SigmaD.getGrids()), GD_shift(this->GD.getGrids());
         INFO2("Evaluating Bethe-Salpeter equation");
 
         for (auto iW : _bGrid.getVals()) {
@@ -128,11 +127,11 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
                 //DEBUG("qx = " << q[0] << ", qy = " << q[1]);
 
                 // Bethe-Salpeter vertex
-                Chi0 = Diagrams.getBubble(GD, Wq_args);
-                auto FullDualVertex4 = Diagrams.BS(Chi0, Vertex4, _eval_BS_SC, _n_BS_iter, _BSmix);
+                Chi0 = Diagrams::getBubble(GD, Wq_args);
+                FullDualVertex4 = Diagrams::BS(Chi0, Vertex4, _eval_BS_SC, _n_BS_iter, _BSmix);
                 
                 // Sigma
-                auto GD_shift = GD.shift(Wq_args);
+                GD_shift = GD.shift(Wq_args);
                 typename GKType::PointFunctionType SigmaF;
                 auto SigmaF2 = [&](wkTupleType in)->ComplexType { 
                     ComplexType w = std::get<0>(in);
@@ -185,12 +184,17 @@ std::tuple<typename DFLadder<Solver,D,ksize>::SuscType> DFLadder<Solver,D,ksize>
     GKType Lwk = GLat/GD0*(-1.0);
     Lwk._f = __fun_traits<typename GKType::FunctionType>::constant(-1.0);
     auto GDL = GD*Lwk;
-    GLocalType Vertex4(_fGrid), Chi0(_fGrid);
+    GLocalType Vertex4(_fGrid), Chi0(_fGrid), FullDualVertex4(_fGrid), ChiLat(_fGrid), GDL_chi0(_fGrid);
         
     size_t totalqpts = 1;
     for (const auto& qmesh : qgrids) { 
             totalqpts*=qmesh.getSize();
         }
+
+    bool calc_static = false; 
+    auto find_r = gridB.find(0.0);
+    if (std::get<0>(find_r)) calc_static = true;
+    BMatsubaraGrid::point zero_point(std::get<1>(find_r), 0.0);
 
     INFO2("Calculating lattice susceptibility");
     for (auto iW : gridB.getVals()) {
@@ -214,15 +218,16 @@ std::tuple<typename DFLadder<Solver,D,ksize>::SuscType> DFLadder<Solver,D,ksize>
             INFO_NONEWLINE("\t\t" << nq << "/" << totalqpts<< ". "); 
             size_t count=0; for (auto qval : q) { INFO_NONEWLINE("q_" << count++ << "="<<RealType(qval) << " "); }; 
             // Bethe-Salpeter vertex
-            Chi0 = Diagrams.getBubble(GD, Wq_args);
-            auto FullDualVertex4 = Diagrams.BS(Chi0, Vertex4, _eval_BS_SC, _n_BS_iter, _BSmix);
+            Chi0 = Diagrams::getBubble(GD, Wq_args);
+            FullDualVertex4 = Diagrams::BS(Chi0, Vertex4, _eval_BS_SC, _n_BS_iter, _BSmix);
             
             // Lattice susceptibility
-            GLocalType ChiLat0 = Diagrams.getBubble(GLat, Wq_args);
-            auto GDL_chi0 = Diagrams.getBubble(GDL, Wq_args);
-            auto ChiLat = GDL_chi0*FullDualVertex4*GDL_chi0 + ChiLat0;
-            auto ChiVal = T*ChiLat.sum();
+            GLocalType ChiLat0 = Diagrams::getBubble(GLat, Wq_args);
+            GDL_chi0 = Diagrams::getBubble(GDL, Wq_args);
+            ChiLat = GDL_chi0*FullDualVertex4*GDL_chi0 + ChiLat0;
+            auto ChiVal = ChiLat.sum();
             LatticeSusc.get(Wq_args) = ChiVal;
+            //if (calc_static) LatticeSusc.get(std::tuple_cat(std::forward_as_tuple(zero_point), q))-=ChiVal*T;
         } // end of q loop
     }; //end of iW loop
     return std::forward_as_tuple(LatticeSusc);

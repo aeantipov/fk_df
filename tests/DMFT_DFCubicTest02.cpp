@@ -127,8 +127,8 @@ int main()
         auto glat_shift_pi = glat.shift(iW,PI,PI);
         chiDMFT0_q0[size_t(iW)] = -T*std::real((glat*glat_shift).sum()/RealType(__power<KPOINTS,D>::value));
         chiDMFT0_qPI[size_t(iW)] = -T*std::real((glat*glat_shift_pi).sum()/RealType(__power<KPOINTS,D>::value));
-        auto chiD0 = SC_DF.Diagrams.getBubble(SC_DF.GD,std::forward_as_tuple(iW,kGrid[0],kGrid[0]));
-        auto chiDPI = SC_DF.Diagrams.getBubble(SC_DF.GD,std::forward_as_tuple(iW,kGrid[KPOINTS/2],kGrid[KPOINTS/2]));
+        auto chiD0 = Diagrams::getBubble(SC_DF.GD,std::make_tuple(iW,kGrid[0],kGrid[0]));
+        auto chiDPI = Diagrams::getBubble(SC_DF.GD,std::make_tuple(iW,kGrid[KPOINTS/2],kGrid[KPOINTS/2]));
         chiDF0_q0[size_t(iW)] = chiD0.sum();
         chiDF1_q0[size_t(iW)] = chiDMFT0_q0[size_t(iW)]+T*(Solver.gw*Solver.gw.shift(iW)).sum(); 
         chiDF0_qPI[size_t(iW)] = chiDPI.sum();

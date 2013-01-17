@@ -27,12 +27,14 @@ public:
     typedef typename GridPointTypeExtractor<ValueType, std::tuple<GridTypes...> >::arg_tuple_type ArgTupleType;
     /** A typedef for the values stored in the container. */
     typedef ValueType ValType;
+    static constexpr size_t N = sizeof...(GridTypes);
 protected:
-    static const size_t N = sizeof...(GridTypes);
     /** Grids on which the data is defined. */
     const std::tuple<GridTypes...> _grids;
+public:
     /** The dimensions of the Container - deduced from grids. */
     std::array<size_t, N> _dims;
+protected:
     /** A pointer to the Container. A pointer is used as there exist no default 
      * constructor for the Container.
      */

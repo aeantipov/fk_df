@@ -1,7 +1,27 @@
 #ifndef ___FK_SELFCONSISTENCY_HPP___
 #define ___FK_SELFCONSISTENCY_HPP___
 
+#include "Diagrams.h"
+
 namespace FK {
+
+template <class Solver>
+template <typename MPoint>
+inline typename SelfConsistency<Solver>::GFType SelfConsistency<Solver>::getLatticeDMFTVertex4(MPoint in) const
+{
+    GFType Vertex4(_S.w_grid);
+    typename GFType::PointFunctionType VertexFillf = 
+        std::bind(&FKImpuritySolver::getBVertex4<MPoint, FMatsubaraGrid::point>, std::cref(_S), in, std::placeholders::_1); 
+    typename GFType::FunctionType Vertexf = 
+        std::bind(&FKImpuritySolver::getBVertex4<ComplexType, ComplexType>, std::cref(_S), ComplexType(in), std::placeholders::_1); 
+    Vertex4.fill(VertexFillf);
+    Vertex4._f = Vertexf;
+
+    GFType Chi0 = Diagrams::getBubble(_S.gw,in);
+    Chi0*=(-1.0);
+    auto Vertex_out = Diagrams::BS(Chi0, Vertex4);
+    return Vertex_out; 
+}
 
 //
 // Bethe SC
