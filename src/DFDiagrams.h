@@ -27,6 +27,9 @@ struct DFDiagrams
     template <typename VertexType> 
     VertexType BS(const VertexType &Chi0, const VertexType &Vertex4, bool eval_SC = false, size_t n_iter = 100, RealType mix = 1.0) const;
 
+    template <typename VertexType> 
+    static VertexType getSusc(const VertexType &Chi0, const VertexType &FullVertex4);
+
 };
 
 } // end of namespace FK 

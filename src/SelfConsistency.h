@@ -55,7 +55,8 @@ template <size_t M, size_t ksize>
 struct CubicTraits{ 
     //const KMesh grid = KMesh(ksize);
     //typedef Eigen::Matrix<RealType,__power<ksize,M>::value,1,Eigen::ColMajor> EkStorage;
-    typedef typename ArgBackGenerator<M,KMesh,std::tuple>::type KMeshTupleType;
+    //typedef typename ArgBackGenerator<M,KMesh,std::tuple>::type KMeshTupleType;
+    typedef typename std::array<KMesh,M> KMeshTupleType;
     //template <class ... GridTypes> static void gen_tuples(std::tuple<GridTypes...> grids){gen_tuples<GridTypes...,KMesh>(std::tuple_cat(grids,KMesh(ksize)));}
     static KMeshTupleType getTuples(const KMesh &grid){std::array<KMesh,M> out; out.fill(grid); return out;};
     template <class IteratorType, typename ...ArgTypes> static void fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes... other_pos); 

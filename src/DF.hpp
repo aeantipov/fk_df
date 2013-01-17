@@ -8,7 +8,7 @@
 // GKType - g(w,k...)
 // GLocalType::FunctionType g(w) - analytic
 // GKType::FunctionType g(w,k...) - analytic
-// CubicTraits<D,ksize>::getTuples(_kGrid) - returns a tuple of D kmeshes
+// __repeater<KMesh,D>::get_tuple(_kGrid) - returns a tuple of D kmeshes
 
 namespace FK {
 
@@ -18,12 +18,11 @@ DFLadder<Solver,D,ksize>::DFLadder(const Solver &S, const FMatsubaraGrid& fGrid,
     _fGrid(fGrid),
     _bGrid(bGrid),
     Diagrams(DFDiagrams<D>(_fGrid,_kGrid)),
-    GD0(std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kGrid))),
+    GD0(std::tuple_cat(std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))),
     GD(GD0.getGrids()),
     SigmaD(GD0.getGrids()), 
     GLat(GD0.getGrids()),
-    GLatLoc(_fGrid),
-    LatticeSusc(std::tuple_cat(std::make_tuple(_bGrid),CubicTraits<D,ksize>::getTuples(_kGrid))) 
+    GLatLoc(_fGrid)
 {
     _initialize();
 };
@@ -72,7 +71,7 @@ ComplexType DFLadder<Solver,D,ksize>::getBubble2(BMatsubaraGrid::point W, KP... 
 template <class Solver, size_t D, size_t ksize>
 inline typename DFLadder<Solver,D,ksize>::GKType DFLadder<Solver,D,ksize>::getGLat(const FMatsubaraGrid &gridF ) const
 {
-    GKType out(std::tuple_cat(std::forward_as_tuple(gridF), CubicTraits<D,ksize>::getTuples(_kGrid)));
+    GKType out(std::tuple_cat(std::forward_as_tuple(gridF), __repeater<KMesh,D>::get_tuple(_kGrid)));
     auto f1 = [&](const typename GKType::PointTupleType &in){return this->GLat(in);};
     auto f2 = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(f1);
     out.fill(f1);
@@ -93,8 +92,8 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
     GLocalType GDLoc(_fGrid); 
     Delta = _S.Delta;
     GLocalType Delta_out(_fGrid); Delta_out=0.0;
-    auto wkgrids = std::tuple_cat(std::make_tuple(_fGrid),CubicTraits<D,ksize>::getTuples(_kGrid));
-    auto Wqgrids = std::tuple_cat(std::make_tuple(_bGrid),CubicTraits<D,ksize>::getTuples(_kGrid)); 
+    auto wkgrids = std::tuple_cat(std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid));
+    auto Wqgrids = std::tuple_cat(std::make_tuple(_bGrid),__repeater<KMesh,D>::get_tuple(_kGrid));
     _initialize();
 
     // Put here operations with GD
@@ -170,13 +169,28 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
 }
 
 template <class Solver, size_t D, size_t ksize>
-void DFLadder<Solver,D,ksize>::calculateLatticeData(const BMatsubaraGrid& gridB)
+std::tuple<typename DFLadder<Solver,D,ksize>::SuscType> DFLadder<Solver,D,ksize>::calculateLatticeData(const BMatsubaraGrid& gridB)
 {
+    KMeshPatch fullgrid(_kGrid);
+    std::array<KMeshPatch, D> grids = __repeater<KMeshPatch,D>::get_array(fullgrid); 
+    auto t1 = __repeater<KMeshPatch,D>::get_tuple(fullgrid); 
+    return calculateLatticeData(gridB, grids);
+}
+
+template <class Solver, size_t D, size_t ksize>
+std::tuple<typename DFLadder<Solver,D,ksize>::SuscType> DFLadder<Solver,D,ksize>::calculateLatticeData(const BMatsubaraGrid& gridB, const std::array<KMeshPatch, D>& qgrids)
+{
+    SuscType LatticeSusc(std::tuple_cat(std::forward_as_tuple(gridB),qgrids));
     RealType T = 1.0/_fGrid._beta;
     GKType Lwk = GLat/GD0*(-1.0);
     Lwk._f = __fun_traits<typename GKType::FunctionType>::constant(-1.0);
     auto GDL = GD*Lwk;
     GLocalType Vertex4(_fGrid), Chi0(_fGrid);
+        
+    size_t totalqpts = 1;
+    for (const auto& qmesh : qgrids) { 
+            totalqpts*=qmesh.getSize();
+        }
 
     INFO2("Calculating lattice susceptibility");
     for (auto iW : gridB.getVals()) {
@@ -188,30 +202,30 @@ void DFLadder<Solver,D,ksize>::calculateLatticeData(const BMatsubaraGrid& gridB)
         Vertex4.fill(VertexFillf);
         Vertex4._f = Vertexf;
  
-        size_t totalqpts = __power<ksize,D>::value;
         std::array<KMesh::point, D> q;
         for (size_t nq=0; nq<totalqpts; ++nq) { // iterate over all kpoints
             size_t offset = 0;
-            for (size_t i=0; i<D; ++i) { q[D-1-i]=_kGrid[(nq-offset)/(int(pow(ksize,i)))%ksize]; offset+=(int(pow(ksize,i)))*size_t(q[D-1-i]); };
+            for (size_t i=0; i<D; ++i) { 
+                q[D-1-i]=qgrids[i][(nq-offset)/(int(pow(qgrids[i].getSize(),i)))%qgrids[i].getSize()]; 
+                offset+=(int(pow(qgrids[i].getSize(),i)))*size_t(q[D-1-i]); 
+                };
             WQTupleType Wq_args = std::tuple_cat(std::forward_as_tuple(iW),q);
             
-            INFO_NONEWLINE("\t\t" << nq << "/" << totalqpts<< ". ");
+            INFO_NONEWLINE("\t\t" << nq << "/" << totalqpts<< ". "); 
+            size_t count=0; for (auto qval : q) { INFO_NONEWLINE("q_" << count++ << "="<<RealType(qval) << " "); }; 
             // Bethe-Salpeter vertex
             Chi0 = Diagrams.getBubble(GD, Wq_args);
             auto FullDualVertex4 = Diagrams.BS(Chi0, Vertex4, _eval_BS_SC, _n_BS_iter, _BSmix);
             
             // Lattice susceptibility
             GLocalType ChiLat0 = Diagrams.getBubble(GLat, Wq_args);
-            DEBUG("!!");
             auto GDL_chi0 = Diagrams.getBubble(GDL, Wq_args);
-            DEBUG("!!!");
             auto ChiLat = GDL_chi0*FullDualVertex4*GDL_chi0 + ChiLat0;
-            DEBUG("!!!!");
             auto ChiVal = T*ChiLat.sum();
-            DEBUG("!!!!!");
             LatticeSusc.get(Wq_args) = ChiVal;
         } // end of q loop
     }; //end of iW loop
+    return std::forward_as_tuple(LatticeSusc);
 }
 
 } // end of namespace FK

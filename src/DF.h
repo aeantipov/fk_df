@@ -15,8 +15,6 @@ struct DFBase
     bool _eval_BS_SC = false;
     RealType _BSmix = 1.0;
     size_t _n_BS_iter = 100;
-
-    virtual void calculateLatticeData(const BMatsubaraGrid& gridB)=0;
 };
 
 template <class Solver, size_t D, size_t ksize=32>
@@ -28,7 +26,7 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize>, DFBase {
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType;
     typedef typename GKType::ArgTupleType wkTupleType;
     typedef decltype(std::tuple_cat(std::make_tuple(BMatsubaraGrid::point()), std::array<KMesh::point, D>())) WQTupleType; 
-    typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,BMatsubaraGrid>::type SuscType;
+    typedef typename ArgBackGenerator<D,KMeshPatch,GridObject,ComplexType,BMatsubaraGrid>::type SuscType;
     using CubicDMFTSC<Solver,D,ksize>::_S;
     using CubicDMFTSC<Solver,D,ksize>::_t;
     using CubicDMFTSC<Solver,D,ksize>::_kGrid;
@@ -41,7 +39,6 @@ struct DFLadder : CubicDMFTSC<Solver,D,ksize>, DFBase {
     GKType SigmaD;
     GKType GLat;
     GLocalType GLatLoc; 
-    SuscType LatticeSusc;
 private:
     void _initialize();
 public:
@@ -53,7 +50,8 @@ public:
     GKType getGLat(const FMatsubaraGrid &gridF ) const;
     //template <typename ...KP> ComplexType getBubble2(BMatsubaraGrid::point W, KP...kpoints, FMatsubaraGrid::point w1) const;
     GLocalType operator()();
-    void calculateLatticeData(const BMatsubaraGrid& gridB);
+    std::tuple<SuscType> calculateLatticeData(const BMatsubaraGrid& gridB);
+    std::tuple<SuscType> calculateLatticeData(const BMatsubaraGrid& gridB, const std::array<KMeshPatch, D>& kpoints);
 };
 
 } // end of namespace FK

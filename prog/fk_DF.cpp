@@ -50,12 +50,12 @@ void sighandler(int signal)
 
 template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& gridF)
 {
-    assert(D);
+    constexpr size_t D = SCType::NDim;
     INFO("Calculating additional statistics.");
     const auto &Solver = SC._S;
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
-    size_t n_b_freq = std::max(15,int(beta));
+    size_t n_b_freq = gridF._w_max/2; // std::max(gridF._w_max/2,int(beta));
     BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
 
     auto glat = SC.getGLat();
@@ -65,7 +65,12 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     iw_gf.fill([](ComplexType w){return w;});
     GridObject<ComplexType,BMatsubaraGrid> chi_q0(gridB), chi_qPI(gridB);
 
-    SC.calculateLatticeData(gridB); // Heavy operation
+
+    KMeshPatch grid0PI(SC._kGrid, {{0, SC._kGrid.getSize()/2}} );
+    std::array<KMeshPatch, D> qgrids = __repeater<KMeshPatch,D>::get_array(grid0PI); 
+    auto data = SC.calculateLatticeData(gridB, qgrids); // Heavy operation
+
+    auto LatticeSusc = std::get<0>(data);
 
     std::array<KMesh::point,SCType::NDim> q_0, q_PI;
     q_0.fill(SC._kGrid[0]);
@@ -74,8 +79,8 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     for (auto iW : gridB.getVals()) {
         auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),q_0);
         auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),q_PI);
-        chi_q0[size_t(iW)] = SC.LatticeSusc(args_0);
-        chi_qPI[size_t(iW)] = SC.LatticeSusc(args_pi);
+        chi_q0[size_t(iW)] = LatticeSusc(args_0);
+        chi_qPI[size_t(iW)] = LatticeSusc(args_pi);
         };
 
     chi_q0.savetxt("Chiq0.dat");
@@ -186,7 +191,6 @@ int main(int argc, char *argv[])
 
     for (; i_dmft<n_dmft_iter && i_df<=n_df_iter && diff>1e-8 &&!interrupt; (calc_DMFT)?i_dmft++:i_df++) {
         INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
-        DEBUG(i_dmft << "|" << i_df);
         if (diff/mix>1e-3) Solver.run(true);
         else Solver.run(false);
         if (calc_DMFT) {  

@@ -91,7 +91,7 @@ inline CubicDMFTSC<Solver,D,ksize>::CubicDMFTSC ( const Solver &S, RealType t):
     SelfConsistency<Solver>(S),
     _t(t),
     _kGrid(KMesh(ksize)),
-    _ek(CubicTraits<D,ksize>::getTuples(_kGrid)),
+    _ek(__repeater<KMesh,D>::get_tuple(_kGrid)),
     _gloc(this->_S.w_grid)
 {
     //CubicTraits<D,ksize>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kGrid);

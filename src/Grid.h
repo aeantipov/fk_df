@@ -159,12 +159,16 @@ public:
 
 struct KMeshPatch : public KMesh 
 {
+    std::map<size_t,size_t> _map_vals;
 public:
     const KMesh& _parent;
     size_t _npoints;
     using KMesh::_vals;
     KMeshPatch(const KMesh& parent, std::vector<size_t> indices);
     KMeshPatch(const KMesh& parent);
+    template <class Obj> auto getValue(Obj &in, RealType x) const ->decltype(in[0]);
+    template <class Obj> auto getValue(Obj &in, KMesh::point x) const ->decltype(in[0]);
+    size_t getIndex(KMesh::point x) const;
 };
 
 /** A tool to generate a function of argtypes of grids. */

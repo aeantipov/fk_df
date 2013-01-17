@@ -385,6 +385,7 @@ inline KMeshPatch::KMeshPatch(const KMesh& parent, std::vector<size_t> indices):
     _vals.resize(_npoints); 
     for (size_t i=0; i<_npoints; ++i) {
         _vals[i]=_parent[indices[i]]; 
+        _map_vals[size_t(_vals[i])] = i;
         }
 }
 
@@ -393,6 +394,30 @@ inline KMeshPatch::KMeshPatch(const KMesh& parent):
     _npoints(parent.getSize())
 {
     _vals = parent.getVals();
+     for (size_t i=0; i<_npoints; ++i) {
+        _map_vals[size_t(_vals[i])] = i;
+        }
+}
+
+template <class Obj> 
+inline auto KMeshPatch::getValue(Obj &in, RealType x) const ->decltype(in[0])
+{
+    const auto find_result=_parent.find(x);
+    if (!std::get<0>(find_result)) throw (exWrongIndex()); 
+    return getValue(in, KMesh::point(std::get<1>(find_result), x));
+}
+
+template <class Obj> 
+inline auto KMeshPatch::getValue(Obj &in, KMesh::point x) const ->decltype(in[0])
+{
+    return in[getIndex(x)];
+}
+
+inline size_t KMeshPatch::getIndex(KMesh::point x) const
+{
+    auto f1 = _map_vals.find(size_t(x));
+    if (f1!=_map_vals.end()) { return f1->second; }
+    else throw (exWrongIndex());
 }
 
 } // end of namespace FK

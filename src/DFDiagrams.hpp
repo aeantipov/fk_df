@@ -41,7 +41,7 @@ inline typename DFDiagrams<D>::GLocalType DFDiagrams<D>::getBubble(const GKType&
 
 template <size_t D>
 template <typename VertexType>
-VertexType DFDiagrams<D>::BS(const VertexType& Chi0, const VertexType &IrrVertex4, bool eval_SC, size_t n_iter, RealType mix) const
+inline VertexType DFDiagrams<D>::BS(const VertexType& Chi0, const VertexType &IrrVertex4, bool eval_SC, size_t n_iter, RealType mix) const
 {
     VertexType Vertex4_out(IrrVertex4);
     GridObject<RealType,FMatsubaraGrid> EVCheck(_fGrid); 
@@ -78,6 +78,12 @@ VertexType DFDiagrams<D>::BS(const VertexType& Chi0, const VertexType &IrrVertex
     return Vertex4_out;
 }
 
+template <size_t D>
+template <typename VertexType>
+inline static VertexType DFDiagrams<D>::getSusc(const VertexType& Chi0, const VertexType &FullVertex4)
+{
+    return Chi0 + Chi0*FullVertex4*Chi0;
+}
 
 } // end of namespace FK 
 

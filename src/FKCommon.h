@@ -104,6 +104,19 @@ template <typename ReturnType, typename ...Args> struct __caller {
     ReturnType call(){ return _callf(typename __gens<sizeof...(Args)>::type()); };
 };
 
+template <typename Arg, size_t D, typename... Extras> struct __repeater : __repeater<Arg,D-1,Arg,Extras...>  {  
+    //template <int ...S> std::array<Arg,D> _get(const std::tuple<Arg...>& in){return { std::get<S>
+    template <int ...S, typename ...ArgTypes> static std::array<Arg,D> __get_arr(__seq<S...>, std::tuple<ArgTypes...> in) { return  {{ std::get<S>(in)... }}; }
+    static std::array<Arg,D> get_array(const Arg& in){ return __get_arr(typename __gens<D>::type(), get_tuple(in)); };
+    static typename __repeater::TupleType get_tuple(const Arg& in){ return std::tuple_cat(std::forward_as_tuple(in),__repeater<Arg,D-1>::get_tuple(in)); }; 
+};
+
+template <typename Arg, typename ... Extras> struct __repeater<Arg,1,Extras...> { 
+    typedef std::tuple<Arg,Extras...> TupleType;
+    static std::array<Arg,1> get_array(const Arg& in){ return {{ in }}; };
+    static TupleType get_tuple(const Arg& in){ return std::forward_as_tuple(in); }
+};
+
 
 /** Function traits. */
 template <typename FunctionType> struct __fun_traits;
