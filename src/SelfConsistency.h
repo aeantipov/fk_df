@@ -15,6 +15,9 @@ struct SelfConsistency
     SelfConsistency(const Solver &S):_S(S){};
     virtual GFType operator()() = 0;
     template <typename MPoint> GFType getLatticeDMFTVertex4(MPoint in) const;
+    template <typename MPoint> GFType getBubblePI(MPoint in);
+    //template <typename MPoint> GFType getBubble0(MPoint in);
+   GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getStaticLatticeDMFTVertex4() const;
 };
 
 template <class Solver>
@@ -92,6 +95,7 @@ struct CubicInfDMFTSC : public SelfConsistency<Solver>
 {
     typedef typename Solver::GFType GFType;
     typedef GridObject<ComplexType, RealGrid> ComplW;
+    using SelfConsistency<Solver>::_S;
 public:
     const RealType _t;
     const RealGrid _realgrid;
@@ -99,10 +103,8 @@ public:
 
     CubicInfDMFTSC(const Solver &S, RealType t, const RealGrid& realgrid);
     GFType operator()();
-    template <typename MPoint>
-    RealType getLatticeSusceptibility(MPoint w, bool zeroOrPi) const;
-    template <typename MPoint, typename ...QPoints>
-    RealType getLatticeSusceptibility(MPoint w, bool zeroOrPi) const;
+        //template <typename MPoint, typename ...QPoints>
+    //RealType getLatticeSusceptibility(MPoint w, bool zeroOrPi) const;
 };
 
 } // end of namespace FK

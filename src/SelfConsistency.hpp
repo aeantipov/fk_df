@@ -23,6 +23,55 @@ inline typename SelfConsistency<Solver>::GFType SelfConsistency<Solver>::getLatt
     return Vertex_out; 
 }
 
+template <class Solver>
+inline GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> SelfConsistency<Solver>::getStaticLatticeDMFTVertex4() const
+{
+    INFO2("Obtaining vertex from Solver");
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4(std::forward_as_tuple(_S.w_grid,_S.w_grid)); 
+    typename decltype(Vertex4)::PointFunctionType VertexFillf = 
+        std::bind(&FKImpuritySolver::getFVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(_S), std::placeholders::_1, std::placeholders::_2); 
+    typename decltype(Vertex4)::FunctionType Vertexf = 
+        std::bind(&FKImpuritySolver::getFVertex4<ComplexType, ComplexType>, std::cref(_S), std::placeholders::_1, std::placeholders::_2); 
+    Vertex4.fill(VertexFillf);
+    Vertex4._f = Vertexf;
+
+    INFO2("Obtaining static 2-freq susceptibility");
+    decltype(Vertex4) Chi0(Vertex4.getGrids());
+    decltype(Vertex4)::PointFunctionType Chi0fillF = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.gw(w1)*_S.gw(w2);};
+    Chi0.fill(Chi0fillF);
+
+    INFO_NONEWLINE("\tRunning inverse BS equation...");
+    auto Vertex4_out = Diagrams::BS(Chi0, Vertex4);
+    INFO2("done");
+    return Vertex4_out;
+}
+
+template <class Solver>
+template <typename MPoint>
+inline typename SelfConsistency<Solver>::GFType SelfConsistency<Solver>::getBubblePI(MPoint in)
+{
+    GFType out(this->_S.w_grid);
+    GFType gw_shift(_S.gw), Sigma_shift(_S.Sigma);
+    RealType T = 1.0/_S.w_grid._beta;
+    if (std::abs(ComplexType(in))<PI*T) {
+         gw_shift = _S.gw.shift(in);
+         Sigma_shift = _S.Sigma.shift(in);
+        };
+    GFType iwn(this->_S.w_grid); iwn.fill([](ComplexType w){return w;});
+    out = -T*(_S.gw+gw_shift)/(2*iwn+ComplexType(in)+2.0*_S.mu-_S.Sigma-Sigma_shift);
+    return out;
+}
+
+/*
+template <class Solver>
+template <typename MPoint>
+inline typename CubicInfDMFTSC<Solver>::GFType CubicInfDMFTSC<Solver>::getBubble0(MPoint in)
+{
+    GFType out(this->_S.w_grid);
+    return out;
+}
+*/
+
 //
 // Bethe SC
 //
@@ -235,7 +284,6 @@ inline typename CubicInfDMFTSC<Solver>::GFType CubicInfDMFTSC<Solver>::operator(
     }; 
     return out;
 }
-
 
 
 } // end of namespace FK

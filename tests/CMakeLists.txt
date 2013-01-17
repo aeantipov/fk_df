@@ -16,6 +16,7 @@ ShiftTest
 DMFTCubicTest
 DMFTBetheTest
 DMFTCubicSuscTest
+DMFTCubicSuscTest02
 DMFT_DFCubicTest01
 DMFT_DFCubicTest02
 DMFT_DFCubicTest03

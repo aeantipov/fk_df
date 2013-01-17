@@ -142,13 +142,15 @@ int main()
         auto Chiq0 = Diagrams::getSusc(Chi0q0, Diagrams::BS(Chi0q0,SC.getLatticeDMFTVertex4(iW)));
         auto Chi0qPI = Diagrams::getBubble(glat, iW, PI, PI);    
         auto ChiqPI = Diagrams::getSusc(Chi0qPI, Diagrams::BS(Chi0qPI,SC.getLatticeDMFTVertex4(iW))); 
+        chi_q0_vals[iwn] = std::real(Chiq0.sum());
         chi0_q0_vals[iwn] = std::real(Chi0q0.sum());
         chi0_qPI_vals[iwn] = std::real(Chi0qPI.sum());
         chi_qPI_vals[iwn] = std::real(ChiqPI.sum());
         auto chiq0_dmft = -T/ComplexType(iW)*(gw-gw.shift(iW)).sum();
-        if (!is_equal(ComplexType(iW),0.0)) { 
-            chi_q0_dmft_vals[size_t(iW)] = std::real(chiq0_dmft); 
-            chi_q0_vals[iwn] = std::real(Chiq0.sum());
+        chi_q0_dmft_vals[size_t(iW)] = std::real(chiq0_dmft); 
+        if (is_equal(ComplexType(iW),0.0)) { 
+            INFO("Static val = " << chi_q0_vals[size_t(iW)])
+            chi_q0_dmft_vals[size_t(iW)] = chi_q0_vals[size_t(iW)]; 
             };
         };
 
