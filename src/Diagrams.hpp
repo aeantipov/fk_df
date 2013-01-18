@@ -2,6 +2,7 @@
 #define __FK_DFDIAGRAMS_HPP__
 
 #include "Diagrams.h"
+#include <Eigen/LU>
 
 namespace FK {
 
@@ -42,6 +43,7 @@ inline typename Diagrams::GLocalType Diagrams::getBubble(const GLocalType &GF, A
     return (-T)*out;
 }
 
+/*
 template <typename VertexType>
 inline VertexType Diagrams::BS(const VertexType &Chi0, const VertexType &IrrVertex4, bool eval_SC, size_t n_iter, RealType mix)
 {
@@ -54,11 +56,29 @@ inline VertexType Diagrams::BS(const VertexType &Chi0, const VertexType &IrrVert
         ERROR("Couldn't invert the vertex");
         exit(1);
     }
+}*/
+
+template <typename ValueType>
+inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, const MatrixType<ValueType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
+{
+    INFO_NONEWLINE("\tRunning " << ((!forward)?"inverse":"") << " BS equation...");
+    size_t size = IrrVertex4.rows(); 
+    try {
+        auto V4 = IrrVertex4*(MatrixType<ValueType>::Identity(size,size) - (2*forward-1)*Chi0*IrrVertex4).inverse();
+        INFO("done");
+        return V4;
+    }
+    catch (std::exception &e) {
+        ERROR("Couldn't invert the vertex");
+        exit(1);
+    }
 }
 
+
 template <typename ValueType, typename GridType>
-inline GridObject<ValueType,GridType> Diagrams::BS (const GridObject<ValueType,GridType>& Chi0, const GridObject<ValueType,GridType> &IrrVertex4, bool eval_SC, size_t n_iter, RealType mix)
+inline GridObject<ValueType,GridType> Diagrams::BS (const GridObject<ValueType,GridType>& Chi0, const GridObject<ValueType,GridType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
 {
+    //INFO_NONEWLINE("\tRunning " << ((!forward)?"inverse":"") << " BS equation...");
     const auto _fGrid = std::get<0>(IrrVertex4.getGrids());
     GridObject<ValueType,GridType> Vertex4_out(IrrVertex4);
     GridObject<RealType,GridType> EVCheck(_fGrid); 
@@ -82,8 +102,9 @@ inline GridObject<ValueType,GridType> Diagrams::BS (const GridObject<ValueType,G
         #ifndef NDEBUG
         DEBUG("Evaluating BS equation using inversion");
         #endif
-        Vertex4_out = IrrVertex4/(1.0 - Chi0 * IrrVertex4);
+        Vertex4_out = IrrVertex4/(1.0 - (2*forward-1)*Chi0 * IrrVertex4);
         }
+    //INFO("done");
     return Vertex4_out;
 }
 

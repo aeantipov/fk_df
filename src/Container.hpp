@@ -66,6 +66,43 @@ ValueType Container<N,ValueType>::sum()
     return out;
 }
 
+template <size_t N, typename ValueType> 
+template<typename N2>
+MatrixType<ValueType> Container<N,ValueType>::getAsMatrix() const
+{
+    size_t rows = _vals.size();
+    size_t cols = _vals[0].getSize();
+    MatrixType<ValueType> out(rows, cols);
+    for (size_t i=0; i<rows; ++i) { 
+        const ValueType *d = _vals[i]._vals.data();
+        Eigen::Map<const VectorType<ValueType>> v(d, cols);
+        out.row(i) = v;
+        }
+    return out;
+}
+
+template <size_t N, typename ValueType> 
+template<typename N2>
+Container<N,ValueType>::Container(const MatrixType<ValueType> &rhs)
+{
+    std::array<size_t, 2> shape = {{ static_cast<size_t>(rhs.rows()), static_cast<size_t>(rhs.cols()) }};
+    *this = Container<2,ValueType>(shape);
+    for (size_t i=0; i<shape[0]; ++i) { 
+            std::copy(rhs.row(i).data(), rhs.row(i).data()+shape[1],_vals[i]._vals.data());
+        }
+}
+
+template <size_t N, typename ValueType> 
+template<typename N2>
+Container<N,ValueType>& Container<N,ValueType>::operator=(MatrixType<ValueType> &&rhs)
+{
+    assert(rhs.rows() == _vals.size() && rhs.cols() == _vals[0].getSize());
+    for (size_t i=0; i<rhs.rows(); ++i) { 
+            std::copy(rhs.row(i).data(), rhs.row(i).data()+rhs.cols(),_vals[i]._vals.data());
+        }
+    return *this;
+}
+
 
 //
 // Container, N=1
@@ -74,6 +111,12 @@ ValueType Container<N,ValueType>::sum()
 template <typename ValueType>
 template <size_t M>
 inline Container<1,ValueType>::Container ( const std::array<size_t, M> &in):_vals(std::vector<ValueType>(std::get<M-1>(in)))
+{
+//    DEBUG("Constructing from size_t.");
+}
+
+template <typename ValueType>
+inline Container<1,ValueType>::Container ( size_t size ):_vals(std::vector<ValueType>(size))
 {
 //    DEBUG("Constructing from size_t.");
 }
@@ -132,6 +175,28 @@ void Container<1,ValueType>::savetxt(const std::string& fname)
     std::ostream_iterator<ValueType> out_it (out,"\n");
     std::copy(_vals.begin(),_vals.end(), out_it);
     out.close();
+}
+
+template <typename ValueType> 
+MatrixType<ValueType> Container<1,ValueType>::getAsDiagonalMatrix() const
+{
+    size_t size1 = _vals.size();
+    Eigen::DiagonalMatrix<ValueType, Eigen::Dynamic> out(size1);
+    const ValueType *d = _vals.data();
+    Eigen::Map<const VectorType<ValueType>> v(d, size1);
+    out.diagonal() = v;
+    return out;
+}
+
+template <typename ValueType> 
+VectorType<ValueType> Container<1,ValueType>::getAsVector() const
+{
+    size_t size1 = _vals.size();
+    VectorType<ValueType> out(size1);
+    const ValueType *d = _vals.data();
+    Eigen::Map<const VectorType<ValueType>> v(d, size1);
+    out = v;
+    return out;
 }
 
 

@@ -30,28 +30,20 @@ inline GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> SelfConsistency<Sol
 {
     INFO_NONEWLINE("\tObtaining vertex from Solver and static 2-freq susceptibility...");
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4_out(std::forward_as_tuple(_S.w_grid,_S.w_grid)); 
-    decltype(Vertex4_out)::PointFunctionType Chi0fillF = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.gw(w1)*_S.gw(w2);};
+    decltype(Vertex4_out)::PointFunctionType VertexF = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getFVertex4(w1,w2);};
+    Vertex4_out.fill(VertexF);
 
-    size_t size = _S.w_grid.getSize();
+    auto Chi0B = Diagrams::getBubble(_S.gw,0.0);
 
-    MatrixType<ComplexType> Vertex4(size,size);
-    MatrixType<ComplexType> Chi0(size,size);
-    for (auto w1:_S.w_grid.getVals()) { 
-        for (auto w2 : _S.w_grid.getVals()) {
-            Chi0(size_t(w1),size_t(w2)) = Chi0fillF(w1,w2);
-            Vertex4(size_t(w1),size_t(w2)) = _S.getFVertex4(w1,w2); 
-            };
-        };
+    auto Vertex4 = Vertex4_out.getData().getAsMatrix();
+    auto Chi0 = Chi0B.getData().getAsDiagonalMatrix();
+
     INFO("done");
 
-    INFO_NONEWLINE("\tRunning inverse BS equation...");
-    Vertex4 *= (Chi0 * Vertex4+decltype(Vertex4)::Identity(size,size)).inverse();
-    INFO2("done");
+    Vertex4 = Diagrams::BS(Chi0, Vertex4, false);
     
     INFO_NONEWLINE("\tFilling output vertex...");
-    typename decltype(Vertex4_out)::PointFunctionType VertexFillf = [&Vertex4](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) 
-        { return Vertex4(size_t(w1),size_t(w2)); }; 
-    Vertex4_out.fill(VertexFillf);
+    Vertex4_out.getData() = Vertex4;
     INFO("done.");
     return Vertex4_out;
 }

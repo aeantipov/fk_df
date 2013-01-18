@@ -49,5 +49,31 @@ int main()
     DEBUG(D*5+2.0);
     DEBUG(D[0]+B);
 
+    INFO("Matrix test");
+    INFO("2-dim");
+    std::array<size_t,2> dim1 {{4,5}};
+    Container<2,RealType> Vals (dim1);
+    Vals[1][0] = 1.0;
+    Vals[0][3] = -0.4;
+    Vals[2][1] = 1.5;
+    INFO(Vals);
+    INFO(Vals.getAsMatrix());
+    decltype(Vals) Vals_2(Vals.getAsMatrix());
+    INFO(Vals_2);
+
+    decltype(Vals) Vals_3(dim1);
+    Vals_3 = Vals.getAsMatrix();
+    INFO(Vals_3);
+
+    if ((Vals-Vals_2).sum()!=0 || (Vals-Vals_3).sum()!=0) return EXIT_FAILURE;
+    INFO("1-dim test");
+    Container<1,RealType> Vals_1d(5);
+    Vals_1d[2]=1.6;
+    Vals_1d[4]=3;
+    INFO(Vals_1d);
+    INFO(Vals_1d.getAsVector());
+    INFO(Vals_1d.getAsDiagonalMatrix());
+    
+
     return EXIT_SUCCESS;
 }

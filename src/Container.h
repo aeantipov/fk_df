@@ -14,6 +14,7 @@ namespace FK {
 template <size_t N, typename ValueType>
 class Container {
 static_assert(N>1, "N=1 has a specialized variant");
+    friend class Container<N+1,ValueType>;
 protected:
     /** The data is stored as a recursive vector<vector ... > > structure. */
     std::vector<Container<N-1, ValueType> >  _vals;
@@ -33,6 +34,8 @@ public:
     typename Container<N,ValueType>::iterator begin();
     /** End iterator. */
     typename Container<N,ValueType>::iterator end();
+    /** Returns the size of the _vals. */
+    size_t getSize() const { return _vals.size(); };
     /** Algebraic operators. */
     Container<N,ValueType>& operator=(Container<N,ValueType> &&rhs);
     Container<N,ValueType>& operator=(const Container<N,ValueType> &rhs);
@@ -54,6 +57,9 @@ public:
     friend inline Container<N,ValueType> operator/ (const ValueType & lhs, const Container<N,ValueType> & rhs) {Container<N,ValueType> out(rhs); out=lhs; return out/rhs;};
 
 
+    template<typename N2 = typename std::enable_if<N==2, bool>> MatrixType<ValueType> getAsMatrix() const;
+    template<typename N2 = typename std::enable_if<N==2, bool>> Container<N,ValueType> (const MatrixType<ValueType> &rhs);
+    template<typename N2 = typename std::enable_if<N==2, bool>> Container<N,ValueType>& operator=(MatrixType<ValueType> &&rhs);
  
     /** Conjugate. */
     template <typename U = ValueType, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type=0> 
@@ -69,6 +75,7 @@ public:
 /* A specialization for the 1d Container. */
 template <typename ValueType>
 class Container<1,ValueType> {
+    friend class Container<2,ValueType>;
 protected:
     std::vector<ValueType>  _vals;
 public:
@@ -81,6 +88,8 @@ public:
     Container(Container<1,ValueType> &&rhs){std::swap(_vals, rhs._vals);};
     /** Constructor from the std::array of size_t. The last value is used. */
     template <size_t M> Container ( const std::array<size_t, M> &in);
+    /** Constructor from a number of points */;
+    Container ( size_t size);
     /** Returns the value at index i. */
     ValueType& operator[](size_t i);
     /** Begin iterator. */
@@ -88,6 +97,8 @@ public:
     /** End iterator. */
     typename Container<1,ValueType>::iterator end();
 
+    /** Returns the size of the _vals. */
+    size_t getSize() const { return _vals.size(); };
     /** Algebraic operators. */
     Container<1,ValueType>& operator=(Container<1,ValueType> &&rhs);
     Container<1,ValueType>& operator=(const Container<1,ValueType> &rhs);
@@ -117,6 +128,10 @@ public:
     void savetxt(const std::string& fname);
     /** Make the object streamable. */
     template <typename ValType> friend std::ostream& operator<<(std::ostream& lhs, const Container<1,ValType> &in);
+    /** Return a diagonal matrix, corresponding to the object */
+    MatrixType<ValueType> getAsDiagonalMatrix() const;
+    /** Return a vector, corresponding to the object. */
+    VectorType<ValueType> getAsVector() const;
 };
 
 }; // end of namespace FK

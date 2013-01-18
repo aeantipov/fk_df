@@ -33,8 +33,8 @@ public:
           mix(1.0), 
           n_freq(1024), 
           n_iter(1000), 
-          sc_type("bethe"), 
-          sc_index(SC::Bethe), 
+          sc_type(""), 
+          sc_index(), 
           extra_ops(false),
           help("") 
           {}

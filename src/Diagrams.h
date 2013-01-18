@@ -30,10 +30,18 @@ struct Diagrams
     template <typename ArgType>
     static GLocalType getBubble(const GLocalType& GF, ArgType arg);
 
-    template <typename VertexType> 
-    static VertexType BS(const VertexType &Chi0, const VertexType &IrrVertex4, bool eval_SC = false, size_t n_iter = 100, RealType mix = 1.0);
     template <typename ValueType, typename GridType>
-    static GridObject<ValueType,GridType> BS(const GridObject<ValueType,GridType> &Chi0, const GridObject<ValueType,GridType> &IrrVertex4, bool eval_SC = false, size_t n_iter = 100, RealType mix = 1.0);
+    static GridObject<ValueType,GridType> BS(
+            const GridObject<ValueType,GridType> &Chi0, 
+            const GridObject<ValueType,GridType> &IrrVertex4, 
+            bool forward = true, bool eval_SC = false, size_t n_iter = 100, RealType mix = 1.0);
+    template <typename ValueType>
+    static MatrixType<ValueType> BS(
+        const MatrixType<ValueType> &Chi0, 
+        const MatrixType<ValueType> &IrrVertex4, 
+        bool forward = true, bool eval_SC = false, size_t n_iter = 100, RealType mix= 1.0);
+//    template <typename VertexType> 
+//    static VertexType BS(const VertexType &Chi0, const VertexType &IrrVertex4, bool eval_SC = false, size_t n_iter = 100, RealType mix = 1.0);
 
     template <typename VertexType> 
     static VertexType getSusc(const VertexType &Chi0, const VertexType &FullVertex4);

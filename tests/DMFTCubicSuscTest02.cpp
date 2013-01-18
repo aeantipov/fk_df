@@ -63,17 +63,29 @@ int main()
     auto Bubbleq0 = SC.getBubble0(0.0);
     auto BubbleqPI = SC.getBubblePI(0.0); 
     auto StaticV4 = SC.getStaticLatticeDMFTVertex4();
+
+    auto FullVertexqPI = StaticV4.getData().getAsMatrix();
+    auto FullVertexq0 = StaticV4.getData().getAsMatrix();
+    auto Chiq0 = Bubbleq0.getData().getAsDiagonalMatrix();
+    auto ChiqPI = BubbleqPI.getData().getAsDiagonalMatrix();
+
+    FullVertexq0 = Diagrams::BS(Chiq0, FullVertexq0);
+    FullVertexqPI = Diagrams::BS(ChiqPI, FullVertexqPI);
+
     GF susc0(gridF), suscPI(gridF);
     for (auto w1: gridF.getVals()) { 
         susc0[size_t(w1)]+=Bubbleq0(w1);
         suscPI[size_t(w1)]+=BubbleqPI(w1);
         for (auto w2: gridF.getVals()) {
-            susc0[size_t(w1)]+=Bubbleq0(w1)*StaticV4(w1,w2)*Bubbleq0(w2); 
-            suscPI[size_t(w1)]+=BubbleqPI(w1)*StaticV4(w1,w2)*BubbleqPI(w2); 
+            susc0[size_t(w1)]+=Bubbleq0(w1)*FullVertexq0(size_t(w1),size_t(w2))*Bubbleq0(w2); 
+            suscPI[size_t(w1)]+=BubbleqPI(w1)*FullVertexqPI(size_t(w1),size_t(w2))*BubbleqPI(w2); 
             }
         };
     INFO("T = " << T);
+    INFO("Static bare q=0 susc = " << Bubbleq0.sum());
+    INFO("Static bare q=PI susc = " << BubbleqPI.sum());
     INFO("Static q=0 susc = " << susc0.sum());
     INFO("Static q=PI susc = " << suscPI.sum());
+    success = true;
     return EXIT_SUCCESS;
 }

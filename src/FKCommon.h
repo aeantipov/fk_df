@@ -31,7 +31,7 @@ template <typename T>
 using VectorType = Eigen::Matrix<T,Eigen::Dynamic, 1>;
 
 template <typename T>
-using MatrixType = Eigen::Matrix<T,Eigen::Dynamic, Eigen::Dynamic>;
+using MatrixType = Eigen::Matrix<T,Eigen::Dynamic, Eigen::Dynamic, Eigen::AutoAlign|Eigen::RowMajor>;
 
 /** A short name for imaginary unit. */
 static const ComplexType I = ComplexType(0.0,1.0);    // 'static' to prevent linking problems
@@ -64,7 +64,7 @@ struct __num_format {
     operator T(){return _v;};
     void savetxt(const std::string& filename) { 
         std::cout << "Saving " << typeid(*this).name() << " to " << filename << std::endl;
-        std::ofstream out; out.open(filename.c_str()); out << *this; out.close(); 
+        std::ofstream out; out.open(filename.c_str()); out << *this << std::endl; out.close(); 
     }; 
     friend std::ostream& operator<<(std::ostream& lhs, const __num_format<T> &in){lhs << std::setprecision(in._prec) << in._v; return lhs;};
     friend std::istream& operator>>(std::istream& lhs, __num_format<T> &out){lhs >> out._v; return lhs;};

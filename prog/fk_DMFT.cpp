@@ -47,23 +47,33 @@ void sighandler(int signal)
     interrupt = true;
 }
 
-template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid& gridF)
+template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& gridF)
 {
     const auto &Solver = SC._S;
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
     INFO("Calculating additional statistics.");
     INFO("Static susceptibility");
+
     auto Bubbleq0 = SC.getBubble0(0.0);
     auto BubbleqPI = SC.getBubblePI(0.0); 
     auto StaticV4 = SC.getStaticLatticeDMFTVertex4();
+
+    auto FullVertexqPI = StaticV4.getData().getAsMatrix();
+    auto FullVertexq0 = StaticV4.getData().getAsMatrix();
+    auto Chiq0 = Bubbleq0.getData().getAsDiagonalMatrix();
+    auto ChiqPI = BubbleqPI.getData().getAsDiagonalMatrix();
+
+    FullVertexq0 = Diagrams::BS(Chiq0, FullVertexq0);
+    FullVertexqPI = Diagrams::BS(ChiqPI, FullVertexqPI);
+
     GF susc0(gridF), suscPI(gridF);
     for (auto w1: gridF.getVals()) { 
         susc0[size_t(w1)]+=Bubbleq0(w1);
         suscPI[size_t(w1)]+=BubbleqPI(w1);
         for (auto w2: gridF.getVals()) {
-            susc0[size_t(w1)]+=Bubbleq0(w1)*StaticV4(w1,w2)*Bubbleq0(w2); 
-            suscPI[size_t(w1)]+=BubbleqPI(w1)*StaticV4(w1,w2)*BubbleqPI(w2); 
+            susc0[size_t(w1)]+=Bubbleq0(w1)*FullVertexq0(size_t(w1),size_t(w2))*Bubbleq0(w2); 
+            suscPI[size_t(w1)]+=BubbleqPI(w1)*FullVertexqPI(size_t(w1),size_t(w2))*BubbleqPI(w2); 
             }
         };
     INFO("T = " << T);
@@ -73,6 +83,8 @@ template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid&
     INFO("Static q=PI susc = " << suscPI_val);
     __num_format<RealType>(susc0_val).savetxt("StaticChiq0.dat");
     __num_format<RealType>(suscPI_val).savetxt("StaticChiqPI.dat");
+    __num_format<RealType>(std::real(Bubbleq0.sum())).savetxt("StaticChi0q0.dat");
+    __num_format<RealType>(std::real(BubbleqPI.sum())).savetxt("StaticChi0qPI.dat");
 
     INFO("Dynamic susceptibility");
     size_t n_b_freq = std::min(Solver.w_grid._w_max/2,int(2*beta));
@@ -83,12 +95,13 @@ template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid&
     auto Sigma = SC._S.Sigma;
 
     for (auto iW : gridB.getVals()) {
+        if (interrupt) exit(0);
         INFO("iW = " << iW);
         size_t iwn = size_t(iW);
         auto Chi0q0 = SC.getBubble0(iW); 
-        auto Chiq0 = Diagrams::getSusc(Chi0q0, Diagrams::BS(Chi0q0,SC.getLatticeDMFTVertex4(iW)));
+        auto Chiq0 = Diagrams::getSusc<GFWrap>(Chi0q0, Diagrams::BS(Chi0q0,SC.getLatticeDMFTVertex4(iW)));
         auto Chi0qPI = SC.getBubblePI(iW);
-        auto ChiqPI = Diagrams::getSusc(Chi0qPI, Diagrams::BS(Chi0qPI,SC.getLatticeDMFTVertex4(iW))); 
+        auto ChiqPI = Diagrams::getSusc<GFWrap>(Chi0qPI, Diagrams::BS(Chi0qPI,SC.getLatticeDMFTVertex4(iW))); 
         chi_q0_vals[iwn] = std::real(Chiq0.sum());
         chi0_q0_vals[iwn] = std::real(Chi0q0.sum());
         chi0_qPI_vals[iwn] = std::real(Chi0qPI.sum());
@@ -99,7 +112,7 @@ template <class SCType> void getGwBubble(const SCType& SC, const FMatsubaraGrid&
             INFO("Static val = " << chi_q0_vals[size_t(iW)])
         //    chi_q0_vals[size_t(iW)] += susc0_val;
         //    chi_qPI_vals[size_t(iW)] += suscPI_val;
-            chi_q0_dmft_vals[size_t(iW)] = 0; //chi_q0_vals[size_t(iW)]; 
+            chi_q0_dmft_vals[size_t(iW)] = chi_q0_vals[size_t(iW)]; 
             //chi_qPI_dmft_vals[size_t(iW)] += suscPI_val;
             };
         };
@@ -172,6 +185,7 @@ int main(int argc, char *argv[])
     FKImpuritySolver Solver(U,mu,e_d,Delta);
 
     std::unique_ptr<SelfConsistency<FKImpuritySolver>> SC_ptr;
+
     typedef FKOptionParserDMFT::SC enumSC;
     switch (sc_switch) {
         case enumSC::Bethe:       SC_ptr.reset(new BetheSC<FKImpuritySolver>(Solver, t)); break;
@@ -179,8 +193,8 @@ int main(int argc, char *argv[])
         case enumSC::DMFTCubic2d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2, KPOINTS>(Solver, t)); D=2; break;
         case enumSC::DMFTCubic3d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, KPOINTS>(Solver, t)); D=3; break;
         case enumSC::DMFTCubic4d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,4, KPOINTS>(Solver, t)); D=4; break;
-        case enumSC::DMFTCubicInfd: SC_ptr.reset(new CubicInfDMFTSC<FKImpuritySolver>(Solver,t,RealGrid(-6.0*t,6.0*t,1024)));
-        default:                  SC_ptr.reset(new BetheSC<FKImpuritySolver>(Solver, t)); break;
+        case enumSC::DMFTCubicInfd: SC_ptr.reset(new CubicInfDMFTSC<FKImpuritySolver>(Solver,t,RealGrid(-6.0*t,6.0*t,1024))); break;
+        default:                  ERROR("No self-consistency provided. Exiting..."); exit(1); 
     };
     auto &SC = *SC_ptr;
 
@@ -205,22 +219,22 @@ int main(int argc, char *argv[])
     Solver.Delta.savetxt("Delta_full.dat");
 
     // Everything important is finished by here
-    if (extra_ops && D) {
+    if (extra_ops) {
         switch (sc_switch) {
             case enumSC::DMFTCubic1d: 
-                getGwBubble(*(static_cast<CubicDMFTSC<FKImpuritySolver,1, KPOINTS>*> (SC_ptr.get())), gridF); 
+                calcStats(*(static_cast<CubicDMFTSC<FKImpuritySolver,1, KPOINTS>*> (SC_ptr.get())), gridF); 
                 break;
             case enumSC::DMFTCubic2d: 
-                getGwBubble(*(static_cast<CubicDMFTSC<FKImpuritySolver,2, KPOINTS>*> (SC_ptr.get())), gridF); 
+                calcStats(*(static_cast<CubicDMFTSC<FKImpuritySolver,2, KPOINTS>*> (SC_ptr.get())), gridF); 
                 break;
             case enumSC::DMFTCubic3d: 
-                getGwBubble(*(static_cast<CubicDMFTSC<FKImpuritySolver,3, KPOINTS>*> (SC_ptr.get())), gridF); 
+                calcStats(*(static_cast<CubicDMFTSC<FKImpuritySolver,3, KPOINTS>*> (SC_ptr.get())), gridF); 
                 break;
             case enumSC::DMFTCubic4d: 
-                getGwBubble(*(static_cast<CubicDMFTSC<FKImpuritySolver,4, KPOINTS>*> (SC_ptr.get())), gridF); 
+                calcStats(*(static_cast<CubicDMFTSC<FKImpuritySolver,4, KPOINTS>*> (SC_ptr.get())), gridF); 
                 break;
             case enumSC::DMFTCubicInfd: 
-                getGwBubble(*(static_cast<CubicInfDMFTSC<FKImpuritySolver>*> (SC_ptr.get())), gridF); 
+                calcStats(*(static_cast<CubicInfDMFTSC<FKImpuritySolver>*> (SC_ptr.get())), gridF); 
                 break;
  
             default: break;
