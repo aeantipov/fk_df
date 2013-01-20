@@ -128,7 +128,7 @@ typename DFLadder<Solver,D,ksize>::GLocalType DFLadder<Solver,D,ksize>::operator
 
                 // Bethe-Salpeter vertex
                 Chi0 = Diagrams::getBubble(GD, Wq_args);
-                FullDualVertex4 = Diagrams::BS(Chi0, Vertex4, _eval_BS_SC, _n_BS_iter, _BSmix);
+                FullDualVertex4 = Diagrams::BS(Chi0, Vertex4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
                 
                 // Sigma
                 GD_shift = GD.shift(Wq_args);
@@ -219,7 +219,7 @@ std::tuple<typename DFLadder<Solver,D,ksize>::SuscType> DFLadder<Solver,D,ksize>
             size_t count=0; for (auto qval : q) { INFO_NONEWLINE("q_" << count++ << "="<<RealType(qval) << " "); }; 
             // Bethe-Salpeter vertex
             Chi0 = Diagrams::getBubble(GD, Wq_args);
-            FullDualVertex4 = Diagrams::BS(Chi0, Vertex4, _eval_BS_SC, _n_BS_iter, _BSmix);
+            FullDualVertex4 = Diagrams::BS(Chi0, Vertex4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
             
             // Lattice susceptibility
             GLocalType ChiLat0 = Diagrams::getBubble(GLat, Wq_args);

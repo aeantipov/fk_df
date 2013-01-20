@@ -69,8 +69,8 @@ int main()
     auto Chiq0 = Bubbleq0.getData().getAsDiagonalMatrix();
     auto ChiqPI = BubbleqPI.getData().getAsDiagonalMatrix();
 
-    FullVertexq0 = Diagrams::BS(Chiq0, FullVertexq0);
-    FullVertexqPI = Diagrams::BS(ChiqPI, FullVertexqPI);
+    FullVertexq0 = Diagrams::BS(Chiq0, FullVertexq0, true);
+    FullVertexqPI = Diagrams::BS(ChiqPI, FullVertexqPI, true);
 
     GF susc0(gridF), suscPI(gridF);
     for (auto w1: gridF.getVals()) { 

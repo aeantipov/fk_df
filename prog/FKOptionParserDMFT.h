@@ -21,7 +21,7 @@ public:
 	size_t n_iter;
 	std::string sc_type;
     SC sc_index;
-    bool extra_ops;
+    size_t extra_ops;
 	std::string help;
 
 	FKOptionParserDMFT() : 
@@ -35,7 +35,7 @@ public:
           n_iter(1000), 
           sc_type(""), 
           sc_index(), 
-          extra_ops(false),
+          extra_ops(0),
           help("") 
           {}
 
@@ -79,12 +79,12 @@ public:
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
 
-        ON_OPTION(LONGOPT("extraops"))
-            extra_ops = true;
+        ON_OPTION_WITH_ARG(LONGOPT("extraops"))
+			extra_ops = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
 
-        ON_OPTION(SHORTOPT('s') || LONGOPT("sc"))
+        ON_OPTION_WITH_ARG(SHORTOPT('s') || LONGOPT("sc"))
             sc_type = arg;
             if (sc_type == "bethe") sc_index = SC::Bethe;
             else if (sc_type == "dmftcubic1d") sc_index = SC::DMFTCubic1d;

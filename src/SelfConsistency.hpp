@@ -20,8 +20,7 @@ inline typename SelfConsistency<Solver>::GFType SelfConsistency<Solver>::getLatt
     Vertex4._f = Vertexf;
 
     GFType Chi0 = Diagrams::getBubble(_S.gw,in);
-    Chi0*=(-1.0);
-    auto Vertex_out = Diagrams::BS(Chi0, Vertex4);
+    auto Vertex_out = Diagrams::BS(Chi0, Vertex4, false);
     return Vertex_out; 
 }
 

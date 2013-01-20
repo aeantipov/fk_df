@@ -139,9 +139,9 @@ int main()
         INFO("iW = " << iW);
         size_t iwn = size_t(iW);
         auto Chi0q0 = Diagrams::getBubble(glat, iW, 0.0, 0.0);    
-        auto Chiq0 = Diagrams::getSusc(Chi0q0, Diagrams::BS(Chi0q0,SC.getLatticeDMFTVertex4(iW)));
+        auto Chiq0 = Diagrams::getSusc<GF>(Chi0q0, Diagrams::BS(Chi0q0,SC.getLatticeDMFTVertex4(iW),true));
         auto Chi0qPI = Diagrams::getBubble(glat, iW, PI, PI);    
-        auto ChiqPI = Diagrams::getSusc(Chi0qPI, Diagrams::BS(Chi0qPI,SC.getLatticeDMFTVertex4(iW))); 
+        auto ChiqPI = Diagrams::getSusc<GF>(Chi0qPI, Diagrams::BS(Chi0qPI,SC.getLatticeDMFTVertex4(iW), true)); 
         chi_q0_vals[iwn] = std::real(Chiq0.sum());
         chi0_q0_vals[iwn] = std::real(Chi0q0.sum());
         chi0_qPI_vals[iwn] = std::real(Chi0qPI.sum());

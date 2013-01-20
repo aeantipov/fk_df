@@ -31,6 +31,7 @@ using namespace FK;
 
 RealType beta;
 size_t D=0;
+size_t extra_ops;
  
 typedef GFWrap GF;
 
@@ -64,8 +65,8 @@ template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& g
     auto Chiq0 = Bubbleq0.getData().getAsDiagonalMatrix();
     auto ChiqPI = BubbleqPI.getData().getAsDiagonalMatrix();
 
-    FullVertexq0 = Diagrams::BS(Chiq0, FullVertexq0);
-    FullVertexqPI = Diagrams::BS(ChiqPI, FullVertexqPI);
+    FullVertexq0 = Diagrams::BS(Chiq0, FullVertexq0, true);
+    FullVertexqPI = Diagrams::BS(ChiqPI, FullVertexqPI, true);
 
     GF susc0(gridF), suscPI(gridF);
     for (auto w1: gridF.getVals()) { 
@@ -86,6 +87,7 @@ template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& g
     __num_format<RealType>(std::real(Bubbleq0.sum())).savetxt("StaticChi0q0.dat");
     __num_format<RealType>(std::real(BubbleqPI.sum())).savetxt("StaticChi0qPI.dat");
 
+    if (extra_ops>=2) { 
     INFO("Dynamic susceptibility");
     size_t n_b_freq = std::min(Solver.w_grid._w_max/2,int(2*beta));
     BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
@@ -99,9 +101,9 @@ template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& g
         INFO("iW = " << iW);
         size_t iwn = size_t(iW);
         auto Chi0q0 = SC.getBubble0(iW); 
-        auto Chiq0 = Diagrams::getSusc<GFWrap>(Chi0q0, Diagrams::BS(Chi0q0,SC.getLatticeDMFTVertex4(iW)));
+        auto Chiq0 = Diagrams::getSusc<GFWrap>(Chi0q0, Diagrams::BS(Chi0q0,SC.getLatticeDMFTVertex4(iW), true));
         auto Chi0qPI = SC.getBubblePI(iW);
-        auto ChiqPI = Diagrams::getSusc<GFWrap>(Chi0qPI, Diagrams::BS(Chi0qPI,SC.getLatticeDMFTVertex4(iW))); 
+        auto ChiqPI = Diagrams::getSusc<GFWrap>(Chi0qPI, Diagrams::BS(Chi0qPI,SC.getLatticeDMFTVertex4(iW), true)); 
         chi_q0_vals[iwn] = std::real(Chiq0.sum());
         chi0_q0_vals[iwn] = std::real(Chi0q0.sum());
         chi0_qPI_vals[iwn] = std::real(Chi0qPI.sum());
@@ -128,6 +130,7 @@ template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& g
     chi0_qPI_vals.savetxt("DynamicChi0qPI.dat");
     chi_q0_vals.savetxt("DynamicChiq0.dat");
     chi_qPI_vals.savetxt("DynamicChiqPI.dat");
+    };
 }
 
 int main(int argc, char *argv[])
@@ -167,7 +170,7 @@ int main(int argc, char *argv[])
     size_t maxit = opt.n_iter;
     RealType mix = opt.mix;
     auto sc_switch = opt.sc_index;
-    bool extra_ops = opt.extra_ops;
+    extra_ops = opt.extra_ops;
     
     Log.setDebugging(true);
 
