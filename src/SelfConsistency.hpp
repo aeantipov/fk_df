@@ -29,17 +29,18 @@ inline GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> SelfConsistency<Sol
 {
     INFO_NONEWLINE("\tObtaining vertex from Solver and static 2-freq susceptibility...");
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4_out(std::forward_as_tuple(_S.w_grid,_S.w_grid)); 
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Chi0(std::forward_as_tuple(_S.w_grid,_S.w_grid)); 
     decltype(Vertex4_out)::PointFunctionType VertexF = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getFVertex4(w1,w2);};
+    decltype(Chi0)::PointFunctionType Chi0F = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.gw(w1)*_S.gw(w2)/_S.w_grid._beta;};
     Vertex4_out.fill(VertexF);
-
-    auto Chi0B = Diagrams::getBubble(_S.gw,0.0);
+    Chi0.fill(Chi0F);
 
     auto Vertex4 = Vertex4_out.getData().getAsMatrix();
-    auto Chi0 = Chi0B.getData().getAsDiagonalMatrix();
+    auto Chi0Matrix = Chi0.getData().getAsMatrix();
 
     INFO("done");
 
-    Vertex4 = Diagrams::BS(Chi0, Vertex4, false);
+    Vertex4 = Diagrams::BS(Chi0Matrix, Vertex4, false);
     
     INFO_NONEWLINE("\tFilling output vertex...");
     Vertex4_out.getData() = Vertex4;
@@ -62,6 +63,20 @@ inline typename SelfConsistency<Solver>::GFType SelfConsistency<Solver>::getBubb
     out = -T*(_S.gw+gw_shift)/(2*iwn+ComplexType(in)+2.0*_S.mu-_S.Sigma-Sigma_shift);
     return out;
 }
+
+template <class Solver>
+inline GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> SelfConsistency<Solver>::getBubblePI() const
+{
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> out(std::forward_as_tuple(this->_S.w_grid, this->_S.w_grid));
+    RealType T = 1.0/_S.w_grid._beta;
+    GFType iwn(this->_S.w_grid); iwn.fill([](ComplexType w){return w;});
+    decltype(out)::PointFunctionType f = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) { 
+        return -T*(_S.gw(w1)+_S.gw(w2))/(ComplexType(w1)+ComplexType(w2)+2.0*_S.mu-_S.Sigma(w1)-_S.Sigma(w2));
+    };
+    out.fill(f);
+    return out;
+}
+
 
 /*
 template <class Solver>
@@ -317,6 +332,19 @@ inline typename CubicInfDMFTSC<Solver>::GFType CubicInfDMFTSC<Solver>::getBubble
     GFType iwn(_S.w_grid);
     iwn.fill([](ComplexType w){return w;});
     return 2.0*T/_t/_t*(1.0-(iwn+_S.mu-_S.Sigma)*_S.gw);
+} 
+
+template <class Solver>
+inline GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> CubicInfDMFTSC<Solver>::getBubble0() const
+{
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> out(std::forward_as_tuple(_S.w_grid,_S.w_grid));
+    auto T = 1.0/_S.w_grid._beta;
+    decltype(out)::PointFunctionType f = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2)->ComplexType {
+        if (w1 == w2) return 2.0*T/_t/_t*(1.0-(ComplexType(w1)+_S.mu-_S.Sigma(w1))*_S.gw(w1));
+        else return -T*(_S.gw(w1) - _S.gw(w2))/( ComplexType(w2) - ComplexType(w1) + _S.Sigma(w1) - _S.Sigma(w2));
+    };
+    out.fill(f);
+    return out;
 } 
 
 

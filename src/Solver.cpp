@@ -55,6 +55,17 @@ void FKImpuritySolver::run(bool calc_weight)
     //DEBUG("Sigma = " << Sigma);
 }
 
+GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> FKImpuritySolver::getBubble() const
+{
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> out(std::forward_as_tuple(w_grid, w_grid));
+    RealType T = 1.0/w_grid._beta;
+    decltype(out)::PointFunctionType f = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) { 
+        return -T*(gw(w1)*gw(w2));
+    };
+    out.fill(f);
+    out._f = [&](ComplexType w1, ComplexType w2){return -T*gw._f(w1)*gw._f(w2);};
+    return out;
+}
 
 } // end of namespace FK
 

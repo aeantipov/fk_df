@@ -3,6 +3,7 @@
 
 #include "Diagrams.h"
 #include <Eigen/LU>
+#include <Eigen/Dense>
 
 namespace FK {
 
@@ -61,12 +62,17 @@ inline VertexType Diagrams::BS(const VertexType &Chi0, const VertexType &IrrVert
 template <typename ValueType>
 inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, const MatrixType<ValueType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
 {
-    INFO_NONEWLINE("\tRunning " << ((!forward)?"inverse":"") << " BS equation...");
+    INFO_NONEWLINE("\tRunning" << ((!forward)?" inverse ":" ") << "BS equation...");
     size_t size = IrrVertex4.rows(); 
+
     try {
-        auto V4 = IrrVertex4*(MatrixType<ValueType>::Identity(size,size) - (2*forward-1)*Chi0*IrrVertex4).inverse();
-        INFO("done");
-        return V4;
+        if (forward) {
+            //Eigen::ColPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (2*forward-1)*IrrVertex4*Chi0);
+            Eigen::FullPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (IrrVertex4*Chi0));
+            auto V4 = Solver.solve(IrrVertex4); 
+            INFO("done.");
+            return V4;
+        };
     }
     catch (std::exception &e) {
         ERROR("Couldn't invert the vertex");

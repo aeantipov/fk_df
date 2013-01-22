@@ -47,6 +47,7 @@ public:
         auto w2 = w_grid.shift(w1,O1);
         return -this->getFVertex4(w1,w2);
         };
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubble() const;
 };
 
 } // end of namespace FK

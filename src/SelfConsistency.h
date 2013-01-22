@@ -17,7 +17,10 @@ struct SelfConsistency
     template <typename MPoint> GFType getLatticeDMFTVertex4(MPoint in) const;
     template <typename MPoint> GFType getBubblePI(MPoint in) const;
     template <typename MPoint> GFType getBubble0(MPoint in) const;
-   GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getStaticLatticeDMFTVertex4() const;
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubblePI() const;
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubble0() const;
+
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getStaticLatticeDMFTVertex4() const;
 };
 
 template <class Solver>
@@ -110,6 +113,7 @@ public:
     //RealType getLatticeSusceptibility(MPoint w, bool zeroOrPi) const;
     using SelfConsistency<Solver>::getBubblePI;
     template <typename MPoint> GFType getBubble0(MPoint in) const;
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubble0() const;
 };
 
 } // end of namespace FK
