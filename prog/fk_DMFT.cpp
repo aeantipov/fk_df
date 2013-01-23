@@ -51,41 +51,72 @@ void sighandler(int signal)
 template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& gridF)
 {
     const auto &Solver = SC._S;
+    auto gw = Solver.gw;
+    auto Sigma = Solver.Sigma;
+    auto w_0 = Solver.w_0;
+    auto w_1 = Solver.w_1;
+    auto K0 = Solver.K0;
+    auto K1 = Solver.K1;
+    auto U = Solver.U;
+    //auto mu = Solver.mu;
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
+
     INFO("Calculating additional statistics.");
     INFO("Static susceptibility");
 
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4_2(std::forward_as_tuple(gridF,gridF)); 
+    decltype(Vertex4_2)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getFVertex4(w1,w2) - ((w1==w2)?Solver.getFVertex4(w1,w1):0.0);};
+    Vertex4_2.fill(VertexF2);
+    auto V4 = Vertex4_2.getData().getAsMatrix();
+
     auto Bubbleq0 = SC.getBubble0(0.0);
     auto BubbleqPI = SC.getBubblePI(0.0); 
-    auto StaticV4 = SC.getStaticLatticeDMFTVertex4();
+    std::vector<std::string> names = {"local", "pi", "zero"};
+    std::vector<GF> bubbles = { -T*gw*gw, BubbleqPI, Bubbleq0 };
 
-    auto FullVertexqPI = StaticV4.getData().getAsMatrix();
-    auto FullVertexq0 = StaticV4.getData().getAsMatrix();
-    auto Chiq0 = Bubbleq0.getData().getAsDiagonalMatrix();
-    auto ChiqPI = BubbleqPI.getData().getAsDiagonalMatrix();
+    std::map<std::string,ComplexType> susc_vals, susc_vals2, bare_susc_vals;
 
-    FullVertexq0 = Diagrams::BS(Chiq0, FullVertexq0, true);
-    FullVertexqPI = Diagrams::BS(ChiqPI, FullVertexqPI, true);
+    auto Lambda = 1.0 + gw*(2.0*Sigma - U); 
+    auto Lambda2 = (1. + gw*Sigma)*(1.+gw*(Sigma-U));
 
-    GF susc0(gridF), suscPI(gridF);
-    for (auto w1: gridF.getVals()) { 
-        susc0[size_t(w1)]+=Bubbleq0(w1);
-        suscPI[size_t(w1)]+=BubbleqPI(w1);
-        for (auto w2: gridF.getVals()) {
-            susc0[size_t(w1)]+=Bubbleq0(w1)*FullVertexq0(size_t(w1),size_t(w2))*Bubbleq0(w2); 
-            suscPI[size_t(w1)]+=BubbleqPI(w1)*FullVertexqPI(size_t(w1),size_t(w2))*BubbleqPI(w2); 
-            }
+    for (size_t i=0; i<bubbles.size(); ++i) { 
+
+        auto bubble = bubbles[i];
+        auto dual_bubble = bubbles[i]+T*gw*gw;
+        auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
+        auto FullVertex = Diagrams::BS(dual_bubble_matrix, V4, true);
+        ComplexType susc = 0.0;
+        ComplexType bare_susc = 0.0;
+
+        /** Skeleton expansion. */
+        auto nu = gw*(-1.0/gw/gw - T/bubble);
+        auto d1 = Lambda*gw*nu + Lambda2;
+        auto ugamma_down = 1.0 - (w_0*w_1*U*U*gw*gw*gw*nu/(Lambda2 * (d1))).sum();
+        auto ugamma = (w_0*w_1*U*U*gw*gw/(d1)).sum() / (ugamma_down); 
+        auto chi_v = -T*((Lambda - ugamma)*gw*gw/d1).sum();
+        susc_vals2[names[i]] = chi_v;
+        
+        /** Vertex expansion. */
+        for (auto w1: gridF.getVals()) { 
+            bare_susc+=bubble(w1);
+            for (auto w2: gridF.getVals()) {
+                susc+=bubble(w1)*FullVertex(size_t(w1),size_t(w2))*bubble(w2); 
+                }
+            };
+        susc+=bare_susc;
+        susc_vals[names[i]] = susc;
+        bare_susc_vals[names[i]] = bare_susc;
+        INFO2("Static susc " << names[i] <<" (bs) = " << susc);
+        INFO2("Static susc " << names[i] <<" (exact) = " << chi_v);
         };
-    INFO("T = " << T);
-    RealType susc0_val = std::real(susc0.sum());
-    RealType suscPI_val = std::real(suscPI.sum());
-    INFO("Static q=0 susc = " << susc0_val);
-    INFO("Static q=PI susc = " << suscPI_val);
-    __num_format<RealType>(susc0_val).savetxt("StaticChiq0.dat");
-    __num_format<RealType>(suscPI_val).savetxt("StaticChiqPI.dat");
-    __num_format<RealType>(std::real(Bubbleq0.sum())).savetxt("StaticChi0q0.dat");
-    __num_format<RealType>(std::real(BubbleqPI.sum())).savetxt("StaticChi0qPI.dat");
+
+    __num_format<ComplexType>(bare_susc_vals["zero"]).savetxt("StaticChi0q0.dat");
+    __num_format<ComplexType>(bare_susc_vals["pi"]).savetxt("StaticChi0qPI.dat");
+    __num_format<ComplexType>(bare_susc_vals["local"]).savetxt("StaticChi0Local.dat");
+    __num_format<ComplexType>(susc_vals["zero"]).savetxt("StaticChiq0.dat");
+    __num_format<ComplexType>(susc_vals["pi"]).savetxt("StaticChiqPI.dat");
+    __num_format<ComplexType>(susc_vals["local"]).savetxt("StaticChiLocal.dat");
 
     if (extra_ops>=2) { 
     INFO("Dynamic susceptibility");

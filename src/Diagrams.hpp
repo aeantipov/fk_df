@@ -72,7 +72,8 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
             auto V4 = Solver.solve(IrrVertex4); 
             INFO("done.");
             return V4;
-        };
+        }
+        else exit(1);
     }
     catch (std::exception &e) {
         ERROR("Couldn't invert the vertex");
