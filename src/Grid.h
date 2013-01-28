@@ -47,7 +47,7 @@ public:
     /** Initialize the values from a given function, that maps the integer values
      * to the ValueType values. 
      */
-    Grid(int min, int max, std::function<ValueType (const int&)> f);
+    Grid(int min, int max, std::function<ValueType (int)> f);
     /** Copy constructor. */
     Grid(const Grid& rhs):_vals(rhs._vals){};
     /** Move constructor. */
@@ -133,6 +133,7 @@ public:
     template <class Obj> auto integrate(const Obj &in) const ->decltype(in(_vals[0]));
     template <class Obj, typename ...OtherArgTypes> auto integrate(const Obj &in, OtherArgTypes... Args) const -> decltype(in(_vals[0],Args...));
     RealGrid(RealType min, RealType max, size_t npoints);
+    RealGrid(int min, int max, const std::function<RealType(int)> &f);
     std::tuple <bool, size_t, RealType> find (RealType in) const ;
     //template <class Obj> auto gridIntegrate(std::vector<Obj> &in) -> Obj;
     template <class Obj> auto getValue(Obj &in, RealType x) const ->decltype(in[0]);

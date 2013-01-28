@@ -108,59 +108,57 @@ inline typename BetheSC<Solver>::GFType BetheSC<Solver>::operator()()
 // CubicTraits
 //
 
-template <size_t M, size_t ksize> 
+template <size_t M> 
 template <class IteratorType, typename ...ArgTypes> 
-inline void CubicTraits<M, ksize>::fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
+inline void CubicTraits<M>::fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
 {
-    assert(grid.getSize() == ksize);
-    size_t mult = __power<ksize,M-1>::value;
+    //assert(grid.getSize() == ksize);
+    size_t ksize = grid.getSize();
+    size_t mult = pow(ksize,M-1); 
     auto move_it = in;
     for (size_t kx = 0; kx<ksize; ++kx) { 
-        CubicTraits<M-1, ksize>::template fill<IteratorType, ArgTypes..., RealType> (move_it, t, grid, otherpos..., grid[kx]);
+        CubicTraits<M-1>::template fill<IteratorType, ArgTypes..., RealType> (move_it, t, grid, otherpos..., grid[kx]);
         move_it += mult;
         }
 }
 
-template <size_t M, size_t ksize> 
+template <size_t M> 
 template <class ContainerType, typename ...ArgTypes> 
-inline void CubicTraits<M, ksize>::fillContainer(ContainerType &in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
+inline void CubicTraits<M>::fillContainer(ContainerType &in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
 {
-    assert(grid.getSize() == ksize);
+    assert(grid.getSize() == in.getSize());
+    size_t ksize = grid.getSize();
     for (size_t kx = 0; kx<ksize; ++kx) { 
-        CubicTraits<M-1, ksize>::fillContainer(in[kx], t, grid, otherpos..., grid[kx]);
+        CubicTraits<M-1>::fillContainer(in[kx], t, grid, otherpos..., grid[kx]);
         }
 }
 
 
 
-template <size_t ksize> 
 template <class IteratorType, typename ...ArgTypes> 
-inline void CubicTraits<0, ksize>::fill (IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
+inline void CubicTraits<0>::fill (IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
 {
     *in = ek(t,otherpos...);
 }
 
-template <size_t ksize> 
 template <class DataType, typename ...ArgTypes> 
-inline void CubicTraits<0, ksize>::fillContainer(DataType &in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
+inline void CubicTraits<0>::fillContainer(DataType &in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
 {
-    assert(grid.getSize() == ksize);
+    assert(grid.getSize() == in.getSize());
     in = ek(t,otherpos...);
 }
 
 
-template <size_t ksize> 
 template <typename ArgType1, typename ...ArgTypes> 
-inline RealType CubicTraits<0, ksize>::ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints) 
+inline RealType CubicTraits<0>::ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints) 
 {
     static_assert(std::is_convertible<ArgType1, RealType>::value,"Wrong kpoint");
     assert (kpoint1>=0 && kpoint1 < 2*PI);
     return -2.0*t*cos(kpoint1)+ek(t, kpoints...);
 }
  
-template <size_t ksize> 
 template <typename ArgType1> 
-inline RealType CubicTraits<0, ksize>::ek(RealType t, ArgType1 kpoint1)
+inline RealType CubicTraits<0>::ek(RealType t, ArgType1 kpoint1)
 {
     static_assert(std::is_convertible<ArgType1, RealType>::value,"Wrong kpoint");
     assert (kpoint1>=0 && kpoint1 < 2*PI);
@@ -171,32 +169,32 @@ inline RealType CubicTraits<0, ksize>::ek(RealType t, ArgType1 kpoint1)
 // CubicDMFT
 //
 
-template <class Solver, size_t D, size_t ksize>
-inline CubicDMFTSC<Solver,D,ksize>::CubicDMFTSC ( const Solver &S, RealType t):
+template <class Solver, size_t D>
+inline CubicDMFTSC<Solver,D>::CubicDMFTSC ( const Solver &S, RealType t, KMesh kGrid):
     SelfConsistency<Solver>(S),
     _t(t),
-    _kGrid(KMesh(ksize)),
+    _kGrid(kGrid),
     _ek(__repeater<KMesh,D>::get_tuple(_kGrid)),
     _gloc(this->_S.w_grid)
 {
-    //CubicTraits<D,ksize>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kGrid);
-    CubicTraits<D,ksize>::template fillContainer<Container<D,ComplexType>>(_ek.getData(), _t, _kGrid);
-    //CubicTraits<D,ksize>::template fillContainer<EkStorage>(_ek, _t, _kGrid);
-    _ek._f = CubicTraits<D,ksize>::template get_dispersion<typename EkStorage::FunctionType> (t); 
+    //CubicTraits<D>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kGrid);
+    CubicTraits<D>::template fillContainer<Container<D,ComplexType>>(_ek.getData(), _t, _kGrid);
+    //CubicTraits<D>::template fillContainer<EkStorage>(_ek, _t, _kGrid);
+    _ek._f = CubicTraits<D>::template get_dispersion<typename EkStorage::FunctionType> (t); 
 }
 
 
-template <class Solver, size_t D, size_t ksize>
+template <class Solver, size_t D>
 template <typename ...ArgTypes>
-inline RealType CubicDMFTSC<Solver,D,ksize>::dispersion(ArgTypes... kpoints) const
+inline RealType CubicDMFTSC<Solver,D>::dispersion(ArgTypes... kpoints) const
 {
     static_assert(sizeof...(ArgTypes) == D, "Number of points mismatch!" );
-    return CubicTraits<0,ksize>::ek(_t, kpoints...);
+    return CubicTraits<0>::ek(_t, kpoints...);
 }
 
-template <class Solver, size_t D, size_t ksize>
+template <class Solver, size_t D>
 template <typename ...ArgTypes>
-inline RealType CubicDMFTSC<Solver,D,ksize>::dispersion(const std::tuple<ArgTypes...>& kpoints) const
+inline RealType CubicDMFTSC<Solver,D>::dispersion(const std::tuple<ArgTypes...>& kpoints) const
 {
     static_assert(sizeof...(ArgTypes) == D, "Number of points mismatch!" );
     typename EkStorage::PointFunctionType f1 = [&](ArgTypes... kpoints)->RealType{return dispersion(kpoints...);};
@@ -205,9 +203,9 @@ inline RealType CubicDMFTSC<Solver,D,ksize>::dispersion(const std::tuple<ArgType
 }
 
 
-template <class Solver, size_t D, size_t ksize>
+template <class Solver, size_t D>
 template <typename ...ArgTypes>
-inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::glat(ArgTypes... kpoints) const
+inline typename CubicDMFTSC<Solver,D>::GFType CubicDMFTSC<Solver,D>::glat(ArgTypes... kpoints) const
 {
     static_assert(sizeof...(ArgTypes) == D,"!");
     auto e = dispersion<ArgTypes...>(kpoints...);
@@ -216,15 +214,15 @@ inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>:
 
 }
 
-template <class Solver, size_t D, size_t ksize>
+template <class Solver, size_t D>
 template <typename MPoint, typename ...ArgTypes> 
-ComplexType CubicDMFTSC<Solver,D,ksize>::glat_val(MPoint w, ArgTypes... kpoints) const
+ComplexType CubicDMFTSC<Solver,D>::glat_val(MPoint w, ArgTypes... kpoints) const
 {
     return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-dispersion(kpoints...));
 }
 
-template <class Solver, size_t D, size_t ksize>
-typename CubicDMFTSC<Solver,D,ksize>::GKType CubicDMFTSC<Solver,D,ksize>::getGLat(const FMatsubaraGrid& fGrid) const
+template <class Solver, size_t D>
+typename CubicDMFTSC<Solver,D>::GKType CubicDMFTSC<Solver,D>::getGLat(const FMatsubaraGrid& fGrid) const
 {
     std::array<KMesh,D> kgrids;
     kgrids.fill(_kGrid);
@@ -250,15 +248,17 @@ typename CubicDMFTSC<Solver,D,ksize>::GKType CubicDMFTSC<Solver,D,ksize>::getGLa
     return out;
 }
 
-template <class Solver, size_t D, size_t ksize>
-inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::operator()()
+template <class Solver, size_t D>
+inline typename CubicDMFTSC<Solver,D>::GFType CubicDMFTSC<Solver,D>::operator()()
 {
-    INFO("Using DMFT self-consistency on a cubic lattice in " << D << " dimensions on a lattice of " << ksize << "^" << D << " atoms.");
+    INFO("Using DMFT self-consistency on a cubic lattice in " << D << " dimensions on a lattice of " << _kGrid.getSize() << "^" << D << " atoms.");
     GFType out(this->_S.w_grid); 
     out=0.0; 
+    size_t ksize = _kGrid.getSize();
+    RealType knorm = pow(ksize,D);
     for (auto w : _gloc.getGrid().getVals()) {
         EkStorage e1 = (1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek)); 
-        _gloc.get(w) = e1.sum()/RealType(__power<ksize,D>::value);
+        _gloc.get(w) = e1.sum()/knorm;
         out.get(w) = -1.0/_gloc(w)+_S.mu-_S.Sigma(w)+ComplexType(w);
     }
     //out._f = std::bind([&](ComplexType w){return _t*_t*2*RealType(D)/w;}, std::placeholders::_1);
@@ -266,9 +266,9 @@ inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>:
     return out;
 }
 
-template <class Solver, size_t D, size_t ksize>
+template <class Solver, size_t D>
 template <typename MPoint>
-inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::getBubble0(MPoint in) const
+inline typename CubicDMFTSC<Solver,D>::GFType CubicDMFTSC<Solver,D>::getBubble0(MPoint in) const
 {
     std::array<KMesh::point,D> q;
     auto q1 = _kGrid.findClosest(0.0);
@@ -277,12 +277,14 @@ inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>:
     return Diagrams::getBubble(this->getGLat(_S.w_grid),args);
 }
 
-template <class Solver, size_t D, size_t ksize>
+template <class Solver, size_t D>
 template <typename MPoint>
-inline typename CubicDMFTSC<Solver,D,ksize>::GFType CubicDMFTSC<Solver,D,ksize>::getBubblePI(MPoint in) const
+inline typename CubicDMFTSC<Solver,D>::GFType CubicDMFTSC<Solver,D>::getBubblePI(MPoint in) const
 {
     std::array<KMesh::point,D> q;
     auto q1 = _kGrid.findClosest(PI);
+    DEBUG(q1);
+    DEBUG(_kGrid[size_t(q1)+1]);
     q.fill(q1);
     auto args = std::tuple_cat(std::forward_as_tuple(in),q);
     return Diagrams::getBubble(this->getGLat(_S.w_grid),args);

@@ -41,7 +41,7 @@ int main()
     Delta.fill(f1);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
-    CubicDMFTSC<FKImpuritySolver, 2, 32> SC(Solver, t);
+    BetheSC<FKImpuritySolver> SC(Solver, t);
 
     for (int i=0; i<maxit && diff>1e-8; ++i) {
         INFO("Iteration " << i);

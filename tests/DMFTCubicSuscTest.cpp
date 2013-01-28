@@ -47,7 +47,7 @@ int main()
     Delta.fill(f1);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
-    CubicDMFTSC<FKImpuritySolver, D, KPOINTS> SC(Solver, t);
+    CubicDMFTSC<FKImpuritySolver, D> SC(Solver, t, KMesh(KPOINTS));
     DEBUG(SC._kGrid);
 
     if (!is_equal((SC._ek + SC._ek.shift(PI,PI)).sum(),0.0)) { ERROR("Glat(k+pi)!=conj(Glat(k))"); return EXIT_FAILURE;};

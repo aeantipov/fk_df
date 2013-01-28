@@ -18,6 +18,7 @@ public:
 	FK::RealType e_d  ;
 	FK::RealType mix  ;
 	size_t n_freq;
+	size_t kpts;
 	size_t n_dual_freq;
 	size_t n_dmft_iter;
 	size_t n_df_iter;
@@ -36,6 +37,7 @@ public:
           e_d(0.0),
           mix(1.0), 
           n_freq(1024), 
+          kpts(32),
           n_dual_freq(128), 
           n_dmft_iter(1000), 
           n_df_iter(100), 
@@ -76,6 +78,12 @@ public:
         ON_OPTION_WITH_ARG(LONGOPT("mix"))
 			mix = std::atof(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
+
+        ON_OPTION_WITH_ARG(SHORTOPT('k') || LONGOPT("kpoints"))
+			kpts = std::atoi(arg);
+			used_args = 1;	// Notify the parser of a consumption of argument.
+			// no need of the notification: used_args variable will be set to 1.
+
 
         ON_OPTION_WITH_ARG(LONGOPT("ndmftiter"))
 			n_dmft_iter = std::atoi(arg);

@@ -32,7 +32,7 @@ struct BetheSC : public SelfConsistency<Solver>
     GFType operator()();
 };
 
-template <class Solver, size_t D, size_t ksize=32> struct CubicDMFTSC : public SelfConsistency<Solver>
+template <class Solver, size_t D> struct CubicDMFTSC : public SelfConsistency<Solver>
 {
     using SelfConsistency<Solver>::_S;
     typedef typename Solver::GFType GFType;
@@ -49,7 +49,7 @@ public:
     mutable EkStorage _ek;
     GFType _gloc;
 
-    CubicDMFTSC(const Solver &S, RealType t);
+    CubicDMFTSC(const Solver &S, RealType t, KMesh kGrid);
     template <typename ...ArgTypes> RealType dispersion(ArgTypes... kpoints) const;
     template <typename ...ArgTypes> RealType dispersion(const std::tuple<ArgTypes...>& kpoints) const;
     template <typename ...ArgTypes> GFType glat(ArgTypes... kpoints) const;
@@ -67,7 +67,7 @@ public:
     template <typename MPoint> GFType getBubblePI(MPoint in) const;
 };
     
-template <size_t M, size_t ksize> 
+template <size_t M> 
 struct CubicTraits{ 
     //const KMesh grid = KMesh(ksize);
     //typedef Eigen::Matrix<RealType,__power<ksize,M>::value,1,Eigen::ColMajor> EkStorage;
@@ -79,12 +79,12 @@ struct CubicTraits{
     template <class ContainerType, typename ...ArgTypes> static void fillContainer(ContainerType &in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
     template <class ObjType, typename ...ArgTypes> static void setAnalytics(ObjType &in, RealType t);
     template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t)
-        { return CubicTraits<M-1, ksize>::template get_dispersion<FunctionType,ArgTypes...,RealType>(t); }
+        { return CubicTraits<M-1>::template get_dispersion<FunctionType,ArgTypes...,RealType>(t); }
     //static RealType ek(RealType t, ArgTypes... kpoints); 
 };
 
-template <size_t ksize>
-struct CubicTraits<0, ksize>{ 
+template <>
+struct CubicTraits<0>{ 
     template <class IteratorType, typename ...ArgTypes> static void fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
     template <class DataType, typename ...ArgTypes> static void fillContainer(DataType &in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
     template <typename ...GridTypes> static std::tuple<GridTypes...> getKMeshTuple(GridTypes ... extra_grids)

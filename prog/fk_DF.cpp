@@ -19,17 +19,6 @@
 
 using namespace FK;
 
-#ifdef K8
-    static const size_t KPOINTS = 8;
-#elif K16
-    static const size_t KPOINTS = 16;
-#elif K32
-    static const size_t KPOINTS = 32;
-#elif K64
-    static const size_t KPOINTS = 64;
-#else 
-    static const size_t KPOINTS = 16;
-#endif
 RealType beta;
 size_t D = 0;
 
@@ -60,6 +49,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
 
     auto glat = SC.getGLat();
     auto gloc = SC.GLatLoc;
+    size_t ksize = SC._kGrid.getSize();
     
     GF iw_gf(gridF); 
     iw_gf.fill([](ComplexType w){return w;});
@@ -74,7 +64,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
 
     std::array<KMesh::point,SCType::NDim> q_0, q_PI;
     q_0.fill(SC._kGrid[0]);
-    q_PI.fill(SC._kGrid[KPOINTS/2]);
+    q_PI.fill(SC._kGrid[ksize/2]);
 
     for (auto iW : gridB.getVals()) {
         auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),q_0);
@@ -129,6 +119,7 @@ int main(int argc, char *argv[])
     beta = opt.beta;
     RealType t = opt.t; 
     size_t n_freq = opt.n_freq;
+    size_t ksize = opt.kpts;
     size_t n_dual_freq = opt.n_dual_freq;
     RealType mix = opt.mix;
     auto sc_switch = opt.sc_index;
@@ -137,7 +128,7 @@ int main(int argc, char *argv[])
     size_t n_df_iter = opt.n_df_iter;
     size_t n_df_sc_iter = opt.n_df_sc_iter;
 
-    KMesh kGrid(KPOINTS);
+    KMesh kGrid(ksize);
 
     Log.setDebugging(true);
 
@@ -158,23 +149,23 @@ int main(int argc, char *argv[])
     KMeshPatch qGrid(kGrid);
     switch (sc_switch) {
         case enumSC::DFCubic1d: 
-  //          SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,1, KPOINTS>(Solver, t));
-  //          SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 1, KPOINTS>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+  //          SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,1, ksize>(Solver, t));
+  //          SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 1, ksize>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
             D=1; break;
         case enumSC::DFCubic2d: 
-            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2, KPOINTS>(Solver, t));
-            typedef DFLadder<FKImpuritySolver, 2, KPOINTS> DFSCType;
-            SC_DF_ptr.reset(new DFSCType(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2>(Solver, t, kGrid));
+            typedef DFLadder<FKImpuritySolver, 2> DFSCType;
+            SC_DF_ptr.reset(new DFSCType(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
             static_cast<DFSCType*> (SC_DF_ptr.get())->_n_GD_iter = n_df_sc_iter;
             static_cast<DFSCType*> (SC_DF_ptr.get())->_GDmix = opt.df_sc_mix;
             D=2; break;
         case enumSC::DFCubic3d: 
-//            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, KPOINTS>(Solver, t));
-//            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 3, KPOINTS>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+//            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, ksize>(Solver, t));
+//            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 3, ksize>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
             D=3; break;
         case enumSC::DFCubic4d: 
-//            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,4, KPOINTS>(Solver, t));
-//            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 4, KPOINTS>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+//            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,4, ksize>(Solver, t));
+//            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 4, ksize>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
             D=4; break;
         default:
             ERROR("Couldn't find the desired SC type. Exiting.");
@@ -217,16 +208,16 @@ int main(int argc, char *argv[])
     if (D) {
         switch (sc_switch) {
             case enumSC::DFCubic1d: 
-                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,1, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,1>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic2d: 
-                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,2, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,2>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic3d: 
-                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,3, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,3>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic4d: 
-                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,4, KPOINTS>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,4>*> (SC_DF_ptr.get())), gridF); 
                 break;
             default: break;
             }; 

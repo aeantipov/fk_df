@@ -18,3 +18,5 @@ foreach (ex ${execs})
     install ( TARGETS ${ex} DESTINATION bin )
 endforeach(ex)
 
+add_executable(dmft_cubic_path EXCLUDE_FROM_ALL DMFTCubicSuscPath.cpp) 
+

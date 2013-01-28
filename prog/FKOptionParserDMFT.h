@@ -18,6 +18,7 @@ public:
 	FK::RealType e_d  ;
 	FK::RealType mix  ;
 	size_t n_freq;
+	size_t kpts;
 	size_t n_iter;
 	std::string sc_type;
     SC sc_index;
@@ -32,6 +33,7 @@ public:
           e_d(0.0),
           mix(1.0), 
           n_freq(1024), 
+          kpts(32),
           n_iter(1000), 
           sc_type(""), 
           sc_index(), 
@@ -73,6 +75,12 @@ public:
 			n_iter = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
+
+        ON_OPTION_WITH_ARG(SHORTOPT('k') || LONGOPT("kpoints"))
+			kpts = std::atoi(arg);
+			used_args = 1;	// Notify the parser of a consumption of argument.
+			// no need of the notification: used_args variable will be set to 1.
+
 
        	ON_OPTION_WITH_ARG(SHORTOPT('m') || LONGOPT("nfreq"))
 			n_freq = std::atoi(arg);

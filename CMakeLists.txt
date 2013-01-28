@@ -26,14 +26,6 @@ else ()
 endif ()
 #end :: C++11 check
 
-#kpoints
-if(DEFINED KPOINTS)
-    message(STATUS "Using ${KPOINTS} kpoints")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DK${KPOINTS}")
-endif()
-
-
-
 # begin :: doxygen
 set(DOXYFILE_SOURCE_DIR "./src")
 include(UseDoxygen)

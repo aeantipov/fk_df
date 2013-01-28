@@ -68,12 +68,16 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     try {
         if (forward) {
             //Eigen::ColPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (2*forward-1)*IrrVertex4*Chi0);
-            Eigen::FullPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (IrrVertex4*Chi0));
+            Eigen::ColPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (IrrVertex4*Chi0));
             auto V4 = Solver.solve(IrrVertex4); 
             INFO("done.");
             return V4;
         }
-        else exit(1);
+        else {
+            auto V4 = IrrVertex4*(MatrixType<ValueType>::Identity(size,size) + Chi0*IrrVertex4).inverse();
+            INFO("done.");
+            return V4;
+        }
     }
     catch (std::exception &e) {
         ERROR("Couldn't invert the vertex");

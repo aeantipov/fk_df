@@ -27,7 +27,7 @@ Grid<ValueType,Derived>::Grid(const std::vector<ValueType> &vals):_vals(vals)
 };
 
 template <typename ValueType, class Derived>
-Grid<ValueType,Derived>::Grid(int min, int max, std::function<ValueType (const int&)> f)
+Grid<ValueType,Derived>::Grid(int min, int max, std::function<ValueType (int)> f)
 {
     if (max<min) std::swap(min,max);
     size_t n_points = max-min;
@@ -240,6 +240,14 @@ inline RealGrid::RealGrid(RealType min, RealType max, size_t n_points):
 {
 }
 
+inline RealGrid::RealGrid(int min, int max, const std::function<RealType (int)> &f):
+    Grid(min,max,f),
+    _min(f(min)),
+    _max(f(max))
+{
+}
+
+
 template <class Obj> 
 inline auto RealGrid::integrate(const Obj &in) const -> decltype(in(_vals[0]))
 {
@@ -316,7 +324,8 @@ inline std::tuple <bool, size_t, RealType> KMesh::find (RealType in) const
     assert(in>=0 && in < 2.0*PI);
     int n = std::lround(in/2.0/PI*_points);
     if (n<0) { ERROR("KMesh point is out of bounds, " << in << "<" << 0); return std::make_tuple(0,0,0); };
-    if (n>=_points) { ERROR("KMesh point is out of bounds, " << in << "> 2*PI"); return std::make_tuple(0,_points,0); };
+    if (n==_points) n=0; 
+    if (n>_points) { ERROR("KMesh point is out of bounds, " << in << "> 2*PI"); return std::make_tuple(0,_points,0); };
     RealType weight=in/2.0/PI*_points-RealType(n);
     return std::make_tuple (1,n,weight);
 }
