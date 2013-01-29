@@ -172,8 +172,11 @@ void Container<1,ValueType>::savetxt(const std::string& fname)
 {
     std::ofstream out;
     out.open(fname.c_str());
-    std::ostream_iterator<ValueType> out_it (out,"\n");
-    std::copy(_vals.begin(),_vals.end(), out_it);
+    for (auto x : _vals)
+        {
+            out << std::scientific << __num_format<decltype(x)>(x) << std::endl;
+        }
+
     out.close();
 }
 

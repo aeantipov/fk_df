@@ -169,6 +169,16 @@ std::tuple<Tail...> __tuple_tail(std::tuple<Head,Tail...> const& tpl)
 {
     return __split_tuple_struct<std::tuple<Tail...>, std::tuple<Head,Tail...>, 1, std::tuple_size<std::tuple<Head,Tail...>>::value == 1>::create(tpl);
 }
+
+/** Print a tuple. */
+template <class T> struct __tuple_print;
+template <typename...ArgTypes> struct __tuple_print<std::tuple<ArgTypes...>> 
+    { static void print(std::tuple<ArgTypes...> in ){std::cout << std::get<0>(in) << " " << std::flush; auto a = __tuple_tail(in); __tuple_print<decltype(a)>::print(a);};
+    };
+template <typename ArgType> struct __tuple_print<std::tuple<ArgType>> 
+    { static void print(std::tuple<ArgType> in ){std::cout << std::get<0>(in) << std::endl;};
+    };
+
 } // end namespace FK
 
 #endif // endif::ifndef ___FK_FK_H___

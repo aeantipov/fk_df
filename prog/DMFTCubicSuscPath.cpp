@@ -75,6 +75,7 @@ int main()
     size_t nkpoints = 10;
     size_t npaths = 2;
     std::vector<std::vector<std::array<RealType, D>>> paths(npaths); // Here generate the path in BZ
+    std::vector<std::string> path_names = {"Path1", "Path2"}; // name of paths
     
     std::function<RealType(size_t)> zero_pi_fill = [nkpoints](int x)->RealType{RealType y = 6*(RealType(x+1)/(nkpoints)); return PI*(1.0 - (pow(0.1,y) - pow(0.1,6)));}; 
     auto kloggrid = RealGrid(0,nkpoints,zero_pi_fill);
@@ -94,14 +95,15 @@ int main()
     auto bubble2 = static_cast<SelfConsistency<FKImpuritySolver>&>(SC).getBubblePI(0);
 
     for (size_t p=0; p<npaths; ++p) {
+    INFO("Path " << p);
         Container<1, ComplexType> susc_cc_vals(nkpoints), susc_cf_vals(nkpoints), susc_ff_vals(nkpoints);
         for (size_t i=0; i<nkpoints; ++i) { 
 
-            INFO(i << "/" << nkpoints);
+            INFO_NONEWLINE("\t" << i << "/" << nkpoints << " : k= ");
             std::array<RealType, D> path_pts = paths[p][i];
+            __tuple_print<std::tuple<RealType,RealType>>::print(path_pts);
             
             typedef decltype(SC)::GKType::ArgTupleType argwktuple;
-            //decltype(glatglat)::PointFunctionType 
             auto f1 = [&](argwktuple in)->ComplexType
                 {argwktuple shift = std::tuple_cat(std::make_tuple(0.0), path_pts);
                  argwktuple out = glatglat._shiftArgs(in,shift);
@@ -114,14 +116,7 @@ int main()
             bubble.fill(f3);
             
             
-            DEBUG(bubble.diff(bubble2));
-
-            //DEBUG(glat(_[0]));
-            //DEBUG(SC.getGLat()(-);
-
-            //DEBUG(bubble);
-            //DEBUG(BubbleqPI);
-            //exit(0);
+            INFO("Diff with q=pi bare cc susc" << bubble.diff(bubble2));
 
             // Skeleton expansion.
             auto nu = gw*(-1.0/gw/gw - T/bubble);
@@ -135,10 +130,16 @@ int main()
             //susc_vals2[names[i]] = chi_cc;
             
             
-            INFO2("Static cc susc " << path_pts[0] << "," << path_pts[1] <<" (bs) = " << chi_cc);
-            INFO2("Static cf susc " << path_pts[0] << "," << path_pts[1] <<" (bs) = " << chi_cf);
-            INFO2("Static ff susc " << path_pts[0] << "," << path_pts[1] <<" (bs) = " << chi_ff);
+            INFO2("Static cc susc (bs) = " << chi_cc);
+            INFO2("Static cf susc (bs) = " << chi_cf);
+            INFO2("Static ff susc (bs) = " << chi_ff);
+            susc_cc_vals[i] = chi_cc;
+            susc_cf_vals[i] = chi_cf;
+            susc_ff_vals[i] = chi_ff;
             };
+        susc_cc_vals.savetxt("ChargeCC"+path_names[p]+".dat");
+        susc_cf_vals.savetxt("ChargeCF"+path_names[p]+".dat");
+        susc_ff_vals.savetxt("ChargeFF"+path_names[p]+".dat");
         };
 
     /*__num_format<ComplexType>(bare_susc_vals["zero"]).savetxt("StaticChi0q0.dat");
