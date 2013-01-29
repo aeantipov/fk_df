@@ -53,7 +53,8 @@ public:
     template <typename ...ArgTypes> RealType dispersion(ArgTypes... kpoints) const;
     template <typename ...ArgTypes> RealType dispersion(const std::tuple<ArgTypes...>& kpoints) const;
     template <typename ...ArgTypes> GFType glat(ArgTypes... kpoints) const;
-    template <typename MPoint, typename ...ArgTypes> ComplexType glat_val(MPoint w, ArgTypes... kpoints) const;
+    template <typename MPoint, typename ...ArgTypes> ComplexType glat_analytic(MPoint w, ArgTypes... kpoints) const;
+    template <typename MPoint, typename ...ArgTypes> ComplexType glat_analytic(std::tuple<MPoint,ArgTypes...> in) const;
     GKType getGLat(const FMatsubaraGrid& in) const;
     GFType operator()();
     

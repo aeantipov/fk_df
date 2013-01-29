@@ -29,7 +29,7 @@ int main()
     RealType U = 2.0;
     RealType mu = U/2;
     RealType e_d = 0.0;
-    RealType beta = 1./0.1262009;
+    RealType beta = 1./0.1263;
     RealType T = 1.0/beta;
     RealType t = 1.0; 
     size_t maxit = 1000;
@@ -48,7 +48,8 @@ int main()
     Delta.fill(f1);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
-    CubicDMFTSC<FKImpuritySolver, D> SC(Solver, t, KMesh(KPOINTS));
+    auto kGridRegular = KMesh(KPOINTS);
+    CubicDMFTSC<FKImpuritySolver, D> SC(Solver, t, kGridRegular);
 
     for (int i=0; i<maxit && diff>1e-8; ++i) {
         INFO("Iteration " << i);
@@ -71,7 +72,7 @@ int main()
     INFO("Calculating additional statistics.");
     INFO("Static susceptibility");
 
-    size_t nkpoints = 1;
+    size_t nkpoints = 10;
     size_t npaths = 2;
     std::vector<std::vector<std::array<RealType, D>>> paths(npaths); // Here generate the path in BZ
     
@@ -89,6 +90,9 @@ int main()
     auto Lambda = 1.0 + gw*(2.0*Sigma - U); 
     auto Lambda2 = (1. + gw*Sigma)*(1.+gw*(Sigma-U));
 
+    auto glatglat = SC.getGLat(gridF);
+    auto bubble2 = static_cast<SelfConsistency<FKImpuritySolver>&>(SC).getBubblePI(0);
+
     for (size_t p=0; p<npaths; ++p) {
         Container<1, ComplexType> susc_cc_vals(nkpoints), susc_cf_vals(nkpoints), susc_ff_vals(nkpoints);
         for (size_t i=0; i<nkpoints; ++i) { 
@@ -96,12 +100,21 @@ int main()
             INFO(i << "/" << nkpoints);
             std::array<RealType, D> path_pts = paths[p][i];
             
-            auto glat = SC.glat(path_pts[0], path_pts[1]);
-            //auto bubble = Diagrams::getBubble(glat,0.0);
-            auto bubble = SC.getBubblePI(0.0); 
-            auto bubble2 = static_cast<SelfConsistency<FKImpuritySolver>&>(SC).getBubblePI(0);
+            typedef decltype(SC)::GKType::ArgTupleType argwktuple;
+            //decltype(glatglat)::PointFunctionType 
+            auto f1 = [&](argwktuple in)->ComplexType
+                {argwktuple shift = std::tuple_cat(std::make_tuple(0.0), path_pts);
+                 argwktuple out = glatglat._shiftArgs(in,shift);
+                  return -T*SC.glat_analytic(in)*SC.glat_analytic(out); 
+                };
+            decltype(glatglat)::FunctionType f2 = __fun_traits<decltype(glatglat)::FunctionType>::getFromTupleF(f1);
+            glatglat.fill(f2);
+            GF bubble(gridF);
+            typename GF::PointFunctionType f3 = [&](FMatsubaraGrid::point w)->ComplexType{return glatglat[size_t(w)].sum()/pow(KPOINTS,D);};
+            bubble.fill(f3);
+            
+            
             DEBUG(bubble.diff(bubble2));
-            exit(0);
 
             //DEBUG(glat(_[0]));
             //DEBUG(SC.getGLat()(-);

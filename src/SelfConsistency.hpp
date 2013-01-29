@@ -197,8 +197,8 @@ template <typename ...ArgTypes>
 inline RealType CubicDMFTSC<Solver,D>::dispersion(const std::tuple<ArgTypes...>& kpoints) const
 {
     static_assert(sizeof...(ArgTypes) == D, "Number of points mismatch!" );
-    typename EkStorage::PointFunctionType f1 = [&](ArgTypes... kpoints)->RealType{return dispersion(kpoints...);};
-    auto f2 =__fun_traits<typename EkStorage::PointFunctionType>::getTupleF(f1); 
+    std::function<RealType(ArgTypes...)> f1 = [&](ArgTypes... kpoints)->RealType{return dispersion(kpoints...);};
+    auto f2 =__fun_traits<decltype(f1)>::getTupleF(f1); 
     return std::real(f2(kpoints));
 }
 
@@ -216,9 +216,18 @@ inline typename CubicDMFTSC<Solver,D>::GFType CubicDMFTSC<Solver,D>::glat(ArgTyp
 
 template <class Solver, size_t D>
 template <typename MPoint, typename ...ArgTypes> 
-ComplexType CubicDMFTSC<Solver,D>::glat_val(MPoint w, ArgTypes... kpoints) const
+ComplexType CubicDMFTSC<Solver,D>::glat_analytic(MPoint w, ArgTypes... kpoints) const
 {
     return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-dispersion(kpoints...));
+}
+
+template <class Solver, size_t D>
+template <typename MPoint, typename ...ArgTypes> 
+ComplexType CubicDMFTSC<Solver,D>::glat_analytic(std::tuple<MPoint,ArgTypes...> in) const
+{
+    auto w = std::get<0>(in);
+    auto kpts = __tuple_tail(in);
+    return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-dispersion(kpts));
 }
 
 template <class Solver, size_t D>

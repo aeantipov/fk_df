@@ -74,7 +74,7 @@ typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::findClosest(Val
 {
     auto find_result = find(in);
     if (!std::get<0>(find_result)) { ERROR("Couldn't find the closest point"); throw (exWrongIndex()); };
-    return point(std::get<1>(find_result),in);
+    return point(_vals[std::get<1>(find_result)],std::get<1>(find_result));
 } 
 
 template <typename ValueType, class Derived>

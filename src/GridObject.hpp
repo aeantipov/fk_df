@@ -240,7 +240,7 @@ inline void GridObject<ValueType,GridTypes...>::fill(const typename GridObject<V
 template <size_t N, template <size_t, typename ...> class, typename ... > struct __genContainerExtractorForFunctionType;
 template <size_t N, template <size_t, typename ...> class T, template <typename ...> class B, typename GridType1, typename ... GridTypes, typename ...ArgTypes> 
 struct __genContainerExtractorForFunctionType<N,T,B<GridType1, GridTypes...>, ArgTypes... > :
-     __genContainerExtractorForFunctionType<N-1,T, B<GridTypes...>, decltype(GridType1::point::_val), ArgTypes...> {} ;
+     __genContainerExtractorForFunctionType<N-1,T, B<GridTypes...>, ArgTypes..., decltype(GridType1::point::_val)> {} ;
 template <template <size_t, typename ...> class T, template <typename ...> class B, typename ... ArgTypes> 
 struct __genContainerExtractorForFunctionType<0,T,B<>, ArgTypes...> { typedef T<sizeof...(ArgTypes),ArgTypes...> type; };
 
