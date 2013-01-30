@@ -55,7 +55,7 @@ template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& g
     INFO("Static susceptibility");
 
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4_2(std::forward_as_tuple(gridF,gridF)); 
-    decltype(Vertex4_2)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getFVertex4(w1,w2) - ((w1==w2)?Solver.getFVertex4(w1,w1):0.0);};
+    decltype(Vertex4_2)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getVertex4(0.0, w1,w2);};
     Vertex4_2.fill(VertexF2);
     auto V4 = Vertex4_2.getData().getAsMatrix();
 
@@ -91,9 +91,9 @@ template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& g
         susc_vals2[names[i]] = chi_cc;
         
         /** Vertex expansion. */
-        for (auto w1: gridF.getVals()) { 
+        for (auto w1: gridF.getPoints()) { 
             bare_susc+=bubble(w1);
-            for (auto w2: gridF.getVals()) {
+            for (auto w2: gridF.getPoints()) {
                 susc+=bubble(w1)*FullVertex(size_t(w1),size_t(w2))*bubble(w2); 
                 }
             };
@@ -118,7 +118,7 @@ template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& g
     GridObject<RealType,BMatsubaraGrid> chi0_q0_vals(gridB), chi0_qPI_vals(gridB);
     GridObject<RealType,BMatsubaraGrid> chi_q0_vals(gridB), chi_qPI_vals(gridB), chi_q0_dmft_vals(gridB), chi_qPI_dmft_vals(gridB);
 
-    for (auto iW : gridB.getVals()) {
+    for (auto iW : gridB.getPoints()) {
         if (interrupt) exit(0);
         INFO("iW = " << iW);
         size_t iWn = size_t(iW);

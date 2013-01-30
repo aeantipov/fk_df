@@ -55,7 +55,9 @@ public:
     /** Returns a value at given index. */
     point operator[](size_t in) const;
     /** Returns all values. */
-    const std::vector<point> & getVals() const;
+    const std::vector<point> & getPoints() const;
+    /** Returns values of all points. */
+    const std::vector<ValueType> & getPointVals() const;
     /** Returns size of grid. */
     size_t getSize() const;
 

@@ -236,7 +236,7 @@ typename CubicDMFTSC<Solver,D>::GKType CubicDMFTSC<Solver,D>::getGLat(const FMat
     std::array<KMesh,D> kgrids;
     kgrids.fill(_kGrid);
     GKType out(std::tuple_cat(std::forward_as_tuple(fGrid),kgrids));
-    //for (auto iw : fGrid.getVals()) {
+    //for (auto iw : fGrid.getPoints()) {
     auto f1 = [&](const typename GKType::PointTupleType& in)->ComplexType {
         FMatsubaraGrid::point w = std::get<0>(in);
         auto ktuple = __tuple_tail(in);
@@ -265,7 +265,7 @@ inline typename CubicDMFTSC<Solver,D>::GFType CubicDMFTSC<Solver,D>::operator()(
     out=0.0; 
     size_t ksize = _kGrid.getSize();
     RealType knorm = pow(ksize,D);
-    for (auto w : _gloc.getGrid().getVals()) {
+    for (auto w : _gloc.getGrid().getPoints()) {
         EkStorage e1 = (1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek)); 
         _gloc.get(w) = e1.sum()/knorm;
         out.get(w) = -1.0/_gloc(w)+_S.mu-_S.Sigma(w)+ComplexType(w);
@@ -324,7 +324,7 @@ inline typename CubicInfDMFTSC<Solver>::GFType CubicInfDMFTSC<Solver>::operator(
     CubicInfDMFTSC::GFType gl(this->_S.w_grid); 
     CubicInfDMFTSC::GFType out(this->_S.w_grid); 
     ComplW denominator(_realgrid);
-    for (auto iw : this->_S.w_grid.getVals()) { 
+    for (auto iw : this->_S.w_grid.getPoints()) { 
         //std::function<ComplexType(RealGrid::point)> f2 = [&](RealGrid::point w){return 1.0/this->_S.gw(iw)+this->_S.Delta(iw)-RealType(w);};
         std::function<ComplexType(RealGrid::point)> f2 = [&](RealGrid::point w){return ComplexType(iw)+this->_S.mu-this->_S.Sigma(iw)-RealType(w);};
         denominator.fill(f2);

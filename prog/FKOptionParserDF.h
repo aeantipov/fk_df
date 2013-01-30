@@ -10,7 +10,7 @@
  */
 class FKOptionParserDF : public optparse {
 public:
-    enum class SC : size_t { DFCubic1d, DFCubic2d, DFCubic3d, DFCubic4d };
+    enum class SC : size_t { DFCubic1d, DFCubic2d, DFCubic3d, DFCubic4d, Fail };
 	FK::RealType beta ;
 	FK::RealType U    ;
 	FK::RealType t    ;
@@ -44,7 +44,7 @@ public:
           n_df_sc_iter(10), 
           df_sc_mix(1.0),
           sc_type(""), 
-          sc_index(SC::DFCubic1d), 
+          sc_index(SC::Fail), 
           extra_ops(false),
           help("") 
           {}

@@ -51,7 +51,7 @@ ComplexType GFWrap::operator()(const typename FMatsubaraGrid::point &in) const
 
 GFWrap& GFWrap::operator=(GFWrap&& in)
 {
-    if (std::get<0>(_grids).getVals() == std::get<0>(in._grids).getVals()) {
+    if (std::get<0>(_grids).getPoints() == std::get<0>(in._grids).getPoints()) {
         _data.swap(in._data);
         _f.swap(in._f);
         return (*this);
@@ -99,7 +99,7 @@ GFWrap& GFWrap::copyAndInterpolate(const GFWrap &in)
 GFWrap& GFWrap::operator=(const GFWrap& in)
 {
     assert(std::get<0>(_grids)._beta == std::get<0>(in._grids)._beta);
-    if (std::get<0>(_grids).getVals() == std::get<0>(in._grids).getVals()) { 
+    if (std::get<0>(_grids).getPoints() == std::get<0>(in._grids).getPoints()) { 
         (*_data) = *(in._data);
         _f = in._f;
         return (*this);

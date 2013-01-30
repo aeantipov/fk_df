@@ -121,7 +121,7 @@ int main()
     chiDMFT0_qPI_2.fill(chiDMFT0_qPI_f);
 
     
-    for (auto iW : gridB.getVals()) {
+    for (auto iW : gridB.getPoints()) {
         INFO("iW = " << iW);
         auto glat_shift = glat.shift(iW,0.0,0.0);
         auto glat_shift_pi = glat.shift(iW,PI,PI);

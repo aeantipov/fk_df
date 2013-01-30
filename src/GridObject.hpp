@@ -70,7 +70,7 @@ inline void GridObject<ValueType,GridTypes...>::ContainerExtractor<Nc,ArgType1,A
 {
     const auto & grid=std::get<N-Nc>(grids);
     const size_t grid_size = grid.getSize();
-    const auto& grid_vals = grid.getVals();
+    const auto& grid_vals = grid.getPoints();
     static_assert(std::is_convertible<decltype(grid_vals[0]), ArgType1>::value, "!");
     for (size_t i=0; i<grid_size; ++i) { 
         const auto& cur_val = grid_vals[i];
@@ -88,7 +88,7 @@ inline void GridObject<ValueType,GridTypes...>::ContainerExtractor<1,ArgType1>::
 {
     const auto & grid=std::get<N-1>(grids);
     const size_t grid_size = grid.getSize();
-    const auto& grid_vals = grid.getVals();
+    const auto& grid_vals = grid.getPoints();
     static_assert(std::is_convertible<decltype(grid_vals[0]), ArgType1>::value, "!");
     for (size_t i=0; i<grid_size; ++i) { 
         data[i]=f(grid_vals[i]);
@@ -397,9 +397,9 @@ inline void GridObject<ValueType,GridTypes...>::savetxt(const std::string& fname
     INFO("Saving " << typeid(*this).name() << " to " << fname);
     std::ofstream out;
     out.open(fname.c_str());
-    for (auto x : std::get<0>(_grids).getVals())
+    for (auto x : std::get<0>(_grids).getPoints())
         {
-            out << std::scientific << __num_format<decltype(x)>(x) << "    " << __num_format<ValueType>((*this)(x)) << std::endl;
+            out << std::scientific << __num_format<decltype(x._val)>(x._val) << "    " << __num_format<ValueType>((*this)(x)) << std::endl;
         }
     out.close();
 }
@@ -412,7 +412,7 @@ inline void GridObject<ValueType,GridTypes...>::loadtxt(const std::string& fname
     in.open(fname.c_str());
     if (!in.good()) { throw exIOProblem(); }
 
-    for (auto x : std::get<0>(_grids).getVals())
+    for (auto x : std::get<0>(_grids).getPoints())
         {
             __num_format<decltype(x)> tmp(x);
             in >> tmp;

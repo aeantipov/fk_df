@@ -66,7 +66,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     q_0.fill(SC._kGrid[0]);
     q_PI.fill(SC._kGrid[ksize/2]);
 
-    for (auto iW : gridB.getVals()) {
+    for (auto iW : gridB.getPoints()) {
         auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),q_0);
         auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),q_PI);
         chi_q0[size_t(iW)] = LatticeSusc(args_0);
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
     Delta_half.savetxt("Delta.dat");
     Solver.Delta.savetxt("Delta_full.dat");
 
-    if (D) {
+    if (D && 1==0) {
         switch (sc_switch) {
             case enumSC::DFCubic1d: 
                 getExtraData(*(static_cast<DFLadder<FKImpuritySolver,1>*> (SC_DF_ptr.get())), gridF); 

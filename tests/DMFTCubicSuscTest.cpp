@@ -107,7 +107,7 @@ int main()
     DEBUG((glat.conj()+glat_shift1).sum());
 
     GF glat_sum(gridF);
-    for (auto w:gridF.getVals()) {
+    for (auto w:gridF.getPoints()) {
         glat_sum[size_t(w)] = glat[size_t(w)].sum()/RealType(__power<KPOINTS,D>::value); 
     }
 
@@ -135,7 +135,7 @@ int main()
     chi0_q0_dmft_vals.fill(chi0_q0_vals_f);
     chi0_qPI_dmft_vals.fill(chi0_qPI_vals_f);
 
-    for (auto iW : gridB.getVals()) {
+    for (auto iW : gridB.getPoints()) {
         INFO("iW = " << iW);
         size_t iwn = size_t(iW);
         auto Chi0q0 = Diagrams::getBubble(glat, iW, 0.0, 0.0);    

@@ -31,7 +31,7 @@ template <class Solver, size_t D>
 void DFLadder<Solver,D>::_initialize()
 {
     GLat = CubicDMFTSC<Solver, D>::getGLat(_fGrid);
-    for (auto iw : _fGrid.getVals()) {
+    for (auto iw : _fGrid.getPoints()) {
         size_t iwn = size_t(iw);
         GD0[iwn] = GLat[iwn] - _S.gw(iw);
     };
@@ -96,48 +96,77 @@ typename DFLadder<Solver,D>::GLocalType DFLadder<Solver,D>::operator()()
     _initialize();
 
     // Put here operations with GD
-    GLocalType Vertex4(_fGrid), FullDualVertex4(_fGrid);
+    GLocalType DynVertex4(_fGrid), FullDualDynVertex4(_fGrid);
     GLocalType Chi0(_fGrid);
     size_t ksize = _kGrid.getSize();
     RealType knorm = pow(ksize,D);
+    size_t totalqpts = size_t(knorm);
+
+    // Prepare static vertex
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> StaticVertex4(std::forward_as_tuple(_fGrid,_fGrid)); 
+    decltype(StaticVertex4)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getVertex4(0.0, w1,w2);};
+    StaticVertex4.fill(VertexF2);
+    auto StaticV4 = StaticVertex4.getData().getAsMatrix();
 
     INFO2("Starting ladder dual fermion calculations")
     INFO2("Beginning with GD sum = " << std::abs(GD.sum())/RealType(_fGrid.getSize())/knorm);
+
     RealType diffGD = 1.0;
     for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > 1e-8; ++nd_iter) { 
-        INFO2("DF iteration " << nd_iter);
+        INFO2("DF iteration " << nd_iter << ". Evaluating BS equation.");
         GKType addSigma(this->SigmaD.getGrids()), GD_shift(this->GD.getGrids());
-        INFO2("Evaluating Bethe-Salpeter equation");
 
-        for (auto iW : _bGrid.getVals()) {
-            INFO2("iW = " << iW);
-            typename GLocalType::PointFunctionType VertexFillf = 
-                std::bind(&FKImpuritySolver::getBVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(_S), iW, std::placeholders::_1); 
-            typename GLocalType::FunctionType Vertexf = 
-                std::bind(&FKImpuritySolver::getBVertex4<ComplexType, ComplexType>, std::cref(_S), ComplexType(iW), std::placeholders::_1); 
-            Vertex4.fill(VertexFillf);
-            Vertex4._f = Vertexf;
+        std::array<KMesh::point, D> q;
+        for (size_t nq=0; nq<totalqpts; ++nq) { // iterate over all kpoints
+            INFO_NONEWLINE("\t" << nq << "/" << totalqpts<< ". ");
+            size_t offset = 0;
+            for (size_t i=0; i<D; ++i) { q[D-1-i]=_kGrid[(nq-offset)/(int(pow(ksize,i)))%ksize]; offset+=(int(pow(ksize,i)))*size_t(q[D-1-i]); };
+
+            INFO2("Static contribution");
+            auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
+            auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
+            auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
+            DEBUG(dual_bubble_matrix.diagonal());
+            
+            auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true);
+            // Sigma upd
+            auto gammaChig4 = (FullStaticV4*dual_bubble_matrix*StaticV4).diagonal();
+            auto gammaChig4_2 = (StaticV4*dual_bubble_matrix*StaticV4).diagonal();
+            DEBUG(gammaChig4);
+            DEBUG(gammaChig4_2);
+            DEBUG(gammaChig4_2-gammaChig4);
+        
+            addSigma.getData() = gammaChig4;
+            GD_shift = GD.shift(Wq_args_static);
+            addSigma*=GD_shift;
+            DEBUG(addSigma.diff(SigmaD));
+            SigmaD+=addSigma/2.0/totalqpts;
+            
+
+            INFO2("Dynamic contribution");
+            if (_bGrid.getSize()>1)
+            for (auto iW : _bGrid.getPoints()) {
+                INFO_NONEWLINE("iW = " << iW);
+                typename GLocalType::PointFunctionType VertexFillf = 
+                    std::bind(&FKImpuritySolver::getVertex4<BMatsubaraGrid::point,FMatsubaraGrid::point,FMatsubaraGrid::point>, std::cref(_S), iW, std::placeholders::_1, std::placeholders::_1); 
+                typename GLocalType::FunctionType Vertexf = 
+                    std::bind(&FKImpuritySolver::getVertex4<ComplexType, ComplexType,ComplexType>, std::cref(_S), ComplexType(iW), std::placeholders::_1, std::placeholders::_1); 
+                DynVertex4.fill(VertexFillf);
+                DynVertex4._f = Vertexf;
  
-            size_t totalqpts = size_t(knorm);
-            std::array<KMesh::point, D> q;
-            for (size_t nq=0; nq<totalqpts; ++nq) { // iterate over all kpoints
-                size_t offset = 0;
-                for (size_t i=0; i<D; ++i) { q[D-1-i]=_kGrid[(nq-offset)/(int(pow(ksize,i)))%ksize]; offset+=(int(pow(ksize,i)))*size_t(q[D-1-i]); };
                 WQTupleType Wq_args = std::tuple_cat(std::forward_as_tuple(iW),q);
-                
-                INFO_NONEWLINE("\t\t" << nq << "/" << totalqpts<< ". ");
                 //DEBUG("qx = " << q[0] << ", qy = " << q[1]);
 
                 // Bethe-Salpeter vertex
                 Chi0 = Diagrams::getBubble(GD, Wq_args);
-                FullDualVertex4 = Diagrams::BS(Chi0, Vertex4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
+                FullDualDynVertex4 = Diagrams::BS(Chi0, DynVertex4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
                 
                 // Sigma
                 GD_shift = GD.shift(Wq_args);
                 typename GKType::PointFunctionType SigmaF;
                 auto SigmaF2 = [&](wkTupleType in)->ComplexType { 
                     ComplexType w = std::get<0>(in);
-                    return 0.5*Vertex4(w)*Chi0(w)*GD_shift(in)*FullDualVertex4(w);
+                    return 0.5*DynVertex4(w)*Chi0(w)*GD_shift(in)*FullDualDynVertex4(w);
                     };
                 SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
                 addSigma.fill(SigmaF);
@@ -155,7 +184,7 @@ typename DFLadder<Solver,D>::GLocalType DFLadder<Solver,D>::operator()()
     };
     INFO("Finished DF iterations");
         
-    for (auto iw : _fGrid.getVals()) {
+    for (auto iw : _fGrid.getPoints()) {
         size_t iwn = size_t(iw);
         GLat[iwn] = 1.0/(Delta(iw) - _ek.getData()) + 1.0/(Delta(iw) - _ek.getData())/gw(iw)*GD[iwn]/gw(iw)/(Delta(iw) - _ek.getData());
         GDLoc[iwn] = GD[iwn].sum()/knorm; 
@@ -186,7 +215,7 @@ std::tuple<typename DFLadder<Solver,D>::SuscType> DFLadder<Solver,D>::calculateL
     GKType Lwk = GLat/GD0*(-1.0);
     Lwk._f = __fun_traits<typename GKType::FunctionType>::constant(-1.0);
     auto GDL = GD*Lwk;
-    GLocalType Vertex4(_fGrid), Chi0(_fGrid), FullDualVertex4(_fGrid), ChiLat(_fGrid), GDL_chi0(_fGrid);
+    GLocalType DynVertex4(_fGrid), Chi0(_fGrid), FullDualDynVertex4(_fGrid), ChiLat(_fGrid), GDL_chi0(_fGrid);
         
     size_t totalqpts = 1;
     for (const auto& qmesh : qgrids) { 
@@ -199,14 +228,14 @@ std::tuple<typename DFLadder<Solver,D>::SuscType> DFLadder<Solver,D>::calculateL
     BMatsubaraGrid::point zero_point(std::get<1>(find_r), 0.0);
 
     INFO2("Calculating lattice susceptibility");
-    for (auto iW : gridB.getVals()) {
+    for (auto iW : gridB.getPoints()) {
         INFO2("iW = " << iW);
         typename GLocalType::PointFunctionType VertexFillf = 
             std::bind(&FKImpuritySolver::getBVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(_S), iW, std::placeholders::_1); 
         typename GLocalType::FunctionType Vertexf = 
             std::bind(&FKImpuritySolver::getBVertex4<ComplexType, ComplexType>, std::cref(_S), ComplexType(iW), std::placeholders::_1); 
-        Vertex4.fill(VertexFillf);
-        Vertex4._f = Vertexf;
+        DynVertex4.fill(VertexFillf);
+        DynVertex4._f = Vertexf;
  
         std::array<KMesh::point, D> q;
         for (size_t nq=0; nq<totalqpts; ++nq) { // iterate over all kpoints
@@ -221,12 +250,12 @@ std::tuple<typename DFLadder<Solver,D>::SuscType> DFLadder<Solver,D>::calculateL
             size_t count=0; for (auto qval : q) { INFO_NONEWLINE("q_" << count++ << "="<<RealType(qval) << " "); }; 
             // Bethe-Salpeter vertex
             Chi0 = Diagrams::getBubble(GD, Wq_args);
-            FullDualVertex4 = Diagrams::BS(Chi0, Vertex4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
+            FullDualDynVertex4 = Diagrams::BS(Chi0, DynVertex4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
             
             // Lattice susceptibility
             GLocalType ChiLat0 = Diagrams::getBubble(GLat, Wq_args);
             GDL_chi0 = Diagrams::getBubble(GDL, Wq_args);
-            ChiLat = GDL_chi0*FullDualVertex4*GDL_chi0 + ChiLat0;
+            ChiLat = GDL_chi0*FullDualDynVertex4*GDL_chi0 + ChiLat0;
             auto ChiVal = ChiLat.sum();
             LatticeSusc.get(Wq_args) = ChiVal;
             //if (calc_static) LatticeSusc.get(std::tuple_cat(std::forward_as_tuple(zero_point), q))-=ChiVal*T;

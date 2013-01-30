@@ -80,7 +80,7 @@ int main()
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4_out(std::forward_as_tuple(gridF,gridF)); 
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4_2(std::forward_as_tuple(gridF,gridF)); 
     decltype(Vertex4_out)::PointFunctionType VertexF = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getFVertex4(w1,w2);};
-    decltype(Vertex4_out)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getFVertex4(w1,w2) - ((w1==w2)?Solver.getFVertex4(w1,w1):0.0);};
+    decltype(Vertex4_out)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getVertex4(0.0, w1,w2);};
     Vertex4_out.fill(VertexF);
     Vertex4_2.fill(VertexF2);
     typename GF::PointFunctionType VertexDiagF = [&](FMatsubaraGrid::point w1){return Solver.getFVertex4(w1,w1);};
@@ -97,12 +97,12 @@ int main()
     ComplexType s2=0.0;
     ComplexType s3=0.0;
 
-    for (auto w1: gridF.getVals()) { 
+    for (auto w1: gridF.getPoints()) { 
         s1+=local_bubble(w1);
         s3+=local_bubble(w1);
         s1-=local_bubble(w1)*Vertex4_out(w1,w1)*local_bubble(w1); 
         s2-=T*(w_0*K0(w1)*K0(w1)+w_1*K1(w1)*K1(w1));
-        for (auto w2: gridF.getVals()) {
+        for (auto w2: gridF.getPoints()) {
             s1+=local_bubble(w1)*Vertex4_out(w1,w2)*local_bubble(w2); 
             s2+=T*(w_0*K0(w1)*K0(w2)+w_1*K1(w1)*K1(w2));
             s3+=local_bubble(w1)*Vertex4_2(w1,w2)*local_bubble(w2);
@@ -145,7 +145,6 @@ int main()
         if (!is_equal(d1.diff(d1_2),0)) return EXIT_FAILURE;
         auto ugamma_down = 1.0 - (w_0*w_1*U*U*gw*gw*gw*nu/(Lambda2 * (d1))).sum();
         auto sigma_l = ((Vertex4_diag * dual_bubble)/(1+Vertex4_diag * dual_bubble)).sum();
-        DEBUG(sigma_l);
         auto ugamma_down2 = 1.0 - sigma_l ; 
         if (!is_equal(ugamma_down,ugamma_down2)) return EXIT_FAILURE;
         auto ugamma = (w_0*w_1*U*U*gw*gw/(d1)).sum() / (ugamma_down); 
@@ -155,14 +154,13 @@ int main()
         auto chi_part2 = T*(ugamma*gw*gw/d1).sum(); 
         ComplexType chi_part2_2 = 0.0;
         ComplexType sigma_l_2 = 0.0;
-        for (auto wn : gridF.getVals()) {
-            for (auto wm : gridF.getVals()) {
+        for (auto wn : gridF.getPoints()) {
+            for (auto wm : gridF.getPoints()) {
                 chi_part2_2+=Vertex4_out(wn,wm)*bubble(wn)*bubble(wm)/(1.0 + Vertex4_out(wm,wm)*dual_bubble(wm))/(1.0 + Vertex4_out(wn,wn)*dual_bubble(wn));
                 sigma_l_2+=(Vertex4_out(wn,wm)*dual_bubble(wm))/(1.0 + Vertex4_out(wn,wm)*dual_bubble(wm));
                 }
             }; 
 
-        DEBUG(sigma_l_2);
 
         if (!is_equal(chi_part2_2/(1.0-sigma_l),chi_part2)) return EXIT_FAILURE;;
 
@@ -173,7 +171,7 @@ int main()
 
     if (!is_equal(susc_vals["local"],s1)) return EXIT_FAILURE; 
     
-    INFO("Static susc");
+    INFO("BS static susc");
     std::map<std::string,ComplexType> susc_vals2;
 
     auto V4 = Vertex4_2.getData().getAsMatrix();
@@ -201,14 +199,14 @@ int main()
         //DEBUG(long_bubble.sum());
         //DEBUG(bubble.sum());
 
-        for (auto w1: gridF.getVals()) { 
+        for (auto w1: gridF.getPoints()) { 
             susc+=bubble(w1);
             auto v1 = bubble(w1)*FullVertex(size_t(w1),size_t(w1))*bubble(w1);
             auto v2 = long_bubble(w1,w1)*FullVertex2(w1,w1)*long_bubble(w1,w1);
             //DEBUG(v1 << " <---> " << v2);
             //susc-=v1+v2; 
             //susc_cor-=v2;
-            for (auto w2: gridF.getVals()) {
+            for (auto w2: gridF.getPoints()) {
                 //susc_cor+=long_bubble(w1,w2);
                 susc+=bubble(w1)*FullVertex(size_t(w1),size_t(w2))*bubble(w2); 
                 //susc_cor+=long_bubble(w1,w2)*FullVertex2(w1,w2)*long_bubble(w1,w2);

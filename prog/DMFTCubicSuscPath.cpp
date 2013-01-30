@@ -29,15 +29,15 @@ int main()
     RealType U = 2.0;
     RealType mu = U/2;
     RealType e_d = 0.0;
-    RealType beta = 1./0.1263;
-    RealType T = 1.0/beta;
+    RealType T = 0.1325348;
+    RealType beta = 1./T;
     RealType t = 1.0; 
     size_t maxit = 1000;
     RealType mix = 0.5;
-    constexpr size_t KPOINTS=16;
+    constexpr size_t KPOINTS=32;
     constexpr size_t D=2;
     
-    size_t n_freq = 512;
+    size_t n_freq = 1024;
     FMatsubaraGrid gridF(-n_freq, n_freq, beta);
 
     GF iwn(gridF);
@@ -72,12 +72,12 @@ int main()
     INFO("Calculating additional statistics.");
     INFO("Static susceptibility");
 
-    size_t nkpoints = 10;
+    size_t nkpoints = 128;
     size_t npaths = 2;
     std::vector<std::vector<std::array<RealType, D>>> paths(npaths); // Here generate the path in BZ
     std::vector<std::string> path_names = {"Path1", "Path2"}; // name of paths
     
-    std::function<RealType(size_t)> zero_pi_fill = [nkpoints](int x)->RealType{RealType y = 6*(RealType(x+1)/(nkpoints)); return PI*(1.0 - (pow(0.1,y) - pow(0.1,6)));}; 
+    std::function<RealType(size_t)> zero_pi_fill = [nkpoints](int x)->RealType{RealType y = 6*(RealType(x)/(nkpoints-1)); return PI*(1.0 - (pow(0.1,y) - pow(0.1,6)));}; 
     auto kloggrid = RealGrid(0,nkpoints,zero_pi_fill);
 
     for (size_t i=0; i<nkpoints; ++i) { 
@@ -96,7 +96,7 @@ int main()
 
     for (size_t p=0; p<npaths; ++p) {
     INFO("Path " << p);
-        Container<1, ComplexType> susc_cc_vals(nkpoints), susc_cf_vals(nkpoints), susc_ff_vals(nkpoints);
+        GridObject<ComplexType, RealGrid> susc_cc_vals(kloggrid), susc_cf_vals(kloggrid), susc_ff_vals(kloggrid);
         for (size_t i=0; i<nkpoints; ++i) { 
 
             INFO_NONEWLINE("\t" << i << "/" << nkpoints << " : k= ");
@@ -133,9 +133,9 @@ int main()
             INFO2("Static cc susc (bs) = " << chi_cc);
             INFO2("Static cf susc (bs) = " << chi_cf);
             INFO2("Static ff susc (bs) = " << chi_ff);
-            susc_cc_vals[i] = chi_cc;
-            susc_cf_vals[i] = chi_cf;
-            susc_ff_vals[i] = chi_ff;
+            susc_cc_vals.get(path_pts[1]) = chi_cc;
+            susc_cf_vals.get(path_pts[1]) = chi_cf;
+            susc_ff_vals.get(path_pts[1]) = chi_ff;
             };
         susc_cc_vals.savetxt("ChargeCC"+path_names[p]+".dat");
         susc_cf_vals.savetxt("ChargeCF"+path_names[p]+".dat");

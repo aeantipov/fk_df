@@ -43,7 +43,13 @@ typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::operator[](size
 }
 
 template <typename ValueType, class Derived>
-const std::vector<typename Grid<ValueType,Derived>::point> & Grid<ValueType,Derived>::getVals() const
+const std::vector<typename Grid<ValueType,Derived>::point> & Grid<ValueType,Derived>::getPoints() const
+{
+    return _vals;
+}
+
+template <typename ValueType, class Derived>
+const std::vector<ValueType>& Grid<ValueType,Derived>::getPointVals() const
 {
     return _vals;
 }
@@ -410,7 +416,7 @@ inline KMeshPatch::KMeshPatch(const KMesh& parent):
     _parent(parent),
     _npoints(parent.getSize())
 {
-    _vals = parent.getVals();
+    _vals = parent.getPoints();
      for (size_t i=0; i<_npoints; ++i) {
         _map_vals[size_t(_vals[i])] = i;
         }

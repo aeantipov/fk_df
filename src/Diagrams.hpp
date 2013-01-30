@@ -27,7 +27,7 @@ inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const
     for (auto val : GF._dims) knorm*=val; 
     knorm/=GF._dims[0];
 
-    for (auto iw: _fGrid.getVals()) { 
+    for (auto iw: _fGrid.getPoints()) { 
         size_t iwn = size_t(iw);
         out[iwn] = GF_shifted[iwn].sum()/RealType(knorm); 
     }
