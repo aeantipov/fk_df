@@ -135,11 +135,18 @@ typename DFLadder<Solver,D>::GLocalType DFLadder<Solver,D>::operator()()
             DEBUG(gammaChig4);
             DEBUG(gammaChig4_2);
             DEBUG(gammaChig4_2-gammaChig4);
-        
-            addSigma.getData() = gammaChig4;
             GD_shift = GD.shift(Wq_args_static);
-            addSigma*=GD_shift;
+        
+            typename GKType::PointFunctionType StaticSigmaF;
+            auto StaticSigmaF2 = [&](wkTupleType in)->ComplexType { 
+                    auto w = std::get<0>(in);
+                    return 0.5*gammaChig4(size_t(w))*GD_shift(in);
+                    };
+            StaticSigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(StaticSigmaF2);
+
+            addSigma.fill(StaticSigmaF);
             DEBUG(addSigma.diff(SigmaD));
+            DEBUG(addSigma);
             SigmaD+=addSigma/2.0/totalqpts;
             
 
@@ -165,7 +172,7 @@ typename DFLadder<Solver,D>::GLocalType DFLadder<Solver,D>::operator()()
                 GD_shift = GD.shift(Wq_args);
                 typename GKType::PointFunctionType SigmaF;
                 auto SigmaF2 = [&](wkTupleType in)->ComplexType { 
-                    ComplexType w = std::get<0>(in);
+                    auto w = std::get<0>(in);
                     return 0.5*DynVertex4(w)*Chi0(w)*GD_shift(in)*FullDualDynVertex4(w);
                     };
                 SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
