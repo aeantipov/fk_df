@@ -24,7 +24,8 @@ struct DFLadder : CubicDMFTSC<Solver,D>, DFBase {
     using typename CubicDMFTSC<Solver,D>::EkStorage;
     typedef typename Solver::GFType GLocalType;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType;
-    typedef typename GKType::PointTupleType wkTupleType;
+    typedef typename GKType::ArgTupleType wkArgTupleType;
+    typedef typename GKType::PointTupleType wkPointTupleType;
     typedef decltype(std::tuple_cat(std::make_tuple(BMatsubaraGrid::point()), std::array<KMesh::point, D>())) WQTupleType; 
     typedef typename ArgBackGenerator<D,KMeshPatch,GridObject,ComplexType,BMatsubaraGrid>::type SuscType;
     using CubicDMFTSC<Solver,D>::_S;

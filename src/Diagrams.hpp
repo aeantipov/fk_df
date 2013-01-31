@@ -65,6 +65,7 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     INFO_NONEWLINE("\tRunning" << ((!forward)?" inverse ":" ") << "BS equation...");
     size_t size = IrrVertex4.rows(); 
 
+    if (!eval_SC) {
     try {
         if (forward) {
             //Eigen::ColPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (2*forward-1)*IrrVertex4*Chi0);
@@ -81,8 +82,24 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     }
     catch (std::exception &e) {
         ERROR("Couldn't invert the vertex");
-        exit(1);
     }
+    } // From here solver by iterations
+    auto V4 = IrrVertex4;
+    auto V4_old = IrrVertex4;
+    INFO_NONEWLINE("\tEvaluating BS self-consistently. ");
+    RealType diffBS = 1.0;
+    for (size_t n=0; n<n_iter && diffBS > 1e-8; ++n) { 
+        INFO_NONEWLINE(n << "/" << n_iter<< ". ")
+    //INFO("BS iteration " << n << " for iW = " << ComplexType(iW) << ", (qx,qy) = (" << RealType(qx) << "," << RealType(qy) << ").");
+        if (forward)
+            V4 = IrrVertex4 + IrrVertex4*Chi0*V4_old;
+        else 
+            V4 = IrrVertex4 - V4_old*Chi0*IrrVertex4;
+        diffBS = (V4-V4_old).norm();
+        INFO("vertex diff = " << diffBS);
+        V4_old = V4*mix+(1.0-mix)*V4_old;
+        }
+    return V4;
 }
 
 
@@ -104,7 +121,7 @@ inline GridObject<ValueType,GridType> Diagrams::BS (const GridObject<ValueType,G
         for (size_t n=0; n<n_iter && diffBS > 1e-8; ++n) { 
             //INFO("BS iteration " << n << " for iW = " << ComplexType(iW) << ", (qx,qy) = (" << RealType(qx) << "," << RealType(qy) << ").");
             Vertex4_out = IrrVertex4 + IrrVertex4*Chi0*Vertex4_old;
-            auto diffBS = IrrVertex4.diff(Vertex4_old);
+            diffBS = Vertex4_out.diff(Vertex4_old);
             INFO("vertex diff = " << diffBS);
             Vertex4_old = Vertex4_out*mix+(1.0-mix)*Vertex4_old;
             }

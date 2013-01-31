@@ -189,12 +189,17 @@ int main(int argc, char *argv[])
             }
         else { 
             Delta = SC_DF();
+            DEBUG("!");
              }
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         diff = Delta_new.diff(Solver.Delta);
         INFO("diff = " << diff);
         Solver.Delta = Delta_new;
-        if (diff<=1e-8 && calc_DMFT) { diff = 1.0; calc_DMFT = false; mix = 1.0; }; // now continue with DF 
+        if (diff<=1e-8 && calc_DMFT) { 
+            Solver.Sigma.savetxt("SigmaDMFT.dat"); 
+            Solver.Delta.savetxt("DeltaDMFT.dat");
+            Solver.gw.savetxt("GwDMFT.dat");
+            diff = 1.0; calc_DMFT = false; mix = 1.0; }; // now continue with DF 
         }
    
     GF Delta_half(gridF_half); Delta_half = Delta;
