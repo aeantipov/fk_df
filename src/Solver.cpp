@@ -59,7 +59,8 @@ GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> FKImpuritySolver::getBubbl
 {
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> out(std::forward_as_tuple(w_grid, w_grid));
     RealType T = 1.0/w_grid._beta;
-    decltype(out)::PointFunctionType f = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) { 
+    typedef decltype(out) tmp1;
+    tmp1::PointFunctionType f = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) { 
         return -T*(gw(w1)*gw(w2));
     };
     out.fill(f);

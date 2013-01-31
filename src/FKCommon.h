@@ -56,9 +56,12 @@ inline ComplexType FMatsubara(int n, RealType beta){return Matsubara<1>(n,beta);
 inline ComplexType BMatsubara(int n, RealType beta){return Matsubara<0>(n,beta);};
 
 /** A wrapper around numbers for file output. */
+template <typename T> struct __num_format;
+template <typename T> std::ostream& operator<<(std::ostream& lhs, const __num_format<T> &in);
+template <typename T> std::istream& operator>>(std::istream& lhs, __num_format<T> &out);
 template <typename T> 
 struct __num_format {
-    const int _prec = 12;
+    static const int _prec = 12;
     T _v;
     __num_format(T v):_v(v){};
     operator T(){return _v;};
@@ -66,11 +69,17 @@ struct __num_format {
         std::cout << "Saving " << typeid(*this).name() << " to " << filename << std::endl;
         std::ofstream out; out.open(filename.c_str()); out << *this << std::endl; out.close(); 
     }; 
-    friend std::ostream& operator<<(std::ostream& lhs, const __num_format<T> &in){lhs << std::setprecision(in._prec) << in._v; return lhs;};
-    friend std::istream& operator>>(std::istream& lhs, __num_format<T> &out){lhs >> out._v; return lhs;};
+    friend std::ostream& operator<< <>(std::ostream& lhs, const __num_format<T> &in);
+    friend std::istream& operator>> <>(std::istream& lhs, __num_format<T> &out);
 };
 
+template <typename T> 
+inline std::ostream& operator<<(std::ostream& lhs, const __num_format<T> &in) {lhs << std::setprecision(in._prec) << in._v; return lhs;};
+template <typename T> 
+inline std::istream& operator>>(std::istream& lhs, __num_format<T> &out) {lhs >> out._v; return lhs;};
+template <>
 inline std::ostream& operator<<(std::ostream& lhs, const __num_format<ComplexType> &in){lhs << std::setprecision(in._prec) << real(in._v) << " " << imag(in._v); return lhs;};
+template <>
 inline std::istream& operator>>(std::istream& lhs, __num_format<ComplexType> &out){RealType re,im; lhs >> re; lhs >> im; out._v = re+I*im; return lhs;};
 
 /** A tool to generate a type for an object T of D Args. */

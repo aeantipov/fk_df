@@ -5,11 +5,11 @@
 namespace FK {
 
 GFWrap::GFWrap(const FMatsubaraGrid& in):
-    GridObject<ComplexType, FMatsubaraGrid>(in)
+    GridObject<ComplexType, FMatsubaraGrid>(std::make_tuple(in))
 {
 }
 
-GFWrap::GFWrap(const std::tuple<FMatsubaraGrid> & in):GFWrap(std::get<0>(in))
+GFWrap::GFWrap(const std::tuple<FMatsubaraGrid> & in):GridObject<ComplexType, FMatsubaraGrid>(in)
 {
 }
 

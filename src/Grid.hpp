@@ -114,7 +114,8 @@ const char* Grid<ValueType,Derived>::exWrongIndex::what() const throw(){
 
 template <bool F>
 inline MatsubaraGrid<F>::MatsubaraGrid(int min, int max, RealType beta):
-    Grid<ComplexType, MatsubaraGrid<F>>(min,max,std::bind(Matsubara<F>, std::placeholders::_1, beta)),
+    //Grid<ComplexType, MatsubaraGrid<F>>(min,max,std::bind(Matsubara<F>, std::placeholders::_1, beta)),
+    Grid<ComplexType, MatsubaraGrid<F>>(min,max,[beta](int n){return Matsubara<F>(n,beta);}),
     _beta(beta), 
     _spacing(PI/beta), 
     _w_min(min),
@@ -240,7 +241,7 @@ inline auto MatsubaraGrid<F>::getValue(Obj &in, MatsubaraGrid::point x) const ->
 // RealGrid
 //
 inline RealGrid::RealGrid(RealType min, RealType max, size_t n_points):
-    Grid(0,n_points,[n_points,max,min](size_t in){return (max-min)/n_points*in+min;}),
+    Grid<RealType,RealGrid>(0,n_points,[n_points,max,min](size_t in){return (max-min)/n_points*in+min;}),
     _min(min),
     _max(max)
 {
@@ -312,7 +313,7 @@ inline auto RealGrid::getValue(Obj &in, RealGrid::point x) const ->decltype(in[0
 //
 
 inline KMesh::KMesh(size_t n_points):
-Grid(0,n_points,[n_points](size_t in){return 2.0*PI/n_points*in;}),
+Grid<RealType,KMesh>(0,n_points,[n_points](size_t in){return 2.0*PI/n_points*in;}),
 _points(n_points)
 {
 }
