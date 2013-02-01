@@ -20,13 +20,16 @@ public:
 	size_t n_freq;
 	size_t kpts;
 	size_t n_dual_freq;
-	size_t n_dmft_iter;
-	size_t n_df_iter;
-	size_t n_df_sc_iter;
-    FK::RealType df_sc_mix;
+	size_t NDMFTRuns;
+	size_t NDFRuns;
+	size_t DFNumberOfSelfConsistentIterations;
+    FK::RealType DFSCMixing;
+	size_t DFNumberOfBSIterations;
+    bool DFEvaluateBSSelfConsistent;
+    FK::RealType DFBSMixing;
 	std::string sc_type;
     SC sc_index;
-    bool extra_ops;
+    size_t extraops;
 	std::string help;
 
 	FKOptionParserDF() : 
@@ -39,13 +42,16 @@ public:
           n_freq(1024), 
           kpts(32),
           n_dual_freq(128), 
-          n_dmft_iter(1000), 
-          n_df_iter(100), 
-          n_df_sc_iter(10), 
-          df_sc_mix(1.0),
+          NDMFTRuns(1000), 
+          NDFRuns(100), 
+          DFNumberOfSelfConsistentIterations(10), 
+          DFSCMixing(0.5),
+          DFNumberOfBSIterations(1), 
+          DFEvaluateBSSelfConsistent(false),
+          DFBSMixing(1.0),
           sc_type(""), 
           sc_index(SC::Fail), 
-          extra_ops(false),
+          extraops(0),
           help("") 
           {}
 
@@ -84,22 +90,29 @@ public:
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
 
-
         ON_OPTION_WITH_ARG(LONGOPT("ndmftiter"))
-			n_dmft_iter = std::atoi(arg);
+			NDMFTRuns = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
         ON_OPTION_WITH_ARG(LONGOPT("ndfiter"))
-			n_df_iter = std::atoi(arg);
+			NDFRuns = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
         ON_OPTION_WITH_ARG(LONGOPT("ndfsciter"))
-			n_df_sc_iter = std::atoi(arg);
+			DFNumberOfSelfConsistentIterations = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
         ON_OPTION_WITH_ARG(LONGOPT("dfscmix"))
-		    df_sc_mix = std::atof(arg);
+		    DFSCMixing = std::atof(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
+        
+        ON_OPTION_WITH_ARG(LONGOPT("ndfbsiter"))
+            DFNumberOfBSIterations = std::atoi(arg);
+            used_args = 1;
+
+        ON_OPTION_WITH_ARG(LONGOPT("dfbsmix"))
+            DFBSMixing = std::atof(arg);
+            used_args = 1;
 
 		ON_OPTION_WITH_ARG(SHORTOPT('m') || LONGOPT("nfreq"))
 			n_freq = std::atoi(arg);
@@ -112,12 +125,13 @@ public:
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
 
-        ON_OPTION(LONGOPT("extraops"))
-            extra_ops = true;
+        ON_OPTION_WITH_ARG(LONGOPT("extraops"))
+            extraops = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
-			// no need of the notification: used_args variable will be set to 1.
 
-
+        ON_OPTION(LONGOPT("dfevalbssc"))
+            DFEvaluateBSSelfConsistent = true;
+            used_args = 1;
 
         ON_OPTION(SHORTOPT('s') || LONGOPT("sc"))
             sc_type = arg;
@@ -130,19 +144,23 @@ public:
         ON_OPTION(SHORTOPT('h') || LONGOPT("help"))
             std::cout << "Usage: fk_DF [options]" << std::endl;
             std::cout << "Options: " << std::endl;
+            std::cout << "-h     --help        : Show this help message" << std::endl;
             std::cout << "-b     --beta        : The value of inverse temperature. Default: " << beta << std::endl;
             std::cout << "-U     --U           : The value of U. Default: " << U << std::endl;
             std::cout << "-t     --t           : The value of t. Default: " << t << std::endl;
-            
             std::cout << "--ed                 : The value of e_d. Default: " << e_d << std::endl;
             std::cout << "--sc                 : The type of self-consistency. Default: " << sc_type << std::endl;
-            std::cout << "Possible values: bethe; dmftcubic1d; dmftcubic2d; dmftcubic3d; dmftcubic4d; dmftcubicinfd; dfcubic1d; dfcubic2d; dfcubic3d; dfcubic4d " << sc_type << std::endl;
+            std::cout << "Possible values: dfcubic1d; dfcubic2d; dfcubic3d; dfcubic4d " << sc_type << std::endl;
             std::cout << "-m     --matsubaras  : Amount of Matsubara frequencies. Default: " << n_freq<< std::endl;
-            std::cout << "--ndfreq             : Amount of Matsubara frequencies for DF calc. Default: " << n_dual_freq<< std::endl;
-            std::cout << "--ndmftiter          : Amount of DMFT iterations. Default: " << n_dmft_iter<< std::endl;
-            std::cout << "--ndfiter            : Amount of DF iterations. Default: " << n_df_iter<< std::endl;
-            std::cout << "--ndfsciter          : Amount of DF self-consistency iterations. Default: " << n_df_sc_iter<< std::endl;
-            std::cout << "-h     --help        : Show this help message" << std::endl;
+            std::cout << "--ndfreq             : Amount of bosonic Matsubara frequencies for DF calc. Default: " << n_dual_freq<< std::endl;
+            std::cout << "--ndmftiter          : Total amount of DMFT iterations. Default: " << NDMFTRuns<< std::endl;
+            std::cout << "--ndfiter            : Total amount of DF iterations. Default: " << NDFRuns<< std::endl;
+            std::cout << "DF related:" << std::endl;
+            std::cout << "--dfscmix            : Mixing for DF updates of dual Green's function. Default: " << DFSCMixing << std::endl;
+            std::cout << "--ndfsciter          : Amount of DF self-consistency iterations. Default: " << DFNumberOfSelfConsistentIterations<< std::endl;
+            std::cout << "--dfevalbssc         : Evaluate BS equation self-consistently. Default: " << std::boolalpha << DFEvaluateBSSelfConsistent << std::endl;
+            std::cout << "--ndfbsiter          : Amount of DF Bethe-Salpeter iterations (if needed). Default: " << DFNumberOfBSIterations<< std::endl;
+            std::cout << "--dfbsmix            : Mixing for Bethe-Salpeter iterations (if needed). Default: " << DFBSMixing << std::endl;
             //std::cout << "--calc_vertex        : Defines whether the program will calculate a vertex or not. Default: false." << std::endl;
             exit(0);
 

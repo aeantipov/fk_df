@@ -19,7 +19,7 @@ inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const
     static_assert(GKType::N==sizeof...(ArgTypes), "Argument size mismatch");
     const auto _fGrid = std::get<0>(GF.getGrids()); 
     GLocalType out(_fGrid);
-    GKType GF_shifted(GF.getGrids());
+    static GKType GF_shifted(GF.getGrids());
     GF_shifted = GF.shift(args);
     GF_shifted*=GF;
 
@@ -65,36 +65,49 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     INFO_NONEWLINE("\tRunning" << ((!forward)?" inverse ":" ") << "BS equation...");
     size_t size = IrrVertex4.rows(); 
 
-    if (!eval_SC) {
-    try {
-        if (forward) {
+    MatrixType<ValueType> V4Chi;
+    if (forward)
+        V4Chi = MatrixType<ValueType>::Identity(size,size) - IrrVertex4*Chi0;
+    else
+        V4Chi = MatrixType<ValueType>::Identity(size,size) + Chi0*IrrVertex4;
+    auto D1 = V4Chi.determinant();
+
+    if (!eval_SC && std::abs(D1)>std::numeric_limits<RealType>::epsilon()) {
+        try {
+            #ifdef NDEBUG
+            #undef NDEBUG
+            #define NDEBUG1
+            #endif
             //Eigen::ColPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (2*forward-1)*IrrVertex4*Chi0);
-            Eigen::ColPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (IrrVertex4*Chi0));
-            auto V4 = Solver.solve(IrrVertex4); 
+            //Eigen::ColPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (IrrVertex4*Chi0));
+            //auto V4 = Solver.solve(IrrVertex4); 
+            if (forward) {
+                V4Chi = V4Chi.colPivHouseholderQr().solve(IrrVertex4);
+                }
+            else
+                V4Chi=IrrVertex4*V4Chi.inverse();
             INFO("done.");
-            return V4;
+            #ifdef NDEBUG1
+            #define NDEBUG
+            #undef NDEBUG1
+            #endif
+            return V4Chi;
         }
-        else {
-            auto V4 = IrrVertex4*(MatrixType<ValueType>::Identity(size,size) + Chi0*IrrVertex4).inverse();
-            INFO("done.");
-            return V4;
+        catch (std::exception &e) {
+            ERROR("Couldn't invert the vertex");
         }
-    }
-    catch (std::exception &e) {
-        ERROR("Couldn't invert the vertex");
-    }
-    } // From here solver by iterations
+    }; // From here solver by iterations
+    V4Chi=IrrVertex4*Chi0;
     auto V4 = IrrVertex4;
     auto V4_old = IrrVertex4;
     INFO_NONEWLINE("\tEvaluating BS self-consistently. ");
     RealType diffBS = 1.0;
     for (size_t n=0; n<n_iter && diffBS > 1e-8; ++n) { 
-        INFO_NONEWLINE(n << "/" << n_iter<< ". ")
-    //INFO("BS iteration " << n << " for iW = " << ComplexType(iW) << ", (qx,qy) = (" << RealType(qx) << "," << RealType(qy) << ").");
+        INFO_NONEWLINE("\t\t" << n+1 << "/" << n_iter<< ". ")
         if (forward)
-            V4 = IrrVertex4 + IrrVertex4*Chi0*V4_old;
+            V4 = IrrVertex4 + V4Chi*V4_old;
         else 
-            V4 = IrrVertex4 - V4_old*Chi0*IrrVertex4;
+            V4 = IrrVertex4 - V4_old*V4Chi;
         diffBS = (V4-V4_old).norm();
         INFO("vertex diff = " << diffBS);
         V4_old = V4*mix+(1.0-mix)*V4_old;
@@ -113,7 +126,7 @@ inline GridObject<ValueType,GridType> Diagrams::BS (const GridObject<ValueType,G
     std::function<RealType(typename GridType::point)> absEVf = [&](typename GridType::point w)->RealType{return std::abs(Chi0(w)*IrrVertex4(w)); };
     EVCheck.fill(absEVf);
     RealType max_ev = *std::max_element(EVCheck.getData().begin(), EVCheck.getData().end());
-    INFO("Maximum EV of Chi0*gamma = " << max_ev); // << "|" << max_ev_re << "|" << max_ev_im);
+    INFO_NONEWLINE("\tMaximum EV of Chi0*gamma = " << max_ev << " ."); // << "|" << max_ev_re << "|" << max_ev_im);
     if (std::abs(max_ev-1.0) < 1e-6 || eval_SC) {
         GridObject<ValueType,GridType> Vertex4_old(IrrVertex4);
         INFO2 ("Caught divergence, evaluating BS equation self_consistently. ");

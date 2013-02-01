@@ -11,23 +11,23 @@ namespace FK {
 //
 
 template <typename ValueType, class Derived>
-Grid<ValueType,Derived>::Grid()
+inline Grid<ValueType,Derived>::Grid()
 {};
 
 template <typename ValueType, class Derived>
-Grid<ValueType,Derived>::Grid(const std::vector<point> &vals):_vals(vals)
+inline Grid<ValueType,Derived>::Grid(const std::vector<point> &vals):_vals(vals)
 {
 };
 
 
 template <typename ValueType, class Derived>
-Grid<ValueType,Derived>::Grid(const std::vector<ValueType> &vals):_vals(vals)
+inline Grid<ValueType,Derived>::Grid(const std::vector<ValueType> &vals):_vals(vals)
 {
     for (size_t i=0; i<_vals.size(); ++i) _vals[i]._index = i;
 };
 
 template <typename ValueType, class Derived>
-Grid<ValueType,Derived>::Grid(int min, int max, std::function<ValueType (int)> f)
+inline Grid<ValueType,Derived>::Grid(int min, int max, std::function<ValueType (int)> f)
 {
     if (max<min) std::swap(min,max);
     size_t n_points = max-min;
@@ -36,33 +36,33 @@ Grid<ValueType,Derived>::Grid(int min, int max, std::function<ValueType (int)> f
 }
 
 template <typename ValueType, class Derived>
-typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::operator[](size_t index) const
+inline typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::operator[](size_t index) const
 {
     if (index>_vals.size()) throw exWrongIndex();
     return _vals[index];
 }
 
 template <typename ValueType, class Derived>
-const std::vector<typename Grid<ValueType,Derived>::point> & Grid<ValueType,Derived>::getPoints() const
+inline const std::vector<typename Grid<ValueType,Derived>::point> & Grid<ValueType,Derived>::getPoints() const
 {
     return _vals;
 }
 
 template <typename ValueType, class Derived>
-const std::vector<ValueType>& Grid<ValueType,Derived>::getPointVals() const
+inline const std::vector<ValueType>& Grid<ValueType,Derived>::getPointVals() const
 {
     return _vals;
 }
 
 template <typename ValueType, class Derived>
-size_t Grid<ValueType,Derived>::getSize() const
+inline size_t Grid<ValueType,Derived>::getSize() const
 {
     return _vals.size();
 }
 
 template <typename ValueType, class Derived>
 template <class ArgType>
-typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::shift(point in, ArgType shift_arg) const
+inline typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::shift(point in, ArgType shift_arg) const
 {
     point out;
     out._val = in._val + ValueType(shift_arg);
@@ -76,7 +76,7 @@ typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::shift(point in,
 }
 
 template <typename ValueType, class Derived>
-typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::findClosest(ValueType in) const
+inline typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::findClosest(ValueType in) const
 {
     auto find_result = find(in);
     if (!std::get<0>(find_result)) { ERROR("Couldn't find the closest point"); throw (exWrongIndex()); };
@@ -85,7 +85,7 @@ typename Grid<ValueType,Derived>::point Grid<ValueType,Derived>::findClosest(Val
 
 template <typename ValueType, class Derived>
 template <class ArgType>
-ValueType Grid<ValueType,Derived>::shift(ValueType in, ArgType shift_arg) const
+inline ValueType Grid<ValueType,Derived>::shift(ValueType in, ArgType shift_arg) const
 {
     return in+ValueType(shift_arg);
 }

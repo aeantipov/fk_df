@@ -1,3 +1,4 @@
+#pragma once
 #ifndef ___FK_CONTAINER_H___
 #define ___FK_CONTAINER_H___
 

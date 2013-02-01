@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __FK_DFDIAGRAMS_H__
 #define __FK_DFDIAGRAMS_H__
 

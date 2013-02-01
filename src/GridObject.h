@@ -1,3 +1,4 @@
+#pragma once
 #ifndef ___FK_GRID_OBJECT_H___
 #define ___FK_GRID_OBJECT_H___
 

@@ -49,7 +49,7 @@ typename Container<N,ValueType>::iterator Container<N,ValueType>::end()
 
 template <size_t N, typename ValueType> 
 template <typename U, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type>
-Container <N,ValueType> Container<N,ValueType>::conj()
+inline Container <N,ValueType> Container<N,ValueType>::conj()
 {
     Container <N,ValueType> out(*this);
     for (iterator it1 = this->begin(); it1!=this->end(); it1++) {  
@@ -59,7 +59,7 @@ Container <N,ValueType> Container<N,ValueType>::conj()
 }
 
 template <size_t N, typename ValueType> 
-ValueType Container<N,ValueType>::sum()
+inline ValueType Container<N,ValueType>::sum()
 {
     ValueType out=0.0;
     out = std::accumulate(_vals.begin(), _vals.end(), out, [](ValueType x, Container<N-1,ValueType> &in){return x+in.sum();});
@@ -68,7 +68,7 @@ ValueType Container<N,ValueType>::sum()
 
 template <size_t N, typename ValueType> 
 template<typename N2>
-MatrixType<ValueType> Container<N,ValueType>::getAsMatrix() const
+inline MatrixType<ValueType> Container<N,ValueType>::getAsMatrix() const
 {
     size_t rows = _vals.size();
     size_t cols = _vals[0].getSize();
@@ -83,7 +83,7 @@ MatrixType<ValueType> Container<N,ValueType>::getAsMatrix() const
 
 template <size_t N, typename ValueType> 
 template<typename N2>
-Container<N,ValueType>::Container(const MatrixType<ValueType> &rhs)
+inline Container<N,ValueType>::Container(const MatrixType<ValueType> &rhs)
 {
     std::array<size_t, 2> shape = {{ static_cast<size_t>(rhs.rows()), static_cast<size_t>(rhs.cols()) }};
     *this = Container<2,ValueType>(shape);
@@ -94,7 +94,7 @@ Container<N,ValueType>::Container(const MatrixType<ValueType> &rhs)
 
 template <size_t N, typename ValueType> 
 template<typename N2>
-Container<N,ValueType>& Container<N,ValueType>::operator=(MatrixType<ValueType> &&rhs)
+inline Container<N,ValueType>& Container<N,ValueType>::operator=(MatrixType<ValueType> &&rhs)
 {
     assert(rhs.rows() == _vals.size() && rhs.cols() == _vals[0].getSize());
     for (size_t i=0; i<rhs.rows(); ++i) { 
@@ -152,7 +152,7 @@ typename Container<1,ValueType>::iterator Container<1,ValueType>::end()
 
 template <typename ValueType> 
 template <typename U, typename std::enable_if<std::is_same<U, ComplexType>::value, int>::type>
-Container <1,ValueType> Container<1,ValueType>::conj()
+inline Container <1,ValueType> Container<1,ValueType>::conj()
 {
     Container <1,ValueType> out(*this);
     for_each(out._vals.begin(), out._vals.end(), [&](ComplexType &x){x=std::conj(x);});
@@ -160,7 +160,7 @@ Container <1,ValueType> Container<1,ValueType>::conj()
 }
 
 template <typename ValueType> 
-ValueType Container<1,ValueType>::sum()
+inline ValueType Container<1,ValueType>::sum()
 {
     ValueType out=0.0;
     out = std::accumulate(_vals.begin(), _vals.end(), out, std::plus<ValueType>());
@@ -181,7 +181,7 @@ void Container<1,ValueType>::savetxt(const std::string& fname)
 }
 
 template <typename ValueType> 
-MatrixType<ValueType> Container<1,ValueType>::getAsDiagonalMatrix() const
+inline MatrixType<ValueType> Container<1,ValueType>::getAsDiagonalMatrix() const
 {
     size_t size1 = _vals.size();
     Eigen::DiagonalMatrix<ValueType, Eigen::Dynamic> out(size1);
@@ -192,7 +192,7 @@ MatrixType<ValueType> Container<1,ValueType>::getAsDiagonalMatrix() const
 }
 
 template <typename ValueType> 
-VectorType<ValueType> Container<1,ValueType>::getAsVector() const
+inline VectorType<ValueType> Container<1,ValueType>::getAsVector() const
 {
     size_t size1 = _vals.size();
     VectorType<ValueType> out(size1);
@@ -210,28 +210,28 @@ VectorType<ValueType> Container<1,ValueType>::getAsVector() const
 // Operator=
 
 template <size_t N, typename ValueType> 
-Container<N,ValueType>& Container<N,ValueType>::operator=(const Container<N,ValueType> &rhs)
+inline Container<N,ValueType>& Container<N,ValueType>::operator=(const Container<N,ValueType> &rhs)
 {
     _vals = rhs._vals; 
     return (*this);
 }
 
 template <typename ValueType> 
-Container<1,ValueType>& Container<1,ValueType>::operator=(const Container<1,ValueType> &rhs)
+inline Container<1,ValueType>& Container<1,ValueType>::operator=(const Container<1,ValueType> &rhs)
 {
     _vals = rhs._vals; 
     return (*this);
 }
 
 template <size_t N, typename ValueType> 
-Container<N,ValueType>& Container<N,ValueType>::operator=(Container<N,ValueType> &&rhs)
+inline Container<N,ValueType>& Container<N,ValueType>::operator=(Container<N,ValueType> &&rhs)
 {
     _vals.swap(rhs._vals); 
     return (*this);
 }
 
 template <typename ValueType> 
-Container<1,ValueType>& Container<1,ValueType>::operator=(Container<1,ValueType> &&rhs)
+inline Container<1,ValueType>& Container<1,ValueType>::operator=(Container<1,ValueType> &&rhs)
 {
     _vals.swap(rhs._vals); 
     return (*this);
@@ -240,14 +240,14 @@ Container<1,ValueType>& Container<1,ValueType>::operator=(Container<1,ValueType>
 
 
 template <size_t N, typename ValueType> 
-Container<N,ValueType>& Container<N,ValueType>::operator=(const ValueType &rhs)
+inline Container<N,ValueType>& Container<N,ValueType>::operator=(const ValueType &rhs)
 {
     std::for_each(_vals.begin(), _vals.end(), [&](Container<N-1,ValueType> &x){x=rhs;});
     return (*this);
 }
 
 template <typename ValueType> 
-Container<1,ValueType>& Container<1,ValueType>::operator=(const ValueType &rhs)
+inline Container<1,ValueType>& Container<1,ValueType>::operator=(const ValueType &rhs)
 {
     std::for_each(_vals.begin(), _vals.end(), [&](ValueType &x){x=rhs;});
     return (*this);

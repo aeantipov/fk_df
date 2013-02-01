@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __FK_DF_H__
 #define __FK_DF_H__
 
@@ -9,7 +10,7 @@ namespace FK {
 
 struct DFBase
 {
-    RealType _GDmix = 1.0;
+    RealType _GDmix = 0.5;
     size_t _n_GD_iter = 100;
 
     bool _eval_BS_SC = false;

@@ -21,6 +21,7 @@ using namespace FK;
 
 RealType beta;
 size_t D = 0;
+size_t extraops=0;
 
 typedef GFWrap GF;
 
@@ -44,43 +45,49 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     const auto &Solver = SC._S;
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
-    size_t n_b_freq = gridF._w_max/2; // std::max(gridF._w_max/2,int(beta));
-    BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
-
-    auto glat = SC.getGLat();
-    auto gloc = SC.GLatLoc;
-    size_t ksize = SC._kGrid.getSize();
-    
-    GF iw_gf(gridF); 
-    iw_gf.fill([](ComplexType w){return w;});
-    GridObject<ComplexType,BMatsubaraGrid> chi_q0(gridB), chi_qPI(gridB);
-
-
-    KMeshPatch grid0PI(SC._kGrid, {{0, SC._kGrid.getSize()/2}} );
-    std::array<KMeshPatch, D> qgrids = __repeater<KMeshPatch,D>::get_array(grid0PI); 
-    auto data = SC.calculateLatticeData(gridB, qgrids); // Heavy operation
-
-    auto LatticeSusc = std::get<0>(data);
-
-    std::array<KMesh::point,SCType::NDim> q_0, q_PI;
-    q_0.fill(SC._kGrid[0]);
-    q_PI.fill(SC._kGrid[ksize/2]);
-
-    for (auto iW : gridB.getPoints()) {
-        auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),q_0);
-        auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),q_PI);
-        chi_q0[size_t(iW)] = LatticeSusc(args_0);
-        chi_qPI[size_t(iW)] = LatticeSusc(args_pi);
-        };
-
-    chi_q0.savetxt("Chiq0.dat");
-    chi_qPI.savetxt("ChiqPI.dat");
-    auto chi_q0_0 = -T*chi_q0.sum();
-    auto chi_qPI_0 = -T*chi_qPI.sum();
-    INFO("Chi0(q=0) sum  = " << chi_q0_0);
-    INFO("Chi0(q=pi) sum = " << chi_qPI_0);
-
     SC.GLatLoc.savetxt("gloc.dat");
+
+    if (extraops>=1) {
+    }
+
+    if (extraops >= 2) {
+        size_t n_b_freq = gridF._w_max/2; // std::max(gridF._w_max/2,int(beta));
+        BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
+
+        auto glat = SC.getGLat();
+        auto gloc = SC.GLatLoc;
+        size_t ksize = SC._kGrid.getSize();
+        
+        GF iw_gf(gridF); 
+        iw_gf.fill([](ComplexType w){return w;});
+        GridObject<ComplexType,BMatsubaraGrid> chi_q0(gridB), chi_qPI(gridB);
+
+
+        KMeshPatch grid0PI(SC._kGrid, {{0, SC._kGrid.getSize()/2}} );
+        std::array<KMeshPatch, D> qgrids = __repeater<KMeshPatch,D>::get_array(grid0PI); 
+        auto data = SC.calculateLatticeData(gridB, qgrids); // Heavy operation
+
+        auto LatticeSusc = std::get<0>(data);
+
+        std::array<KMesh::point,SCType::NDim> q_0, q_PI;
+        q_0.fill(SC._kGrid[0]);
+        q_PI.fill(SC._kGrid[ksize/2]);
+
+        for (auto iW : gridB.getPoints()) {
+            auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),q_0);
+            auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),q_PI);
+            chi_q0[size_t(iW)] = LatticeSusc(args_0);
+            chi_qPI[size_t(iW)] = LatticeSusc(args_pi);
+            };
+
+        chi_q0.savetxt("Chiq0.dat");
+        chi_qPI.savetxt("ChiqPI.dat");
+        auto chi_q0_0 = -T*chi_q0.sum();
+        auto chi_qPI_0 = -T*chi_qPI.sum();
+        INFO("Chi0(q=0) sum  = " << chi_q0_0);
+        INFO("Chi0(q=pi) sum = " << chi_qPI_0);
+    };
+
 }
 
 
@@ -103,8 +110,9 @@ int main(int argc, char *argv[])
         std::cout << "e_d                  : " << opt.e_d << std::endl;
         std::cout << "Selfconsistency      : " << opt.sc_type << std::endl;
         std::cout << "Number Of Matsubaras : " << opt.n_freq << std::endl;
-        std::cout << "Max number of DMFT iterations : " << opt.n_dmft_iter << std::endl;
-        std::cout << "Max number of DF   iterations : " << opt.n_df_iter << std::endl;
+        std::cout << "Max number of DMFT iterations : " << opt.NDMFTRuns << std::endl;
+        std::cout << "Max number of DF   iterations : " << opt.NDFRuns << std::endl;
+        INFO("Extra options flag: " << opt.extraops);
     } catch (const optparse::unrecognized_option& e) {
         std::cout << "unrecognized option: " << e.what() << std::endl;
         return 1;
@@ -123,10 +131,9 @@ int main(int argc, char *argv[])
     size_t n_dual_freq = opt.n_dual_freq;
     RealType mix = opt.mix;
     auto sc_switch = opt.sc_index;
-    //bool extra_ops = opt.extra_ops;
-    size_t n_dmft_iter = opt.n_dmft_iter;
-    size_t n_df_iter = opt.n_df_iter;
-    size_t n_df_sc_iter = opt.n_df_sc_iter;
+    extraops = opt.extraops;
+    size_t NDMFTRuns = opt.NDMFTRuns;
+    size_t NDFRuns = opt.NDFRuns;
 
     KMesh kGrid(ksize);
 
@@ -156,8 +163,11 @@ int main(int argc, char *argv[])
             SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2>(Solver, t, kGrid));
             typedef DFLadder<FKImpuritySolver, 2> DFSCType;
             SC_DF_ptr.reset(new DFSCType(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
-            static_cast<DFSCType*> (SC_DF_ptr.get())->_n_GD_iter = n_df_sc_iter;
-            static_cast<DFSCType*> (SC_DF_ptr.get())->_GDmix = opt.df_sc_mix;
+            static_cast<DFSCType*> (SC_DF_ptr.get())->_n_GD_iter = opt.DFNumberOfSelfConsistentIterations;
+            static_cast<DFSCType*> (SC_DF_ptr.get())->_GDmix = opt.DFSCMixing;
+            static_cast<DFSCType*> (SC_DF_ptr.get())->_eval_BS_SC = opt.DFEvaluateBSSelfConsistent;
+            static_cast<DFSCType*> (SC_DF_ptr.get())->_n_BS_iter = opt.DFNumberOfBSIterations;
+            static_cast<DFSCType*> (SC_DF_ptr.get())->_BSmix = opt.DFBSMixing;
             D=2; break;
         case enumSC::DFCubic3d: 
 //            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, ksize>(Solver, t));
@@ -180,7 +190,7 @@ int main(int argc, char *argv[])
     size_t i_dmft = 0; 
     size_t i_df = 0;
 
-    for (; i_dmft<n_dmft_iter && i_df<=n_df_iter && diff>1e-8 &&!interrupt; (calc_DMFT)?i_dmft++:i_df++) {
+    for (; i_dmft<NDMFTRuns && i_df<=NDFRuns && diff>1e-8 &&!interrupt; (calc_DMFT)?i_dmft++:i_df++) {
         INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
         if (diff/mix>1e-3) Solver.run(true);
         else Solver.run(false);
@@ -189,7 +199,6 @@ int main(int argc, char *argv[])
             }
         else { 
             Delta = SC_DF();
-            DEBUG("!");
              }
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         diff = Delta_new.diff(Solver.Delta);
@@ -210,7 +219,7 @@ int main(int argc, char *argv[])
     Delta_half.savetxt("Delta.dat");
     Solver.Delta.savetxt("Delta_full.dat");
 
-    if (D && 1==0) {
+    if (extraops>0) {
         switch (sc_switch) {
             case enumSC::DFCubic1d: 
                 getExtraData(*(static_cast<DFLadder<FKImpuritySolver,1>*> (SC_DF_ptr.get())), gridF); 
