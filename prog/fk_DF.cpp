@@ -168,6 +168,8 @@ int main(int argc, char *argv[])
             static_cast<DFSCType*> (SC_DF_ptr.get())->_eval_BS_SC = opt.DFEvaluateBSSelfConsistent;
             static_cast<DFSCType*> (SC_DF_ptr.get())->_n_BS_iter = opt.DFNumberOfBSIterations;
             static_cast<DFSCType*> (SC_DF_ptr.get())->_BSmix = opt.DFBSMixing;
+            static_cast<DFSCType*> (SC_DF_ptr.get())->_EvaluateStaticDiagrams = opt.DFEvaluateStaticDiagrams;
+            static_cast<DFSCType*> (SC_DF_ptr.get())->_EvaluateDynamicDiagrams = opt.DFEvaluateDynamicDiagrams;
             D=2; break;
         case enumSC::DFCubic3d: 
 //            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, ksize>(Solver, t));

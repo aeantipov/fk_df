@@ -44,21 +44,6 @@ inline typename Diagrams::GLocalType Diagrams::getBubble(const GLocalType &GF, A
     return (-T)*out;
 }
 
-/*
-template <typename VertexType>
-inline VertexType Diagrams::BS(const VertexType &Chi0, const VertexType &IrrVertex4, bool eval_SC, size_t n_iter, RealType mix)
-{
-    VertexType one(IrrVertex4), Vertex4(IrrVertex4);
-    one = 1.0;
-    try {
-        return IrrVertex4/(one - Chi0 * IrrVertex4); 
-    }
-    catch (std::exception &e) {
-        ERROR("Couldn't invert the vertex");
-        exit(1);
-    }
-}*/
-
 template <typename ValueType>
 inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, const MatrixType<ValueType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
 {
@@ -148,6 +133,37 @@ inline GridObject<ValueType,GridType> Diagrams::BS (const GridObject<ValueType,G
     //INFO("done");
     return Vertex4_out;
 }
+
+template <typename ValueType, typename ... GridTypes>
+inline GridObject<ValueType,GridTypes...> Diagrams::BS (const GridObject<ValueType,GridTypes...>& Chi0, const GridObject<ValueType,GridTypes...> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
+{
+    INFO_NONEWLINE("\tRunning" << ((!forward)?" inverse ":" ") << "BS equation...");
+    GridObject<ValueType,GridTypes...> Vertex4_out(IrrVertex4);
+    if (!eval_SC) {
+        try {
+            Vertex4_out = IrrVertex4/(1.0 - (2*forward-1)*Chi0 * IrrVertex4);
+            INFO("done.");
+            return Vertex4_out;
+            }
+         catch (std::exception &e) {
+                ERROR("Couldn't invert the vertex");
+            };
+        };
+    GridObject<ValueType,GridTypes...> Vertex4_old(IrrVertex4);
+    RealType diffBS = 1.0;
+    INFO_NONEWLINE("\tEvaluating BS self-consistently. ");
+    for (size_t n=0; n<n_iter && diffBS > 1e-8; ++n) { 
+        Vertex4_out = IrrVertex4 + IrrVertex4*Chi0*Vertex4_old*(2*forward-1);
+        diffBS = Vertex4_out.diff(Vertex4_old);
+        INFO("vertex diff = " << diffBS);
+        Vertex4_old = Vertex4_out*mix+(1.0-mix)*Vertex4_old;
+        };
+    INFO("done");
+    return Vertex4_out;
+}
+
+
+
 
 template <typename VertexType>
 inline VertexType Diagrams::getSusc(const VertexType& Chi0, const VertexType &FullVertex4)

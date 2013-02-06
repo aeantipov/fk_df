@@ -26,6 +26,8 @@ public:
     FK::RealType DFSCMixing;
 	size_t DFNumberOfBSIterations;
     bool DFEvaluateBSSelfConsistent;
+    bool DFEvaluateStaticDiagrams;
+    bool DFEvaluateDynamicDiagrams;
     FK::RealType DFBSMixing;
 	std::string sc_type;
     SC sc_index;
@@ -48,6 +50,8 @@ public:
           DFSCMixing(0.5),
           DFNumberOfBSIterations(1), 
           DFEvaluateBSSelfConsistent(false),
+          DFEvaluateStaticDiagrams(true),
+          DFEvaluateDynamicDiagrams(true),
           DFBSMixing(1.0),
           sc_type(""), 
           sc_index(SC::Fail), 
@@ -129,9 +133,17 @@ public:
             extraops = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
-        ON_OPTION(LONGOPT("dfevalbssc"))
-            DFEvaluateBSSelfConsistent = true;
+        ON_OPTION_WITH_ARG(LONGOPT("dfevalbssc"))
+            DFEvaluateBSSelfConsistent = std::atoi(arg);
             used_args = 1;
+
+        ON_OPTION_WITH_ARG(LONGOPT("dfevalstatic"))
+            DFEvaluateStaticDiagrams = std::atoi(arg);
+            used_args = 1;
+        ON_OPTION_WITH_ARG(LONGOPT("dfevaldynamic"))
+            DFEvaluateDynamicDiagrams = std::atoi(arg);
+            used_args = 1;
+
 
         ON_OPTION(SHORTOPT('s') || LONGOPT("sc"))
             sc_type = arg;
@@ -161,7 +173,8 @@ public:
             std::cout << "--dfevalbssc         : Evaluate BS equation self-consistently. Default: " << std::boolalpha << DFEvaluateBSSelfConsistent << std::endl;
             std::cout << "--ndfbsiter          : Amount of DF Bethe-Salpeter iterations (if needed). Default: " << DFNumberOfBSIterations<< std::endl;
             std::cout << "--dfbsmix            : Mixing for Bethe-Salpeter iterations (if needed). Default: " << DFBSMixing << std::endl;
-            //std::cout << "--calc_vertex        : Defines whether the program will calculate a vertex or not. Default: false." << std::endl;
+            std::cout << "--dfevalstatic       : Evaluate static DF diagram series. Default: " << std::boolalpha << DFEvaluateStaticDiagrams << std::endl;
+            std::cout << "--dfevaldynamic      : Evaluate dynamic DF diagram series. Default: " << std::boolalpha << DFEvaluateDynamicDiagrams << std::endl;
             exit(0);
 
 	END_OPTION_MAP()

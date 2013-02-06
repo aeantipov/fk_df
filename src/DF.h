@@ -16,6 +16,9 @@ struct DFBase
     bool _eval_BS_SC = false;
     RealType _BSmix = 1.0;
     size_t _n_BS_iter = 100;
+
+    bool _EvaluateStaticDiagrams = true;
+    bool _EvaluateDynamicDiagrams = true;
 };
 
 template <class Solver, size_t D>

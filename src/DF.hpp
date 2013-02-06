@@ -112,81 +112,88 @@ typename DFLadder<Solver,D>::GLocalType DFLadder<Solver,D>::operator()()
     INFO("Beginning with GD sum = " << std::abs(GD.sum())/RealType(_fGrid.getSize())/knorm);
 
     RealType diffGD = 1.0;
-    for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > 1e-8; ++nd_iter) { 
+    for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > 1e-8*_GDmix; ++nd_iter) { 
         INFO("DF iteration " << nd_iter << ". Evaluating BS equation.");
         GKType addSigma(this->SigmaD.getGrids()), GD_shift(this->GD.getGrids());
 
         std::array<KMesh::point, D> q;
         for (size_t nq=0; nq<totalqpts; ++nq) { // iterate over all kpoints
-            INFO_NONEWLINE(nq << "/" << totalqpts<< ". ");
+            INFO_NONEWLINE(nq << "/" << totalqpts<< ": [");
             size_t offset = 0;
-            for (size_t i=0; i<D; ++i) { q[D-1-i]=_kGrid[(nq-offset)/(int(pow(ksize,i)))%ksize]; offset+=(int(pow(ksize,i)))*size_t(q[D-1-i]); };
-
-            INFO_NONEWLINE("Static contribution...");
+            for (size_t i=0; i<D; ++i) { 
+                q[D-1-i]=_kGrid[(nq-offset)/(int(pow(ksize,i)))%ksize]; 
+                offset+=(int(pow(ksize,i)))*size_t(q[D-1-i]); 
+                INFO_NONEWLINE(RealType(q[D-1-i]) << " ");
+                };
+            INFO("]. ");
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
-            auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
-            //auto dual_bubble2 =  Diagrams::getBubble(this->GLat, Wq_args_static) + T*gw*gw;
-            //DEBUG(dual_bubble.diff(dual_bubble2));            
-
-            auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
-            //const auto FullStaticV4 = StaticV4; // Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
-            const auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
             GD_shift = GD.shift(Wq_args_static);
-        
-            typename GKType::PointFunctionType StaticSigmaF;
-            auto StaticSigmaF2 = [&](wkPointTupleType in)->ComplexType { 
-                    auto w = std::get<0>(in);
-                    return (T)*FullStaticV4(size_t(w))*GD_shift(in);
+
+            INFO_NONEWLINE("\tStatic contribution...");
+            auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
+            auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
+            const auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
+
+            INFO_NONEWLINE("\tDynamic contribution...");
+            decltype(StaticVertex4) DualBubbleDynamic(StaticVertex4.getGrids());
+            decltype(StaticVertex4)::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
+                return -T*(GD[size_t(w1)]*GD_shift[size_t(w2)]).sum()/RealType(totalqpts);
+                };
+            DualBubbleDynamic.fill(dbfill);
+            auto DynamicFullVertex4 = Diagrams::BS(DualBubbleDynamic, StaticVertex4*(-1.0), true, _eval_BS_SC,_n_BS_iter,_BSmix);
+            //DEBUG(StaticVertex4.diff((-1.)*DynamicFullVertex4));
+            
+            INFO_NONEWLINE("\tSchwinger-Dyson correction...");
+
+            typename GKType::PointFunctionType SigmaF;
+            auto SigmaF2 = [&](wkPointTupleType in)->ComplexType { 
+                    FMatsubaraGrid::point w = std::get<0>(in);
+                    auto kpts = __tuple_tail(in); 
+                    ComplexType out_dynamic=0.0;
+                    if (_EvaluateDynamicDiagrams) {
+                        auto temp_f = [&](FMatsubaraGrid::point w1){ 
+                            return (-1.0)*StaticVertex4(w,w1)*DualBubbleDynamic(w,w1)*GD_shift(std::tuple_cat(std::forward_as_tuple(w1),kpts))*DynamicFullVertex4(w,w1);
+                            };
+                        out_dynamic = (-1.0)*_fGrid.integrate(temp_f);
                     };
-            StaticSigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(StaticSigmaF2);
-
-            addSigma.fill(StaticSigmaF);
-            INFO2("Sigma contribution diff = " << addSigma.diff(addSigma*0));
-            SigmaD+=addSigma/totalqpts;
-
-            if (_bGrid.getSize()>1) {
-            INFO2("Dynamic contribution");
-            for (auto iW : _bGrid.getPoints()) {
-                INFO_NONEWLINE("\tiW = " << iW);
-                typename GLocalType::PointFunctionType VertexFillf = 
-                    std::bind(&FKImpuritySolver::getVertex4<BMatsubaraGrid::point,FMatsubaraGrid::point,FMatsubaraGrid::point>, std::cref(_S), iW, std::placeholders::_1, std::placeholders::_1); 
-                typename GLocalType::FunctionType Vertexf = 
-                    std::bind(&FKImpuritySolver::getVertex4<ComplexType, ComplexType,ComplexType>, std::cref(_S), ComplexType(iW), std::placeholders::_1, std::placeholders::_1); 
-                DynVertex4.fill(VertexFillf);
-                DynVertex4._f = Vertexf;
- 
-                WQTupleType Wq_args = std::tuple_cat(std::forward_as_tuple(iW),q);
-                //DEBUG("qx = " << q[0] << ", qy = " << q[1]);
-
-                // Bethe-Salpeter vertex
-                Chi0 = Diagrams::getBubble(GD, Wq_args);
-                FullDualDynVertex4 = Diagrams::BS(Chi0, DynVertex4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
-                
-                // Sigma
-                GD_shift = GD.shift(Wq_args);
-                typename GKType::PointFunctionType SigmaF;
-                auto SigmaF2 = [&](wkPointTupleType in)->ComplexType { 
-                    auto w = std::get<0>(in);
-                    return (-T)*0.5*DynVertex4(w)*Chi0(w)*GD_shift(in)*FullDualDynVertex4(w);
+                    auto out_static = (-1.0*T)*( (FullStaticV4(size_t(w),size_t(w)))*GD_shift(in));
+           //         DEBUG("static: " << out_static <<", dynamic: " << out_dynamic);
+                    return (_EvaluateStaticDiagrams?out_static:0.0) + (_EvaluateDynamicDiagrams?out_dynamic:0.0);
                     };
-                SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
-                addSigma.fill(SigmaF);
-                INFO3("Sigma contribution diff = " << addSigma.diff(addSigma*0));
-                SigmaD+=addSigma/totalqpts;
-                } // end of q loop
-            }; //end of iW loop
-            }; // if (_bGrid.getSize()>1)
+            SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
 
-        auto GD_new = 1.0/(1.0/GD0 - SigmaD); // Dyson eq;
+            addSigma.fill(SigmaF);
+            INFO2("Sigma contribution diff = " << addSigma.diff(SigmaD*0));
+            SigmaD+=addSigma/RealType(totalqpts);
+            
+        //    DEBUG(addSigma[0][0]/RealType(totalqpts));
+        //    DEBUG(SigmaD[0][0]);
+
+            }; // end of q loop
+
+        //GLocalType SigmaD0(_fGrid),__GD0(_fGrid), __GDnew0(_fGrid);
+        //std::function<ComplexType(FMatsubaraGrid::point)> sf = [&](FMatsubaraGrid::point w){return SigmaD[size_t(w)][0][0];};
+        //SigmaD0.fill(sf);        
+        //DEBUG(SigmaD0);
+
+        auto GD_new = _GDmix/(1.0/GD0 - SigmaD) + GD*(1.0-_GDmix); // Dyson eq;
+        //std::function<ComplexType(FMatsubaraGrid::point)> gdf = [&](FMatsubaraGrid::point w){return GD[size_t(w)][0][0];};
+        //std::function<ComplexType(FMatsubaraGrid::point)> gdnewf = [&](FMatsubaraGrid::point w){return GD_new[size_t(w)][0][0];};
+        //__GD0.fill(gdf);
+        //__GDnew0.fill(gdnewf);
+        //DEBUG(__GD0);
+        //DEBUG(__GDnew0);
         diffGD = GD_new.diff(GD);
         INFO2("DF diff = " << diffGD);
-        GD=GD_new*_GDmix + GD*(1.0-_GDmix);
+        GD=GD_new;
         GD._f = GD0._f; // assume DMFT asymptotics are good 
+        SigmaD = 0.0;
 
        INFO2("GD sum = " << std::abs(GD.sum())/RealType(_fGrid.getSize())/knorm);
     };
     INFO("Finished DF iterations");
         
+    SigmaD = 1.0/GD - 1.0/GD0;
     for (auto iw : _fGrid.getPoints()) {
         size_t iwn = size_t(iw);
         GLat[iwn] = 1.0/(Delta(iw) - _ek.getData()) + 1.0/(Delta(iw) - _ek.getData())/gw(iw)*GD[iwn]/gw(iw)/(Delta(iw) - _ek.getData());
@@ -214,7 +221,7 @@ template <class Solver, size_t D>
 std::tuple<typename DFLadder<Solver,D>::SuscType> DFLadder<Solver,D>::calculateLatticeData(const BMatsubaraGrid& gridB, const std::array<KMeshPatch, D>& qgrids)
 {
     SuscType LatticeSusc(std::tuple_cat(std::forward_as_tuple(gridB),qgrids));
-    RealType T = 1.0/_fGrid._beta;
+    //RealType T = 1.0/_fGrid._beta;
     GKType Lwk = GLat/GD0*(-1.0);
     Lwk._f = __fun_traits<typename GKType::FunctionType>::constant(-1.0);
     auto GDL = GD*Lwk;

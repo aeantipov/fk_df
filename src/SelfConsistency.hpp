@@ -292,8 +292,6 @@ inline typename CubicDMFTSC<Solver,D>::GFType CubicDMFTSC<Solver,D>::getBubblePI
 {
     std::array<KMesh::point,D> q;
     auto q1 = _kGrid.findClosest(PI);
-    DEBUG(q1);
-    DEBUG(_kGrid[size_t(q1)+1]);
     q.fill(q1);
     auto args = std::tuple_cat(std::forward_as_tuple(in),q);
     return Diagrams::getBubble(this->getGLat(_S.w_grid),args);

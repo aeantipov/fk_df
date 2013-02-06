@@ -36,6 +36,12 @@ struct Diagrams
             const GridObject<ValueType,GridType> &Chi0, 
             const GridObject<ValueType,GridType> &IrrVertex4, 
             bool forward, bool eval_SC = false, size_t n_iter = 100, RealType mix = 1.0);
+    template <typename ValueType, typename ... GridTypes>
+    static GridObject<ValueType,GridTypes...> BS(
+            const GridObject<ValueType,GridTypes...> &Chi0, 
+            const GridObject<ValueType,GridTypes...> &IrrVertex4, 
+            bool forward, bool eval_SC = false, size_t n_iter = 100, RealType mix = 1.0);
+
     template <typename ValueType>
     static MatrixType<ValueType> BS(
         const MatrixType<ValueType> &Chi0, 
