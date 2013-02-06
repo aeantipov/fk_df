@@ -141,11 +141,14 @@ int main(int argc, char *argv[])
 
     FMatsubaraGrid gridF(-n_freq, n_freq, beta);
     FMatsubaraGrid gridF_half(0, 2*n_freq, beta);
+    int __msize = std::max(n_freq*5,size_t(1024));
+    FMatsubaraGrid gridF_large(-__msize, __msize, beta);
 
     GF Delta(gridF);
     std::function<ComplexType(ComplexType)> f1, f2;
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
-    try { Delta.loadtxt("Delta_full.dat"); } 
+
+    try { GF Delta2("Delta_full.dat", beta); Delta = Delta2;} 
     catch (std::exception &e) { Delta.fill(f1); };
     Delta.savetxt("Delta_0.dat");
     
@@ -207,8 +210,9 @@ int main(int argc, char *argv[])
         INFO("diff = " << diff);
         Solver.Delta = Delta_new;
         if (diff<=1e-8 && calc_DMFT) { 
+            GF Delta_large(gridF_large); Delta_large = Solver.Delta;
+            Delta_large.savetxt("DeltaDMFT.dat");
             Solver.Sigma.savetxt("SigmaDMFT.dat"); 
-            Solver.Delta.savetxt("DeltaDMFT.dat");
             Solver.gw.savetxt("GwDMFT.dat");
             diff = 1.0; calc_DMFT = false; mix = 1.0; }; // now continue with DF 
         }
@@ -219,7 +223,8 @@ int main(int argc, char *argv[])
     sigma_half.savetxt("Sigma.dat");
     gw_half.savetxt("Gw.dat");
     Delta_half.savetxt("Delta.dat");
-    Solver.Delta.savetxt("Delta_full.dat");
+    GF Delta_large(gridF_large); Delta_large = Delta;
+    Delta_large.savetxt("Delta_full.dat");
 
     if (extraops>0) {
         switch (sc_switch) {

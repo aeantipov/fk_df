@@ -17,7 +17,7 @@ public:
     GFWrap(GFWrap&& in);
     GFWrap(const GridObject<ComplexType, FMatsubaraGrid>& in);
     GFWrap(GridObject<ComplexType, FMatsubaraGrid>&& in);
- //   GFWrap(const std::string& fname);
+    GFWrap(const std::string& fname, RealType beta);
 
     ComplexType operator()(const point &in) const;
     ComplexType operator()(const ComplexType &in) const;

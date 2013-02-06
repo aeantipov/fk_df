@@ -91,6 +91,12 @@ public:
     class exWrongIndex : public std::exception { virtual const char* what() const throw(); }; 
 };
 
+template <class Grid>
+std::ostream& operator<<(std::ostream& lhs, const __num_format<typename Grid::point> &in){lhs << std::setprecision(in._prec) << in._v._val; return lhs;};
+template <class Grid>
+std::istream& operator>>(std::istream& lhs, __num_format<typename Grid::point> &out)
+{__num_format<decltype(std::declval<typename Grid::point>()._v)> d(0.0); lhs >> d; out._v._val = d._v; return lhs;};
+
 /** A Grid of fermionic Matsubara frequencies. */
 template <bool Fermion>
 class MatsubaraGrid : public Grid<ComplexType, MatsubaraGrid<Fermion>>
@@ -123,9 +129,13 @@ public:
 typedef MatsubaraGrid<1> FMatsubaraGrid;
 typedef MatsubaraGrid<0> BMatsubaraGrid;
 
+template <>
 inline std::ostream& operator<<(std::ostream& lhs, const __num_format< typename FMatsubaraGrid::point> &in){lhs << std::setprecision(in._prec) << imag(in._v._val); return lhs;};
+template <>
 inline std::istream& operator>>(std::istream& lhs, __num_format<typename FMatsubaraGrid::point> &out){RealType im; lhs >> im; out._v._val = I*im; return lhs;};
+template <>
 inline std::ostream& operator<<(std::ostream& lhs, const __num_format< typename BMatsubaraGrid::point> &in){lhs << std::setprecision(in._prec) << imag(in._v._val); return lhs;};
+template <>
 inline std::istream& operator>>(std::istream& lhs, __num_format<typename BMatsubaraGrid::point> &out){RealType im; lhs >> im; out._v._val = I*im; return lhs;};
 /** A grid of real values. */
 class RealGrid : public Grid<RealType, RealGrid>

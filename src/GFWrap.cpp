@@ -34,6 +34,33 @@ GFWrap::GFWrap(GridObject<ComplexType,FMatsubaraGrid>&& in):GridObject<ComplexTy
 {
 }
 
+int __get_n_lines(const std::string& fname)
+{   
+    std::ifstream f(fname.c_str()); 
+    std::string line; 
+    int nlines = 0; 
+    while (std::getline(f, line)) ++nlines; 
+    f.close(); 
+    return nlines;
+} 
+
+int __get_min_number(const std::string& fname, RealType beta)
+{
+    std::ifstream f(fname.c_str());
+    __num_format<FMatsubaraGrid::point> tmp(FMatsubaraGrid::point(0,0));
+    f >> tmp;
+    f.close();
+    ComplexType w_min = tmp._v;
+    int w_min_index = FMatsubaraIndex(w_min,beta);
+    return w_min_index;
+}
+
+GFWrap::GFWrap(const std::string& fname, RealType beta):
+GridObject<ComplexType,FMatsubaraGrid>(std::make_tuple(FMatsubaraGrid(__get_min_number(fname,beta), __get_min_number(fname,beta)+__get_n_lines(fname), beta)))
+{
+    this->loadtxt(fname);
+}
+
 ComplexType GFWrap::operator()(const ComplexType &in) const
 {
     assert(std::abs(real(in))<std::numeric_limits<RealType>::epsilon());

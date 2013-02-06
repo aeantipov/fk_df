@@ -204,12 +204,11 @@ int main(int argc, char *argv[])
     Log.setDebugging(true);
 
     FMatsubaraGrid gridF(-n_freq, n_freq, beta);
-    FMatsubaraGrid gridF_half(0, n_freq*2, beta);
     GF Delta(gridF);
     std::function<ComplexType(ComplexType)> f1, f2;
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
 
-    try { Delta.loadtxt("Delta_full.dat"); } 
+    try { GF Delta2("Delta_full.dat", beta); Delta = Delta2;} 
     catch (std::exception &e) { Delta.fill(f1); };
 
     Delta.savetxt("Delta_0.dat");
@@ -242,13 +241,17 @@ int main(int argc, char *argv[])
         Solver.Delta = Delta_new;
         }
    
+    FMatsubaraGrid gridF_half(0, std::max(n_freq*3,size_t(100)), beta);
     GF Delta_half(gridF_half); Delta_half = Delta;
     GF gw_half(gridF_half); gw_half = Solver.gw;
     GF sigma_half(gridF_half); sigma_half = Solver.Sigma;
     sigma_half.savetxt("Sigma.dat");
     gw_half.savetxt("Gw.dat");
     Delta_half.savetxt("Delta.dat");
-    Solver.Delta.savetxt("Delta_full.dat");
+    int __msize = std::max(n_freq*5,size_t(1024));
+    FMatsubaraGrid gridF_large(-__msize, __msize, beta);
+    GF Delta_large(gridF_large); Delta_large = Delta;
+    Delta_large.savetxt("Delta_full.dat");
 
     // Everything important is finished by here
     if (extra_ops) {

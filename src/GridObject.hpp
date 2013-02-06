@@ -399,7 +399,7 @@ inline void GridObject<ValueType,GridTypes...>::savetxt(const std::string& fname
     out.open(fname.c_str());
     for (auto x : std::get<0>(_grids).getPoints())
         {
-            out << std::scientific << __num_format<decltype(x._val)>(x._val) << "    " << __num_format<ValueType>((*this)(x)) << std::endl;
+            out << std::scientific << __num_format<decltype(x)>(x) << "    " << __num_format<ValueType>((*this)(x)) << std::endl;
         }
     out.close();
 }
