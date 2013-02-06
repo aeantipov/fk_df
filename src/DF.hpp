@@ -139,9 +139,11 @@ typename DFLadder<Solver,D>::GLocalType DFLadder<Solver,D>::operator()()
             decltype(StaticVertex4)::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
                 return -T*(GD[size_t(w1)]*GD_shift[size_t(w2)]).sum()/RealType(totalqpts);
                 };
-            DualBubbleDynamic.fill(dbfill);
-            auto DynamicFullVertex4 = Diagrams::BS(DualBubbleDynamic, StaticVertex4*(-1.0), true, _eval_BS_SC,_n_BS_iter,_BSmix);
-            //DEBUG(StaticVertex4.diff((-1.)*DynamicFullVertex4));
+            decltype(StaticVertex4) DynamicFullVertex4(StaticVertex4.getGrids());
+            if (_EvaluateDynamicDiagrams) { 
+                DualBubbleDynamic.fill(dbfill);
+                DynamicFullVertex4 = Diagrams::BS(DualBubbleDynamic, StaticVertex4*(-1.0), true, _eval_BS_SC,_n_BS_iter,_BSmix);
+                };
             
             INFO_NONEWLINE("\tSchwinger-Dyson correction...");
 
