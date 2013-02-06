@@ -3,6 +3,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 project (FK)
 
 message (STATUS "Configuring FK code")
+include(cotire)
 
 # Select default build type
 IF(DEFINED CMAKE_BUILD_TYPE)
