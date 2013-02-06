@@ -14,7 +14,6 @@ struct SelfConsistency
     const Solver &_S;
     SelfConsistency(const Solver &S):_S(S){};
     virtual GFType operator()() = 0;
-    template <typename MPoint> GFType getLatticeDMFTVertex4(MPoint in) const;
     template <typename MPoint> GFType getBubblePI(MPoint in) const;
     template <typename MPoint> GFType getBubble0(MPoint in) const;
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubblePI() const;

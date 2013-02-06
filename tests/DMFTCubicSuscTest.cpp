@@ -76,10 +76,13 @@ int main()
 
     bool success = false;
 
+    const auto gw = Solver.gw;
+    const auto Sigma = Solver.Sigma;
+
     auto iW = BMatsubara(5,beta);
-    auto irrDMFTV4 = SC.getLatticeDMFTVertex4(iW); 
-    auto gw = Solver.gw;
-    auto Sigma = Solver.Sigma;
+    GF Vertex4_1(gridF);
+    Vertex4_1.fill(typename GF::PointFunctionType([&](FMatsubaraGrid::point w){return Solver.getBVertex4(iW,w);}));
+    auto irrDMFTV4 = Diagrams::BS(Diagrams::getBubble(gw,iW), Vertex4_1, false);
     auto gw_shift = Solver.gw.shift(iW);
     auto Sigma_shift = Solver.Sigma.shift(iW);
     auto irrDMFT2 = (Sigma - Sigma_shift)/(gw-gw_shift)*(-1.0)/T;
@@ -138,10 +141,13 @@ int main()
     for (auto iW : gridB.getPoints()) {
         INFO("iW = " << iW);
         size_t iwn = size_t(iW);
+        GF Vertex4(gridF);
+        Vertex4.fill(typename GF::PointFunctionType([&](FMatsubaraGrid::point w){return Solver.getBVertex4(iW,w);}));
+        auto gw_bubble = Diagrams::getBubble(gw, iW);
         auto Chi0q0 = Diagrams::getBubble(glat, iW, 0.0, 0.0);    
-        auto Chiq0 = Diagrams::getSusc<GF>(Chi0q0, Diagrams::BS(Chi0q0,SC.getLatticeDMFTVertex4(iW),true));
+        auto Chiq0 = Diagrams::getSusc<GF>(Chi0q0, Diagrams::BS(Chi0q0 - gw_bubble, Vertex4 , true));
         auto Chi0qPI = Diagrams::getBubble(glat, iW, PI, PI);    
-        auto ChiqPI = Diagrams::getSusc<GF>(Chi0qPI, Diagrams::BS(Chi0qPI,SC.getLatticeDMFTVertex4(iW), true)); 
+        auto ChiqPI = Diagrams::getSusc<GF>(Chi0qPI, Diagrams::BS(Chi0qPI - gw_bubble, Vertex4, true)); 
         chi_q0_vals[iwn] = std::real(Chiq0.sum());
         chi0_q0_vals[iwn] = std::real(Chi0q0.sum());
         chi0_qPI_vals[iwn] = std::real(Chi0qPI.sum());

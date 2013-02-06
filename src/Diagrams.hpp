@@ -104,7 +104,7 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
 template <typename ValueType, typename GridType>
 inline GridObject<ValueType,GridType> Diagrams::BS (const GridObject<ValueType,GridType>& Chi0, const GridObject<ValueType,GridType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
 {
-    //INFO_NONEWLINE("\tRunning " << ((!forward)?"inverse":"") << " BS equation...");
+    INFO_NONEWLINE("\tRunning " << ((!forward)?"inverse":"") << " BS equation...");
     const auto _fGrid = std::get<0>(IrrVertex4.getGrids());
     GridObject<ValueType,GridType> Vertex4_out(IrrVertex4);
     GridObject<RealType,GridType> EVCheck(_fGrid); 
@@ -130,7 +130,7 @@ inline GridObject<ValueType,GridType> Diagrams::BS (const GridObject<ValueType,G
         #endif
         Vertex4_out = IrrVertex4/(1.0 - (2*forward-1)*Chi0 * IrrVertex4);
         }
-    //INFO("done");
+    INFO("done");
     return Vertex4_out;
 }
 
