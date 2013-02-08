@@ -215,16 +215,16 @@ int main(int argc, char *argv[])
     
     FKImpuritySolver Solver(U,mu,e_d,Delta);
 
-    std::unique_ptr<SelfConsistency<FKImpuritySolver>> SC_ptr;
+    std::unique_ptr<SelfConsistency> SC_ptr;
 
     typedef FKOptionParserDMFT::SC enumSC;
     switch (sc_switch) {
-        case enumSC::Bethe:       SC_ptr.reset(new BetheSC<FKImpuritySolver>(Solver, t)); break;
-        case enumSC::DMFTCubic1d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,1>(Solver, t, kgrid)); D=1; break;
-        case enumSC::DMFTCubic2d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2>(Solver, t, kgrid)); D=2; break;
-        case enumSC::DMFTCubic3d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3>(Solver, t, kgrid)); D=3; break;
-        case enumSC::DMFTCubic4d: SC_ptr.reset(new CubicDMFTSC<FKImpuritySolver,4>(Solver, t, kgrid)); D=4; break;
-        case enumSC::DMFTCubicInfd: SC_ptr.reset(new CubicInfDMFTSC<FKImpuritySolver>(Solver,t,RealGrid(-6.0*t,6.0*t,1024))); break;
+        case enumSC::Bethe:       SC_ptr.reset(new BetheSC(Solver, t)); break;
+        case enumSC::DMFTCubic1d: SC_ptr.reset(new CubicDMFTSC<1>(Solver, t, kgrid)); D=1; break;
+        case enumSC::DMFTCubic2d: SC_ptr.reset(new CubicDMFTSC<2>(Solver, t, kgrid)); D=2; break;
+        case enumSC::DMFTCubic3d: SC_ptr.reset(new CubicDMFTSC<3>(Solver, t, kgrid)); D=3; break;
+        case enumSC::DMFTCubic4d: SC_ptr.reset(new CubicDMFTSC<4>(Solver, t, kgrid)); D=4; break;
+        case enumSC::DMFTCubicInfd: SC_ptr.reset(new CubicInfDMFTSC(Solver,t,RealGrid(-6.0*t,6.0*t,1024))); break;
         default:                  ERROR("No self-consistency provided. Exiting..."); exit(1); 
     };
     auto &SC = *SC_ptr;
@@ -257,19 +257,19 @@ int main(int argc, char *argv[])
     if (extra_ops) {
         switch (sc_switch) {
             case enumSC::DMFTCubic1d: 
-                calcStats(*(static_cast<CubicDMFTSC<FKImpuritySolver,1>*> (SC_ptr.get())), gridF); 
+                calcStats(*(static_cast<CubicDMFTSC<1>*> (SC_ptr.get())), gridF); 
                 break;
             case enumSC::DMFTCubic2d: 
-                calcStats(*(static_cast<CubicDMFTSC<FKImpuritySolver,2>*> (SC_ptr.get())), gridF); 
+                calcStats(*(static_cast<CubicDMFTSC<2>*> (SC_ptr.get())), gridF); 
                 break;
             case enumSC::DMFTCubic3d: 
-                calcStats(*(static_cast<CubicDMFTSC<FKImpuritySolver,3>*> (SC_ptr.get())), gridF); 
+                calcStats(*(static_cast<CubicDMFTSC<3>*> (SC_ptr.get())), gridF); 
                 break;
             case enumSC::DMFTCubic4d: 
-                calcStats(*(static_cast<CubicDMFTSC<FKImpuritySolver,4>*> (SC_ptr.get())), gridF); 
+                calcStats(*(static_cast<CubicDMFTSC<4>*> (SC_ptr.get())), gridF); 
                 break;
             case enumSC::DMFTCubicInfd: 
-                calcStats(*(static_cast<CubicInfDMFTSC<FKImpuritySolver>*> (SC_ptr.get())), gridF); 
+                calcStats(*(static_cast<CubicInfDMFTSC*> (SC_ptr.get())), gridF); 
                 break;
  
             default: break;

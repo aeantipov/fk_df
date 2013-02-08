@@ -41,7 +41,7 @@ int main()
     Delta.fill(f1);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
-    BetheSC<FKImpuritySolver> SC(Solver, t);
+    BetheSC SC(Solver, t);
 
     for (int i=0; i<maxit && diff>1e-8; ++i) {
         INFO("Iteration " << i);

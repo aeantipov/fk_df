@@ -53,7 +53,7 @@ int main()
     KMesh kGrid(KPOINTS);
     KMeshPatch qGrid(kGrid);
     std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }}) ; 
-    CubicDMFTSC<FKImpuritySolver, D> SC(Solver, t, KMesh(KPOINTS));
+    CubicDMFTSC<D> SC(Solver, t, KMesh(KPOINTS));
     
     for (int i=0; i<maxit && diff>1e-8; ++i) {
         INFO("Iteration " << i);
@@ -65,7 +65,7 @@ int main()
         Solver.Delta = Delta; 
         }
 
-    DFLadder<FKImpuritySolver, 2> SC_DF(Solver, gridF, kGrid, gridB, t);
+    DFLadder<2> SC_DF(Solver, gridF, kGrid, gridB, t);
     SC_DF._n_GD_iter = 0;
     SC_DF();
 

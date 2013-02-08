@@ -8,7 +8,7 @@ set (fk_src
     GridObject.h GridObject.hpp
     GFWrap.h GFWrap.cpp
     Solver.h Solver.cpp
-    SelfConsistency.h SelfConsistency.hpp
+    SelfConsistency.h SelfConsistency.hpp SelfConsistency.cpp
     Diagrams.h Diagrams.hpp
     DF.h DF.hpp
     )

@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     
-    std::unique_ptr<SelfConsistency<FKImpuritySolver>> SC_DF_ptr, SC_DMFT_ptr;
+    std::unique_ptr<SelfConsistency> SC_DF_ptr, SC_DMFT_ptr;
     typedef FKOptionParserDF::SC enumSC;
     KMeshPatch qGrid(kGrid);
     switch (sc_switch) {
@@ -163,8 +163,8 @@ int main(int argc, char *argv[])
   //          SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 1, ksize>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
             D=1; break;
         case enumSC::DFCubic2d: 
-            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,2>(Solver, t, kGrid));
-            typedef DFLadder<FKImpuritySolver, 2> DFSCType;
+            SC_DMFT_ptr.reset(new CubicDMFTSC<2>(Solver, t, kGrid));
+            typedef DFLadder<2> DFSCType;
             SC_DF_ptr.reset(new DFSCType(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
             static_cast<DFSCType*> (SC_DF_ptr.get())->_n_GD_iter = opt.DFNumberOfSelfConsistentIterations;
             static_cast<DFSCType*> (SC_DF_ptr.get())->_GDmix = opt.DFSCMixing;
@@ -229,16 +229,16 @@ int main(int argc, char *argv[])
     if (extraops>0) {
         switch (sc_switch) {
             case enumSC::DFCubic1d: 
-                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,1>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<1>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic2d: 
-                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,2>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<2>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic3d: 
-                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,3>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<3>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic4d: 
-                getExtraData(*(static_cast<DFLadder<FKImpuritySolver,4>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<4>*> (SC_DF_ptr.get())), gridF); 
                 break;
             default: break;
             }; 

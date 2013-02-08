@@ -12,9 +12,9 @@
 
 namespace FK {
 
-template <class Solver, size_t D>
-DFLadder<Solver,D>::DFLadder(const Solver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, const BMatsubaraGrid& bGrid, RealType t):
-    CubicDMFTSC<Solver,D>(S,t,kGrid),
+template <size_t D>
+DFLadder<D>::DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, const BMatsubaraGrid& bGrid, RealType t):
+    CubicDMFTSC<D>(S,t,kGrid),
     _fGrid(fGrid),
     _bGrid(bGrid),
     GD0(std::tuple_cat(std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))),
@@ -27,10 +27,10 @@ DFLadder<Solver,D>::DFLadder(const Solver &S, const FMatsubaraGrid& fGrid, KMesh
 };
 
 
-template <class Solver, size_t D>
-void DFLadder<Solver,D>::_initialize()
+template <size_t D>
+void DFLadder<D>::_initialize()
 {
-    GLat = CubicDMFTSC<Solver, D>::getGLat(_fGrid);
+    GLat = CubicDMFTSC<D>::getGLat(_fGrid);
     for (auto iw : _fGrid.getPoints()) {
         size_t iwn = size_t(iw);
         GD0[iwn] = GLat[iwn] - _S.gw(iw);
@@ -48,9 +48,9 @@ void DFLadder<Solver,D>::_initialize()
 };
 
 /*
-template <class Solver, size_t D>
+template <size_t D>
 template <typename ...KP>
-ComplexType DFLadder<Solver,D>::getBubble2(BMatsubaraGrid::point W, KP... q, FMatsubaraGrid::point w1) const
+ComplexType DFLadder<D>::getBubble2(BMatsubaraGrid::point W, KP... q, FMatsubaraGrid::point w1) const
 {
     static auto pts = std::make_tuple(W,q...);
     static auto GD_shift = this->GD0.shift(W,q...);
@@ -67,8 +67,8 @@ ComplexType DFLadder<Solver,D>::getBubble2(BMatsubaraGrid::point W, KP... q, FMa
     return G1.sum()/RealType(__power<ksize,D>::value)/(-this->_fGrid._beta);
 }*/
 
-template <class Solver, size_t D>
-inline typename DFLadder<Solver,D>::GKType DFLadder<Solver,D>::getGLat(const FMatsubaraGrid &gridF ) const
+template <size_t D>
+inline typename DFLadder<D>::GKType DFLadder<D>::getGLat(const FMatsubaraGrid &gridF ) const
 {
     GKType out(std::tuple_cat(std::forward_as_tuple(gridF), __repeater<KMesh,D>::get_tuple(_kGrid)));
     auto f1 = [&](const typename GKType::PointTupleType &in){return this->GLat(in);};
@@ -78,8 +78,8 @@ inline typename DFLadder<Solver,D>::GKType DFLadder<Solver,D>::getGLat(const FMa
     return out;
 }
 
-template <class Solver, size_t D>
-typename DFLadder<Solver,D>::GLocalType DFLadder<Solver,D>::operator()()
+template <size_t D>
+typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
 {
     INFO("Using DF Ladder self-consistency in " << D << " dimensions on a cubic lattice of " << _kGrid.getSize() << "^" << D <<" atoms.");
     SigmaD = 0.0;
@@ -158,7 +158,7 @@ typename DFLadder<Solver,D>::GLocalType DFLadder<Solver,D>::operator()()
                             };
                         out_dynamic = (-1.0)*_fGrid.integrate(temp_f);
                     };
-                    auto out_static = (-1.0*T)*( (FullStaticV4(size_t(w),size_t(w)))*GD_shift(in));
+                    auto out_static = (1.0*T)*( (FullStaticV4(size_t(w),size_t(w)))*GD_shift(in));
            //         DEBUG("static: " << out_static <<", dynamic: " << out_dynamic);
                     return (_EvaluateStaticDiagrams?out_static:0.0) + (_EvaluateDynamicDiagrams?out_dynamic:0.0);
                     };
@@ -210,8 +210,8 @@ typename DFLadder<Solver,D>::GLocalType DFLadder<Solver,D>::operator()()
     return Delta_out;
 }
 
-template <class Solver, size_t D>
-std::tuple<typename DFLadder<Solver,D>::SuscType> DFLadder<Solver,D>::calculateLatticeData(const BMatsubaraGrid& gridB)
+template <size_t D>
+std::tuple<typename DFLadder<D>::SuscType> DFLadder<D>::calculateLatticeData(const BMatsubaraGrid& gridB)
 {
     KMeshPatch fullgrid(_kGrid);
     std::array<KMeshPatch, D> grids = __repeater<KMeshPatch,D>::get_array(fullgrid); 
@@ -219,8 +219,8 @@ std::tuple<typename DFLadder<Solver,D>::SuscType> DFLadder<Solver,D>::calculateL
     return calculateLatticeData(gridB, grids);
 }
 
-template <class Solver, size_t D>
-std::tuple<typename DFLadder<Solver,D>::SuscType> DFLadder<Solver,D>::calculateLatticeData(const BMatsubaraGrid& gridB, const std::array<KMeshPatch, D>& qgrids)
+template <size_t D>
+std::tuple<typename DFLadder<D>::SuscType> DFLadder<D>::calculateLatticeData(const BMatsubaraGrid& gridB, const std::array<KMeshPatch, D>& qgrids)
 {
     SuscType LatticeSusc(std::tuple_cat(std::forward_as_tuple(gridB),qgrids));
     //RealType T = 1.0/_fGrid._beta;

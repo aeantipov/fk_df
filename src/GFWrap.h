@@ -24,6 +24,8 @@ public:
     
     //using GridObject<ComplexType, FMatsubaraGrid>::get;
     using GridObject<ComplexType, FMatsubaraGrid>::operator=;
+    GFWrap& operator=(const GridObject<ComplexType, FMatsubaraGrid>& in);
+    GFWrap& operator=(GridObject<ComplexType, FMatsubaraGrid>&& in);
     GFWrap& operator=(const GFWrap& in);
     GFWrap& operator=(GFWrap&& in);
 };

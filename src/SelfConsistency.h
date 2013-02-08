@@ -7,34 +7,30 @@
 
 namespace FK {
 
-template <class Solver>
 struct SelfConsistency 
 {
-    typedef typename Solver::GFType GFType;
-    const Solver &_S;
-    SelfConsistency(const Solver &S):_S(S){};
+    typedef typename FKImpuritySolver::GFType GFType;
+    const FKImpuritySolver &_S;
+    SelfConsistency(const FKImpuritySolver &S):_S(S){};
     virtual GFType operator()() = 0;
     template <typename MPoint> GFType getBubblePI(MPoint in) const;
     template <typename MPoint> GFType getBubble0(MPoint in) const;
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubblePI() const;
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubble0() const;
-
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getStaticLatticeDMFTVertex4() const;
 };
 
-template <class Solver>
-struct BetheSC : public SelfConsistency<Solver>
+struct BetheSC : public SelfConsistency
 {
-    typedef typename Solver::GFType GFType;
+    typedef typename FKImpuritySolver::GFType GFType;
     const RealType _t;
-    BetheSC(const Solver &S, RealType t);
+    BetheSC(const FKImpuritySolver &S, RealType t);
     GFType operator()();
 };
 
-template <class Solver, size_t D> struct CubicDMFTSC : public SelfConsistency<Solver>
+template <size_t D> struct CubicDMFTSC : public SelfConsistency
 {
-    using SelfConsistency<Solver>::_S;
-    typedef typename Solver::GFType GFType;
+    using SelfConsistency::_S;
+    typedef typename FKImpuritySolver::GFType GFType;
     //typedef Eigen::Array<ComplexType,__power<ksize,D>::value,1,Eigen::ColMajor> EkStorage;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType>::type EkStorage;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType; // G(w,kx...)
@@ -48,7 +44,7 @@ public:
     mutable EkStorage _ek;
     GFType _gloc;
 
-    CubicDMFTSC(const Solver &S, RealType t, KMesh kGrid);
+    CubicDMFTSC(const FKImpuritySolver &S, RealType t, KMesh kGrid);
     template <typename ...ArgTypes> RealType dispersion(ArgTypes... kpoints) const;
     template <typename ...ArgTypes> RealType dispersion(const std::tuple<ArgTypes...>& kpoints) const;
     template <typename ...ArgTypes> GFType glat(ArgTypes... kpoints) const;
@@ -56,12 +52,6 @@ public:
     template <typename MPoint, typename ...ArgTypes> ComplexType glat_analytic(std::tuple<MPoint,ArgTypes...> in) const;
     GKType getGLat(const FMatsubaraGrid& in) const;
     GFType operator()();
-    
-    /*
-    template <typename MPoint, typename ...QPoints>
-    RealType getLatticeSusceptibility(MPoint w, QPoints ...qpts) const;
-    template <typename MPoint, typename ...QPoints>
-    RealType getLatticeSusceptibility(const std::tuple<MPoint,QPoints...> & qpts) const;*/
     
     template <typename MPoint> GFType getBubble0(MPoint in) const;
     template <typename MPoint> GFType getBubblePI(MPoint in) const;
@@ -96,22 +86,19 @@ struct CubicTraits<0>{
 };
 
 
-template <class Solver>
-struct CubicInfDMFTSC : public SelfConsistency<Solver>
+struct CubicInfDMFTSC : public SelfConsistency
 {
-    typedef typename Solver::GFType GFType;
+    typedef typename FKImpuritySolver::GFType GFType;
     typedef GridObject<ComplexType, RealGrid> ComplW;
-    using SelfConsistency<Solver>::_S;
+    using SelfConsistency::_S;
 public:
     const RealType _t;
     const RealGrid _realgrid;
     ComplW _nominator;
 
-    CubicInfDMFTSC(const Solver &S, RealType t, const RealGrid& realgrid);
+    CubicInfDMFTSC(const FKImpuritySolver &S, RealType t, const RealGrid& realgrid);
     GFType operator()();
-        //template <typename MPoint, typename ...QPoints>
-    //RealType getLatticeSusceptibility(MPoint w, bool zeroOrPi) const;
-    using SelfConsistency<Solver>::getBubblePI;
+    using SelfConsistency::getBubblePI;
     template <typename MPoint> GFType getBubble0(MPoint in) const;
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubble0() const;
 };

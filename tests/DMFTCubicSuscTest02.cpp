@@ -47,7 +47,7 @@ int main()
     Delta.fill(f1);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     RealType diff=1.0;
-    CubicInfDMFTSC<FKImpuritySolver> SC(Solver, t, RealGrid(-6.0*t,6.0*t,1024));
+    CubicInfDMFTSC SC(Solver, t, RealGrid(-6.0*t,6.0*t,1024));
 
     for (int i=0; i<maxit && diff>1e-8; ++i) {
         INFO("Iteration " << i);

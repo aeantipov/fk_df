@@ -53,7 +53,7 @@ int main()
     KMesh kGrid(KPOINTS);
     KMeshPatch qGrid(kGrid);
     std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }}) ; 
-    DFLadder<FKImpuritySolver, 2> SC(Solver, gridF, kGrid, gridB, t);
+    DFLadder<2> SC(Solver, gridF, kGrid, gridB, t);
     SC._n_GD_iter = 0;
     
     for (int i=0; i<maxit && diff>1e-8; ++i) {
