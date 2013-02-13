@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
     if (extraops>0) {
         switch (sc_switch) {
             case enumSC::DFCubic1d: 
-//                getExtraData(*(static_cast<DFLadder<1>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<1>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic2d: 
                 getExtraData(*(static_cast<DFLadder<2>*> (SC_DF_ptr.get())), gridF); 
