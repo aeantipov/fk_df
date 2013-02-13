@@ -85,20 +85,6 @@ inline RealType CubicTraits<0>::ek(RealType t, ArgType1 kpoint1)
 // CubicDMFT
 //
 
-template <size_t D>
-inline CubicDMFTSC<D>::CubicDMFTSC ( const FKImpuritySolver &S, RealType t, KMesh kGrid):
-    SelfConsistency(S),
-    _t(t),
-    _kGrid(kGrid),
-    _ek(__repeater<KMesh,D>::get_tuple(_kGrid)),
-    _gloc(this->_S.w_grid)
-{
-    //CubicTraits<D>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kGrid);
-    CubicTraits<D>::template fillContainer<Container<D,ComplexType>>(_ek.getData(), _t, _kGrid);
-    //CubicTraits<D>::template fillContainer<EkStorage>(_ek, _t, _kGrid);
-    _ek._f = CubicTraits<D>::template get_dispersion<typename EkStorage::FunctionType> (t); 
-}
-
 
 template <size_t D>
 template <typename ...ArgTypes>
@@ -144,51 +130,6 @@ ComplexType CubicDMFTSC<D>::glat_analytic(std::tuple<MPoint,ArgTypes...> in) con
     auto w = std::get<0>(in);
     auto kpts = __tuple_tail(in);
     return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-dispersion(kpts));
-}
-
-template <size_t D>
-typename CubicDMFTSC<D>::GKType CubicDMFTSC<D>::getGLat(const FMatsubaraGrid& fGrid) const
-{
-    std::array<KMesh,D> kgrids;
-    kgrids.fill(_kGrid);
-    GKType out(std::tuple_cat(std::forward_as_tuple(fGrid),kgrids));
-    //for (auto iw : fGrid.getPoints()) {
-    auto f1 = [&](const typename GKType::PointTupleType& in)->ComplexType {
-        FMatsubaraGrid::point w = std::get<0>(in);
-        auto ktuple = __tuple_tail(in);
-        typename ArgBackGenerator<D,KMesh::point,__caller,RealType>::type t1; //( {{in, &dispersion}});
-        return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek(ktuple));
-    };
-    typename GKType::PointFunctionType f2 = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(f1);
-    out.fill(f2);
-
-    auto glatdmft_f = [&](const typename GKType::ArgTupleType &in)->ComplexType{
-        ComplexType w = std::get<0>(in);
-        auto ktuple = __tuple_tail(in);
-        return (_S.mu - _S.Sigma._f(w)-_ek(ktuple))/std::abs(w*w)+1.0/w;
-        //return (_S.mu - _S.w_1*_S.U-_ek(ktuple))/std::abs(w*w)+1.0/w;
-        };
-    out._f = __fun_traits<typename GKType::FunctionType>::getFromTupleF(glatdmft_f);
-
-    return out;
-}
-
-template <size_t D>
-inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::operator()()
-{
-    INFO("Using DMFT self-consistency on a cubic lattice in " << D << " dimensions on a lattice of " << _kGrid.getSize() << "^" << D << " atoms.");
-    GFType out(this->_S.w_grid); 
-    out=0.0; 
-    size_t ksize = _kGrid.getSize();
-    RealType knorm = pow(ksize,D);
-    for (auto w : _gloc.getGrid().getPoints()) {
-        EkStorage e1 = (1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek)); 
-        _gloc.get(w) = e1.sum()/knorm;
-        out.get(w) = -1.0/_gloc(w)+_S.mu-_S.Sigma(w)+ComplexType(w);
-    }
-    //out._f = std::bind([&](ComplexType w){return _t*_t*2*RealType(D)/w;}, std::placeholders::_1);
-    out._f = std::bind([&](ComplexType w)->ComplexType{return _t*_t*2*RealType(D)*((_S.mu-_S.w_1*_S.U)/std::abs(w*w) + 1.0/w);}, std::placeholders::_1);
-    return out;
 }
 
 template <size_t D>

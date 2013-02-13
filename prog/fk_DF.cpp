@@ -34,7 +34,7 @@ void sighandler(int signal)
 {
     static size_t count = 0;
     count++;
-    INFO("Caught INTERRUPT, signal " << signal <<" " << count << " times. ")
+    INFO("Caught INTERRUPT, signal " << signal <<", " << count << "/3 times. ")
     INTERRUPT = true;
     if (count >= 3) { INFO("Force exiting"); exit(signal); }
 }
@@ -166,9 +166,9 @@ int main(int argc, char *argv[])
     KMeshPatch qGrid(kGrid);
     switch (sc_switch) {
         case enumSC::DFCubic1d: 
-//            SC_DMFT_ptr.reset(new CubicDMFTSC<1>(Solver, t, kGrid));
-//            SC_DF_ptr.reset(new DFLadder<1>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
-//            DF_ptr.reset(static_cast<DFLadder<1>*> (SC_DF_ptr.get()));
+            SC_DMFT_ptr.reset(new CubicDMFTSC<1>(Solver, t, kGrid));
+            SC_DF_ptr.reset(new DFLadder<1>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            DF_ptr.reset(static_cast<DFLadder<1>*> (SC_DF_ptr.get()));
             D=1; break;
         case enumSC::DFCubic2d: 
             SC_DMFT_ptr.reset(new CubicDMFTSC<2>(Solver, t, kGrid));
