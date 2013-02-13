@@ -1,12 +1,8 @@
 #include <numeric>
 
 #include "FKCommon.h"
-#include "Grid.h"
-#include "Container.h"
-#include "GridObject.h"
 #include "GFWrap.h"
 #include "Solver.h"
-#include "SelfConsistency.h"
 #include "DF.h"
 
 #include "FKOptionParserDF.h"
@@ -18,6 +14,8 @@
 #include <csignal>
 
 using namespace FK;
+
+//extern template GridObject<ComplexType,FMatsubaraGrid>;
 
 RealType beta;
 size_t D = 0;
@@ -31,11 +29,14 @@ bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
     return (std::abs(x-y)<tolerance);
 }
 
-bool interrupt = false;
+bool INTERRUPT = false;
 void sighandler(int signal)
 {
-    INFO("Caught interrupt, signal " << signal <<". Exiting...")
-    interrupt = true;
+    static size_t count = 0;
+    count++;
+    INFO("Caught INTERRUPT, signal " << signal <<" " << count << " times. ")
+    INTERRUPT = true;
+    if (count >= 3) { INFO("Force exiting"); exit(signal); }
 }
 
 template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& gridF)
@@ -46,8 +47,13 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
     SC.GLatLoc.savetxt("gloc.dat");
+    //SC.getGLoc().savetxt("gloc-.dat");
 
     if (extraops>=1) {
+        std::array<RealType, D> q;
+        q.fill(PI);
+        auto stat_susc_pi = SC.getStaticLatticeSusceptibility(q);
+        __num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
     }
 
     if (extraops >= 2) {
@@ -155,37 +161,43 @@ int main(int argc, char *argv[])
     FKImpuritySolver Solver(U,mu,e_d,Delta);
     
     std::unique_ptr<SelfConsistency> SC_DF_ptr, SC_DMFT_ptr;
+    std::unique_ptr<DFBase> DF_ptr;
     typedef FKOptionParserDF::SC enumSC;
     KMeshPatch qGrid(kGrid);
     switch (sc_switch) {
         case enumSC::DFCubic1d: 
-  //          SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,1, ksize>(Solver, t));
-  //          SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 1, ksize>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+//            SC_DMFT_ptr.reset(new CubicDMFTSC<1>(Solver, t, kGrid));
+//            SC_DF_ptr.reset(new DFLadder<1>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+//            DF_ptr.reset(static_cast<DFLadder<1>*> (SC_DF_ptr.get()));
             D=1; break;
         case enumSC::DFCubic2d: 
             SC_DMFT_ptr.reset(new CubicDMFTSC<2>(Solver, t, kGrid));
-            typedef DFLadder<2> DFSCType;
-            SC_DF_ptr.reset(new DFSCType(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
-            static_cast<DFSCType*> (SC_DF_ptr.get())->_n_GD_iter = opt.DFNumberOfSelfConsistentIterations;
-            static_cast<DFSCType*> (SC_DF_ptr.get())->_GDmix = opt.DFSCMixing;
-            static_cast<DFSCType*> (SC_DF_ptr.get())->_eval_BS_SC = opt.DFEvaluateBSSelfConsistent;
-            static_cast<DFSCType*> (SC_DF_ptr.get())->_n_BS_iter = opt.DFNumberOfBSIterations;
-            static_cast<DFSCType*> (SC_DF_ptr.get())->_BSmix = opt.DFBSMixing;
-            static_cast<DFSCType*> (SC_DF_ptr.get())->_EvaluateStaticDiagrams = opt.DFEvaluateStaticDiagrams;
-            static_cast<DFSCType*> (SC_DF_ptr.get())->_EvaluateDynamicDiagrams = opt.DFEvaluateDynamicDiagrams;
+            SC_DF_ptr.reset(new DFLadder<2>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            DF_ptr.reset(static_cast<DFLadder<2>*> (SC_DF_ptr.get()));
             D=2; break;
         case enumSC::DFCubic3d: 
-//            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,3, ksize>(Solver, t));
-//            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 3, ksize>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+//            SC_DMFT_ptr.reset(new CubicDMFTSC<3>(Solver, t, kGrid));
+//            SC_DF_ptr.reset(new DFLadder<3>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+//            DF_ptr.reset(static_cast<DFLadder<3>*> (SC_DF_ptr.get()));
             D=3; break;
         case enumSC::DFCubic4d: 
-//            SC_DMFT_ptr.reset(new CubicDMFTSC<FKImpuritySolver,4, ksize>(Solver, t));
-//            SC_DF_ptr.reset(new DFLadder<FKImpuritySolver, 4, ksize>(Solver, gridF, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+//            SC_DMFT_ptr.reset(new CubicDMFTSC<4>(Solver, t, kGrid));
+//            SC_DF_ptr.reset(new DFLadder<4>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+//             DF_ptr.reset(static_cast<DFLadder<4>*> (SC_DF_ptr.get()));
             D=4; break;
         default:
             ERROR("Couldn't find the desired SC type. Exiting.");
             exit(0);
     };
+    DF_ptr->_n_GD_iter = opt.DFNumberOfSelfConsistentIterations;
+    DF_ptr->_GDmix = opt.DFSCMixing;
+    DF_ptr->_SC_cutoff = opt.DFSCCutoff;
+    DF_ptr->_eval_BS_SC = opt.DFEvaluateBSSelfConsistent;
+    DF_ptr->_n_BS_iter = opt.DFNumberOfBSIterations;
+    DF_ptr->_BSmix = opt.DFBSMixing;
+    DF_ptr->_EvaluateStaticDiagrams = opt.DFEvaluateStaticDiagrams;
+    DF_ptr->_EvaluateDynamicDiagrams = opt.DFEvaluateDynamicDiagrams;
+
     auto &SC_DMFT = *SC_DMFT_ptr;
     auto &SC_DF   = *SC_DF_ptr;
   
@@ -195,7 +207,7 @@ int main(int argc, char *argv[])
     size_t i_dmft = 0; 
     size_t i_df = 0;
 
-    for (; i_dmft<NDMFTRuns && i_df<=NDFRuns && diff>1e-8 &&!interrupt; (calc_DMFT)?i_dmft++:i_df++) {
+    for (; i_dmft<NDMFTRuns && i_df<=NDFRuns && diff>1e-8 &&!INTERRUPT; (calc_DMFT)?i_dmft++:i_df++) {
         INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
         if (diff/mix>1e-3) Solver.run(true);
         else Solver.run(false);
@@ -204,6 +216,15 @@ int main(int argc, char *argv[])
             }
         else { 
             Delta = SC_DF();
+            std::stringstream tmp;
+            tmp << "GwDF" << i_df << ".dat";
+            Solver.gw.savetxt(tmp.str());
+            tmp.str( std::string() ); tmp.clear();
+            tmp << "DeltaDF" << i_df << ".dat";
+            Delta.savetxt(tmp.str());
+            tmp.str( std::string() ); tmp.clear();
+            tmp << "glocDF" << i_df << ".dat";
+            DF_ptr->getGLoc().savetxt(tmp.str());
              }
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         diff = Delta_new.diff(Solver.Delta);
@@ -229,16 +250,16 @@ int main(int argc, char *argv[])
     if (extraops>0) {
         switch (sc_switch) {
             case enumSC::DFCubic1d: 
-                getExtraData(*(static_cast<DFLadder<1>*> (SC_DF_ptr.get())), gridF); 
+//                getExtraData(*(static_cast<DFLadder<1>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic2d: 
                 getExtraData(*(static_cast<DFLadder<2>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic3d: 
-                getExtraData(*(static_cast<DFLadder<3>*> (SC_DF_ptr.get())), gridF); 
+//                getExtraData(*(static_cast<DFLadder<3>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic4d: 
-                getExtraData(*(static_cast<DFLadder<4>*> (SC_DF_ptr.get())), gridF); 
+//                getExtraData(*(static_cast<DFLadder<4>*> (SC_DF_ptr.get())), gridF); 
                 break;
             default: break;
             }; 
@@ -247,5 +268,6 @@ int main(int argc, char *argv[])
 
     SC_DMFT_ptr.release(); 
     SC_DF_ptr.release();
+    DF_ptr.release();
 }
 

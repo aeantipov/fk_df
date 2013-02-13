@@ -1,18 +1,23 @@
 include_directories (.)
 
-set (fk_src 
+set (base_src
     FKCommon.h
-    Logger.h Logger.cpp
     Grid.h Grid.hpp 
     Container.h Container.hpp
     GridObject.h GridObject.hpp
+    )
+
+add_library(fk_base OBJECT ${base_src})
+
+set (fk_src 
+    Logger.h Logger.cpp
     GFWrap.h GFWrap.cpp
     Solver.h Solver.cpp
     SelfConsistency.h SelfConsistency.hpp SelfConsistency.cpp
     Diagrams.h Diagrams.hpp
-    DF.h DF.hpp
+    DF.h DF.hpp DF.cpp
     )
-add_library(fk SHARED ${fk_src})
+add_library(fk SHARED ${fk_src} $<TARGET_OBJECTS:fk_base>)
 set_target_properties(fk PROPERTIES LINKER_LANGUAGE CXX)
 
 #target_link_libraries(fk

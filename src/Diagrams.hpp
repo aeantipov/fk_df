@@ -47,7 +47,7 @@ inline typename Diagrams::GLocalType Diagrams::getBubble(const GLocalType &GF, A
 template <typename ValueType>
 inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, const MatrixType<ValueType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
 {
-    INFO_NONEWLINE("\tRunning" << ((!forward)?" inverse ":" ") << "BS equation...");
+    INFO_NONEWLINE("\tRunning" << ((!forward)?" inverse ":" ") << "matrix BS equation...");
     size_t size = IrrVertex4.rows(); 
 
     MatrixType<ValueType> V4Chi;
@@ -56,26 +56,17 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     else
         V4Chi = MatrixType<ValueType>::Identity(size,size) + Chi0*IrrVertex4;
     auto D1 = V4Chi.determinant();
+    if (std::abs(D1)<1e-1) INFO3("Determinant : " << D1);
 
     if (!eval_SC && std::abs(D1)>std::numeric_limits<RealType>::epsilon()) {
         try {
-            #ifdef NDEBUG
-            #undef NDEBUG
-            #define NDEBUG1
-            #endif
-            //Eigen::ColPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (2*forward-1)*IrrVertex4*Chi0);
-            //Eigen::ColPivHouseholderQR<MatrixType<ValueType>> Solver(MatrixType<ValueType>::Identity(size,size) - (IrrVertex4*Chi0));
-            //auto V4 = Solver.solve(IrrVertex4); 
             if (forward) {
                 V4Chi = V4Chi.colPivHouseholderQr().solve(IrrVertex4);
+                //V4Chi = V4Chi.inverse()*IrrVertex4; 
                 }
             else
                 V4Chi=IrrVertex4*V4Chi.inverse();
             INFO("done.");
-            #ifdef NDEBUG1
-            #define NDEBUG
-            #undef NDEBUG1
-            #endif
             return V4Chi;
         }
         catch (std::exception &e) {

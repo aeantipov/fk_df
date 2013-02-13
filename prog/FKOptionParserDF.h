@@ -24,6 +24,7 @@ public:
 	size_t NDFRuns;
 	size_t DFNumberOfSelfConsistentIterations;
     FK::RealType DFSCMixing;
+    FK::RealType DFSCCutoff;
 	size_t DFNumberOfBSIterations;
     bool DFEvaluateBSSelfConsistent;
     bool DFEvaluateStaticDiagrams;
@@ -48,7 +49,8 @@ public:
           NDFRuns(100), 
           DFNumberOfSelfConsistentIterations(10), 
           DFSCMixing(0.5),
-          DFNumberOfBSIterations(1), 
+          DFSCCutoff(1e-8),
+          DFNumberOfBSIterations(1000), 
           DFEvaluateBSSelfConsistent(false),
           DFEvaluateStaticDiagrams(true),
           DFEvaluateDynamicDiagrams(true),
@@ -110,6 +112,10 @@ public:
 		    DFSCMixing = std::atof(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
         
+        ON_OPTION_WITH_ARG(LONGOPT("dfsccutoff"))
+		    DFSCCutoff = std::atof(arg);
+			used_args = 1;	// Notify the parser of a consumption of argument.
+        
         ON_OPTION_WITH_ARG(LONGOPT("ndfbsiter"))
             DFNumberOfBSIterations = std::atoi(arg);
             used_args = 1;
@@ -169,6 +175,7 @@ public:
             std::cout << "--ndfiter            : Total amount of DF iterations. Default: " << NDFRuns<< std::endl;
             std::cout << "DF related:" << std::endl;
             std::cout << "--dfscmix            : Mixing for DF updates of dual Green's function. Default: " << DFSCMixing << std::endl;
+            std::cout << "--dfsccutoff         : Threshold for DF updating. Default: " << DFSCCutoff << std::endl;
             std::cout << "--ndfsciter          : Amount of DF self-consistency iterations. Default: " << DFNumberOfSelfConsistentIterations<< std::endl;
             std::cout << "--dfevalbssc         : Evaluate BS equation self-consistently. Default: " << std::boolalpha << DFEvaluateBSSelfConsistent << std::endl;
             std::cout << "--ndfbsiter          : Amount of DF Bethe-Salpeter iterations (if needed). Default: " << DFNumberOfBSIterations<< std::endl;

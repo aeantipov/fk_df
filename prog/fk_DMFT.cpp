@@ -30,11 +30,14 @@ bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
     return (std::abs(x-y)<tolerance);
 }
 
-bool interrupt = false;
+bool INTERRUPT = false;
 void sighandler(int signal)
 {
-    INFO("Caught interrupt, signal " << signal <<". Exiting...")
-    interrupt = true;
+    static size_t count = 0;
+    count++;
+    INFO("Caught INTERRUPT, signal " << signal <<" " << count << " times. ")
+    INTERRUPT = true;
+    if (count >= 3) { INFO("Force exiting"); exit(signal); }
 }
 
 template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& gridF)
@@ -121,7 +124,7 @@ template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& g
     GridObject<RealType,BMatsubaraGrid> chi_q0_vals(gridB), chi_qPI_vals(gridB), chi_q0_dmft_vals(gridB), chi_qPI_dmft_vals(gridB);
 
     for (auto iW : gridB.getPoints()) {
-        if (interrupt) exit(0);
+        if (INTERRUPT) exit(0);
         INFO("iW = " << iW);
         size_t iWn = size_t(iW);
         GF Vertex4(gridF);
@@ -230,7 +233,7 @@ int main(int argc, char *argv[])
     auto &SC = *SC_ptr;
 
     RealType diff=1.0;
-    for (int i=0; i<maxit && diff>1e-8 &&!interrupt; ++i) {
+    for (int i=0; i<maxit && diff>1e-8 &&!INTERRUPT; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
         if (diff/mix>1e-3) Solver.run(true);
         else Solver.run(false);
