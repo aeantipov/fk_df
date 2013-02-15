@@ -22,6 +22,7 @@ public:
 	size_t n_dual_freq;
 	size_t NDMFTRuns;
 	size_t NDFRuns;
+    FK::RealType DFCutoff;
 	size_t DFNumberOfSelfConsistentIterations;
     FK::RealType DFSCMixing;
     FK::RealType DFSCCutoff;
@@ -47,6 +48,7 @@ public:
           n_dual_freq(128), 
           NDMFTRuns(1000), 
           NDFRuns(100), 
+          DFCutoff(1e-8),
           DFNumberOfSelfConsistentIterations(10), 
           DFSCMixing(0.5),
           DFSCCutoff(1e-8),
@@ -95,6 +97,10 @@ public:
 			kpts = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
+
+        ON_OPTION_WITH_ARG(LONGOPT("dfcutoff"))
+		    DFCutoff = std::atof(arg);
+			used_args = 1;	// Notify the parser of a consumption of argument.
 
         ON_OPTION_WITH_ARG(LONGOPT("ndmftiter"))
 			NDMFTRuns = std::atoi(arg);

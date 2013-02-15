@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
     extraops = opt.extraops;
     size_t NDMFTRuns = opt.NDMFTRuns;
     size_t NDFRuns = opt.NDFRuns;
+    RealType DFCutoff = opt.DFCutoff;
 
     KMesh kGrid(ksize);
 
@@ -207,7 +208,7 @@ int main(int argc, char *argv[])
     size_t i_dmft = 0; 
     size_t i_df = 0;
 
-    for (; i_dmft<NDMFTRuns && i_df<=NDFRuns && diff>1e-8 &&!INTERRUPT; (calc_DMFT)?i_dmft++:i_df++) {
+    for (; i_dmft<NDMFTRuns && i_df<=NDFRuns && diff>1e-8+(1-calc_DMFT)*(DFCutoff-1e-8) &&!INTERRUPT; (calc_DMFT)?i_dmft++:i_df++) {
         INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
         if (diff/mix>1e-3) Solver.run(true);
         else Solver.run(false);
@@ -235,7 +236,7 @@ int main(int argc, char *argv[])
             Delta_large.savetxt("DeltaDMFT.dat");
             Solver.Sigma.savetxt("SigmaDMFT.dat"); 
             Solver.gw.savetxt("GwDMFT.dat");
-            diff = 1.0; calc_DMFT = false; mix = 1.0; }; // now continue with DF 
+            diff = 1.0; calc_DMFT = false; }; // now continue with DF 
         }
    
     GF Delta_half(gridF_half); Delta_half = Delta;
