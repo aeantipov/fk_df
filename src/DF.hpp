@@ -36,7 +36,7 @@ ComplexType DFLadder<D>::getStaticLatticeSusceptibility(const std::array<KPoint,
     auto StaticV4 = StaticVertex4.getData().getAsMatrix();
     auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
     auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
-    const auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
+    const auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true);
 
     auto susc1 = (GDL_bubble_vector.transpose()*FullStaticV4*GDL_bubble_vector);
     susc = susc1(0,0);
