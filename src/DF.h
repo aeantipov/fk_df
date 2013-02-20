@@ -2,11 +2,12 @@
 #ifndef __FK_DF_H__
 #define __FK_DF_H__
 
-#include "FKCommon.h"
 #include "SelfConsistency.h"
 #include "Diagrams.h"
 
 namespace FK {
+
+using namespace GFTools;
 
 struct DFBase
 {

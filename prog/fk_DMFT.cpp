@@ -1,9 +1,8 @@
 #include <numeric>
 
-#include "FKCommon.h"
-#include "Grid.h"
-#include "Container.h"
-#include "GridObject.h"
+#include <MatsubaraGrid.hpp>
+#include <KMesh.hpp>
+#include <GridObject.hpp>
 #include "GFWrap.h"
 #include "Solver.h"
 #include "SelfConsistency.h"
@@ -16,6 +15,7 @@
 #include <unordered_map>
 #include <csignal>
 
+using namespace GFTools;
 using namespace FK;
 
 RealType beta;
@@ -204,8 +204,6 @@ int main(int argc, char *argv[])
 
     KMesh kgrid(kpoints);
     
-    Log.setDebugging(true);
-
     FMatsubaraGrid gridF(-n_freq, n_freq, beta);
     GF Delta(gridF);
     std::function<ComplexType(ComplexType)> f1, f2;

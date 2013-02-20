@@ -8,11 +8,7 @@ enable_testing()
 
 # Here all the tests are set. The source is file is assumed to be ${test}.cpp
 set (tests 
-GridTest
-ContainerTest
-GridObjectTest
 SolverTest
-ShiftTest
 DMFTCubicTest
 DMFTBetheTest
 DMFTCubicSuscTest

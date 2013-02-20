@@ -1,9 +1,5 @@
 #include <numeric>
 
-#include "FKCommon.h"
-#include "Grid.h"
-#include "Container.h"
-#include "GridObject.h"
 #include "Solver.h"
 #include "SelfConsistency.h"
 
@@ -23,7 +19,7 @@ bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
 
 int main()
 {
-    Log.setDebugging(true);
+    //Log.setDebugging(true);
 
     INFO("Hi! Doing Falicov-Kimball. ");
     RealType U = 2.0;

@@ -1,10 +1,9 @@
 #ifndef ___FK_SOLVER_H___
 #define ___FK_SOLVER_H___
 
-#include "FKCommon.h"
-#include "Grid.h"
-#include "Container.h"
-#include "GridObject.h"
+#include "MatsubaraGrid.hpp"
+#include "Container.hpp"
+#include "GridObject.hpp"
 #include "GFWrap.h"
 
 namespace FK { 

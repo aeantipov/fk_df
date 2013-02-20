@@ -2,11 +2,13 @@
 #ifndef __FK_DFDIAGRAMS_H__
 #define __FK_DFDIAGRAMS_H__
 
-#include "FKCommon.h"
-#include "GridObject.h"
+#include <KMesh.hpp>
+#include <GridObject.hpp>
 #include "GFWrap.h"
 
 namespace FK { 
+
+using namespace GFTools;
 
 struct Diagrams
 {

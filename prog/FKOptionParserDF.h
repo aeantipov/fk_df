@@ -1,8 +1,6 @@
 #ifndef	__INCLUDE_FK_OPTIONPARSER_DF_H
 #define	__INCLUDE_FK_OPTIONPARSER_DF_H
 
-#include"FKCommon.h"
-#include"Logger.h"
 #include"OptionParser.h"
 
 /**

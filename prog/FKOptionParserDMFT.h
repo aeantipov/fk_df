@@ -2,8 +2,6 @@
 #define	__INCLUDE_FK_OPTIONPARSER_DMFT_H
 
 #include"OptionParser.h"
-#include"FKCommon.h"
-#include"Logger.h"
 
 /**
  * A class to store parameters specified by command-line arguments

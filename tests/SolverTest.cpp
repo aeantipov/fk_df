@@ -1,9 +1,5 @@
 #include <numeric>
 
-#include "FKCommon.h"
-#include "Grid.h"
-#include "Container.h"
-#include "GridObject.h"
 #include "Solver.h"
 
 #include <iostream>
@@ -14,9 +10,6 @@ using namespace FK;
 
 //typedef GridObject<ComplexType,FMatsubaraGrid> GF;
 typedef GFWrap GF;
-typedef GridObject<ComplexType,KMesh,FMatsubaraGrid> GF1d;
-typedef GridObject<ComplexType,KMesh,KMesh,FMatsubaraGrid> GF2d;
-typedef GridObject<ComplexType,KMesh,KMesh,KMesh,FMatsubaraGrid> GF3d;
 
 template <typename F1, typename F2>
 bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
@@ -28,7 +21,7 @@ int main()
 {
     RealType beta = 4;
     size_t n_freq = 100;
-    Log.setDebugging(true);
+    //Log.setDebugging(true);
     FMatsubaraGrid grid(-n_freq, n_freq, beta);
     BMatsubaraGrid gridB(0,100,beta);
     GF Delta(grid);

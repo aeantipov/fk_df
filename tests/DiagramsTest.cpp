@@ -1,9 +1,5 @@
 #include <numeric>
 
-#include "FKCommon.h"
-#include "Grid.h"
-#include "Container.h"
-#include "GridObject.h"
 #include "Solver.h"
 #include "SelfConsistency.h"
 #include "DF.h"
@@ -39,7 +35,7 @@ int main()
 
     static const size_t KPOINTS=16;
     static const size_t D=2;
-    Log.setDebugging(true);
+    //Log.setDebugging(true);
 
     MatrixType<ComplexType> Chi0(5,5), V4(5,5);
     Chi0.setIdentity(); Chi0*=0.1;

@@ -1,9 +1,5 @@
 #include <numeric>
 
-#include "FKCommon.h"
-#include "Grid.h"
-#include "Container.h"
-#include "GridObject.h"
 #include "Solver.h"
 #include "SelfConsistency.h"
 #include "DF.h"
@@ -40,7 +36,7 @@ int main()
     static const size_t KPOINTS=32;
     static const size_t D=2;
 
-    Log.setDebugging(true);
+    //Log.setDebugging(true);
     FMatsubaraGrid gridF(-n_freq, n_freq, beta);
     BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
 

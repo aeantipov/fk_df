@@ -1,14 +1,5 @@
 include_directories (.)
 
-set (base_src
-    FKCommon.h
-    Grid.h Grid.hpp 
-    Container.h Container.hpp
-    GridObject.h GridObject.hpp
-    )
-
-add_library(fk_base OBJECT ${base_src})
-
 set (fk_src 
     Logger.h Logger.cpp
     GFWrap.h GFWrap.cpp
@@ -17,7 +8,7 @@ set (fk_src
     Diagrams.h Diagrams.hpp
     DF.h DF.hpp DF.cpp
     )
-add_library(fk SHARED ${fk_src} $<TARGET_OBJECTS:fk_base>)
+add_library(fk SHARED ${fk_src})
 set_target_properties(fk PROPERTIES LINKER_LANGUAGE CXX)
 
 #target_link_libraries(fk
@@ -31,4 +22,4 @@ install(TARGETS fk
     )
 
 install(DIRECTORY . DESTINATION include/fk
-          FILES_MATCHING PATTERN "*.h")
+          FILES_MATCHING PATTERN "*.h *.hpp")

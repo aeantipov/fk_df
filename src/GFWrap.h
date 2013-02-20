@@ -1,10 +1,12 @@
 #ifndef ___FK_GF_WRAP_H__
 #define ___FK_GF_WRAP_H__
 
-#include "FKCommon.h"
-#include "GridObject.h"
+#include "MatsubaraGrid.hpp"
+#include "GridObject.hpp"
 
 namespace FK {
+
+using namespace GFTools;
 
 class GFWrap : public GridObject<ComplexType, FMatsubaraGrid>
 {

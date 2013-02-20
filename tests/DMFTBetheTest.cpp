@@ -1,9 +1,5 @@
 #include <numeric>
 
-#include "FKCommon.h"
-#include "Grid.h"
-#include "Container.h"
-#include "GridObject.h"
 #include "Solver.h"
 #include "SelfConsistency.h"
 
@@ -33,7 +29,7 @@ int main()
     RealType mix = 0.5;
 
     size_t n_freq = 256;
-    Log.setDebugging(true);
+//    Log.setDebugging(true);
     FMatsubaraGrid grid(-n_freq, n_freq, beta);
     GF Delta(grid);
     std::function<ComplexType(ComplexType)> f1;

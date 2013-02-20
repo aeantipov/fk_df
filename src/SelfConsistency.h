@@ -1,11 +1,14 @@
 #ifndef ___FK_SELFCONSISTENCY_H___
 #define ___FK_SELFCONSISTENCY_H___
 
-#include "FKCommon.h"
-#include "GridObject.h"
+#include <KMesh.hpp>
+#include <RealGrid.hpp>
+#include <GridObject.hpp>
 #include "Solver.h"
 
 namespace FK {
+
+using namespace GFTools;
 
 struct SelfConsistency 
 {

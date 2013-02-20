@@ -1,6 +1,8 @@
 #include <numeric>
 
-#include "FKCommon.h"
+#include <MatsubaraGrid.hpp>
+#include <KMesh.hpp>
+#include <GridObject.hpp>
 #include "GFWrap.h"
 #include "Solver.h"
 #include "DF.h"
@@ -13,6 +15,7 @@
 #include <unordered_map>
 #include <csignal>
 
+using namespace GFTools;
 using namespace FK;
 
 //extern template GridObject<ComplexType,FMatsubaraGrid>;
@@ -143,8 +146,6 @@ int main(int argc, char *argv[])
     RealType DFCutoff = opt.DFCutoff;
 
     KMesh kGrid(ksize);
-
-    Log.setDebugging(true);
 
     FMatsubaraGrid gridF(-n_freq, n_freq, beta);
     FMatsubaraGrid gridF_half(0, 2*n_freq, beta);
