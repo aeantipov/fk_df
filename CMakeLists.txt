@@ -61,6 +61,10 @@ include_directories(
 
 add_subdirectory(src)
 add_subdirectory(prog)
-add_subdirectory(tests)
-enable_testing()
+
+option(Testing "Enable testing" OFF)
+if (Testing)
+    add_subdirectory(tests)
+    enable_testing()
+endif (Testing)
 
