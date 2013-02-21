@@ -64,6 +64,7 @@ add_subdirectory(prog)
 
 option(Testing "Enable testing" OFF)
 if (Testing)
+    message(STATUS "Enabled test building and running")
     add_subdirectory(tests)
     enable_testing()
 endif (Testing)
