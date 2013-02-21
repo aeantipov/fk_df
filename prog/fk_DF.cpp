@@ -204,12 +204,12 @@ int main(int argc, char *argv[])
     auto &SC_DF   = *SC_DF_ptr;
   
     RealType diff=1.0;
-    bool calc_DMFT = true;
+    bool calc_DMFT = (NDMFTRuns>0);
 
     size_t i_dmft = 0; 
     size_t i_df = 0;
 
-    for (; i_dmft<NDMFTRuns && i_df<=NDFRuns && diff>1e-8+(1-calc_DMFT)*(DFCutoff-1e-8) &&!INTERRUPT; (calc_DMFT)?i_dmft++:i_df++) {
+    for (; i_dmft<=NDMFTRuns-calc_DMFT && i_df<=NDFRuns && diff>1e-8+(1-calc_DMFT)*(DFCutoff-1e-8) &&!INTERRUPT; (calc_DMFT)?i_dmft++:i_df++) {
         INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
         if (diff/mix>1e-3) Solver.run(true);
         else Solver.run(false);

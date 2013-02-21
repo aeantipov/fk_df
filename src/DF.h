@@ -13,7 +13,7 @@ struct DFBase
 {
     typedef typename FKImpuritySolver::GFType GLocalType;
     RealType _GDmix = 0.5;
-    RealType _SC_cutoff = 1e-8;
+    RealType _SC_cutoff = 1e-5;
     size_t _n_GD_iter = 100;
 
     bool _eval_BS_SC = false;

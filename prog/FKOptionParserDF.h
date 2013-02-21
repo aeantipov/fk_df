@@ -49,7 +49,7 @@ public:
           DFCutoff(1e-8),
           DFNumberOfSelfConsistentIterations(10), 
           DFSCMixing(0.5),
-          DFSCCutoff(1e-8),
+          DFSCCutoff(1e-5),
           DFNumberOfBSIterations(1000), 
           DFEvaluateBSSelfConsistent(false),
           DFEvaluateStaticDiagrams(true),

@@ -121,7 +121,7 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
     INFO("Beginning with GD sum = " << std::abs(GD.sum())/RealType(_fGrid.getSize())/knorm);
 
     RealType diffGD = 1.0;
-    for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > _SC_cutoff*_GDmix; ++nd_iter) { 
+    for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > _SC_cutoff; ++nd_iter) { 
         INFO("DF iteration " << nd_iter << ". Evaluating BS equation.");
         GKType addSigma(this->SigmaD.getGrids()), GD_shift(this->GD.getGrids());
 
