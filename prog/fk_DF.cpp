@@ -200,6 +200,20 @@ int main(int argc, char *argv[])
     DF_ptr->_EvaluateStaticDiagrams = opt.DFEvaluateStaticDiagrams;
     DF_ptr->_EvaluateDynamicDiagrams = opt.DFEvaluateDynamicDiagrams;
 
+    bool update_weights = true;
+
+    try {
+            __num_format<RealType> wf(0.0); 
+            wf.loadtxt("w_0.dat");
+            Solver.w_0 = wf;
+            wf.loadtxt("w_1.dat");
+            Solver.w_1 = wf;
+        }
+    catch (...)
+        {
+            INFO("Couldn't load weights from file.");
+        }
+
     auto &SC_DMFT = *SC_DMFT_ptr;
     auto &SC_DF   = *SC_DF_ptr;
   
@@ -211,8 +225,10 @@ int main(int argc, char *argv[])
 
     for (; i_dmft<=NDMFTRuns-calc_DMFT && i_df<=NDFRuns && diff>1e-8+(1-calc_DMFT)*(DFCutoff-1e-8) &&!INTERRUPT; (calc_DMFT)?i_dmft++:i_df++) {
         INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
-        if (diff/mix>1e-3) Solver.run(true);
-        else Solver.run(false);
+
+        update_weights = update_weights && diff/mix>1e-3 && calc_DMFT;
+        Solver.run(update_weights);
+
         if (calc_DMFT) {  
             Delta = SC_DMFT();
             }
@@ -237,6 +253,8 @@ int main(int argc, char *argv[])
             Delta_large.savetxt("DeltaDMFT.dat");
             Solver.Sigma.savetxt("SigmaDMFT.dat"); 
             Solver.gw.savetxt("GwDMFT.dat");
+            __num_format<RealType>(Solver.w_0).savetxt("w_0DMFT.dat");
+            __num_format<RealType>(Solver.w_1).savetxt("w_1DMFT.dat");
             diff = 1.0; calc_DMFT = false; }; // now continue with DF 
         }
    
@@ -248,6 +266,8 @@ int main(int argc, char *argv[])
     Delta_half.savetxt("Delta.dat");
     GF Delta_large(gridF_large); Delta_large = Delta;
     Delta_large.savetxt("Delta_full.dat");
+    __num_format<RealType>(Solver.w_0).savetxt("w_0.dat");
+    __num_format<RealType>(Solver.w_1).savetxt("w_1.dat");
 
     if (extraops>0) {
         switch (sc_switch) {
