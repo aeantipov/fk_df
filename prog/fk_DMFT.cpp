@@ -230,11 +230,15 @@ int main(int argc, char *argv[])
     };
     auto &SC = *SC_ptr;
 
+    bool update_weights = opt.update_weights;
+    Solver.w_0 = opt.w_0;
+    Solver.w_1 = opt.w_1;
+
     RealType diff=1.0;
     for (int i=0; i<maxit && diff>1e-8 &&!INTERRUPT; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
-        if (diff/mix>1e-3) Solver.run(true);
-        else Solver.run(false);
+        update_weights = update_weights && diff/mix>1e-3;
+        Solver.run(update_weights);
         Delta = SC();
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         diff = Delta_new.diff(Solver.Delta);
