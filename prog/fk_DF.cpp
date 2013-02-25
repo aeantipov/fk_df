@@ -200,19 +200,25 @@ int main(int argc, char *argv[])
     DF_ptr->_EvaluateStaticDiagrams = opt.DFEvaluateStaticDiagrams;
     DF_ptr->_EvaluateDynamicDiagrams = opt.DFEvaluateDynamicDiagrams;
 
-    bool update_weights = true;
+    bool update_weights = opt.update_weights;
+    bool read_weights = opt.read_weights;
+    Solver.w_0 = opt.w_0;
+    Solver.w_1 = opt.w_1;
 
-    try {
-            __num_format<RealType> wf(0.0); 
-            wf.loadtxt("w_0.dat");
-            Solver.w_0 = wf;
-            wf.loadtxt("w_1.dat");
-            Solver.w_1 = wf;
-        }
-    catch (...)
-        {
-            INFO("Couldn't load weights from file.");
-        }
+    if (read_weights) {
+        try {
+                __num_format<RealType> wf(0.0); 
+                wf.loadtxt("w_0.dat");
+                Solver.w_0 = wf;
+                wf.loadtxt("w_1.dat");
+                Solver.w_1 = wf;
+                if (std::abs(Solver.w_0 + Solver.w_1 - 1.0)<std::numeric_limits<RealType>::epsilon()) throw(1);
+            }
+        catch (...)
+            {
+                INFO("Couldn't load weights from file.");
+            }
+        };
 
     auto &SC_DMFT = *SC_DMFT_ptr;
     auto &SC_DF   = *SC_DF_ptr;

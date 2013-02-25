@@ -14,6 +14,10 @@ public:
 	FK::RealType t    ;
 	FK::RealType mu   ;
 	FK::RealType e_d  ;
+	FK::RealType w_0  ;
+	FK::RealType w_1  ;
+    bool update_weights;
+    bool read_weights;
 	FK::RealType mix  ;
 	size_t n_freq;
 	size_t kpts;
@@ -40,6 +44,10 @@ public:
           t(1.0), 
           mu(2.0), 
           e_d(0.0),
+          w_0(0.5),
+          w_1(0.5),
+          update_weights(true),
+          read_weights(false),
           mix(1.0), 
           n_freq(1024), 
           kpts(32),
@@ -85,6 +93,19 @@ public:
         
         ON_OPTION_WITH_ARG(LONGOPT("ed"))
 			e_d = std::atof(arg);
+			used_args = 1;	// Notify the parser of a consumption of argument.
+
+        ON_OPTION_WITH_ARG(LONGOPT("w_0"))
+			w_0 = std::atof(arg);
+			w_1 = 1.0-w_0;
+			used_args = 1;	// Notify the parser of a consumption of argument.
+
+        ON_OPTION_WITH_ARG(LONGOPT("update_weights"))
+			update_weights = std::atoi(arg);
+			used_args = 1;	// Notify the parser of a consumption of argument.
+
+        ON_OPTION_WITH_ARG(LONGOPT("read_weights"))
+			read_weights = std::atoi(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
         ON_OPTION_WITH_ARG(LONGOPT("mix"))
