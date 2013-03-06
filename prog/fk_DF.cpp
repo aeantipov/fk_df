@@ -224,6 +224,8 @@ int main(int argc, char *argv[])
     auto &SC_DF   = *SC_DF_ptr;
   
     RealType diff=1.0;
+    std::ofstream diff_stream("diff.dat",std::ios::out);
+    diff_stream.close();
     bool calc_DMFT = (NDMFTRuns>0);
 
     size_t i_dmft = 0; 
@@ -253,6 +255,12 @@ int main(int argc, char *argv[])
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         diff = Delta_new.diff(Solver.Delta);
         INFO("diff = " << diff);
+        if (!calc_DMFT) {
+            diff_stream.open("diff.dat",std::ios::app);
+            diff_stream << diff << std::endl;
+            diff_stream.close();
+        };
+        
         Solver.Delta = Delta_new;
         if (diff<=1e-8 && calc_DMFT) { 
             GF Delta_large(gridF_large); Delta_large = Solver.Delta;

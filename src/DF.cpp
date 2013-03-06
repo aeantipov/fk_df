@@ -116,6 +116,8 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
     auto StaticV4 = StaticVertex4.getData().getAsMatrix();
 
     GLocalType DynVertex4(_fGrid), FullDualDynVertex4(_fGrid), DualDynBubble(_fGrid);
+    std::ofstream diffDF_stream("diffDF.dat",std::ios::out);
+    diffDF_stream.close();
 
     INFO("Starting ladder dual fermion calculations")
     INFO("Beginning with GD sum = " << std::abs(GD.sum())/RealType(_fGrid.getSize())/knorm);
@@ -198,6 +200,10 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
         //DEBUG(__GDnew0);
         diffGD = GD_new.diff(GD);
         INFO2("DF diff = " << diffGD);
+
+        diffDF_stream.open("diffDF.dat",std::ios::app);
+        diffDF_stream << diffGD << std::endl;
+        diffDF_stream.close();
         GD=GD_new;
         GD._f = GD0._f; // assume DMFT asymptotics are good 
         SigmaD = 0.0;
