@@ -25,6 +25,13 @@ inline typename SelfConsistency::GFType SelfConsistency::getBubblePI(MPoint in) 
 //
 
 template <size_t M> 
+template <typename FunctionType, typename ...ArgTypes> 
+inline FunctionType CubicTraits<M>::get_dispersion(RealType t)
+{
+    return CubicTraits<M-1>::template get_dispersion<FunctionType,ArgTypes...,RealType>(t); 
+}
+
+template <size_t M> 
 template <class IteratorType, typename ...ArgTypes> 
 inline void CubicTraits<M>::fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
 {
@@ -80,6 +87,56 @@ inline RealType CubicTraits<0>::ek(RealType t, ArgType1 kpoint1)
     assert (kpoint1>=0 && kpoint1 < 2*PI);
     return -2*t*cos(kpoint1);
 }
+
+template <size_t M>
+inline std::vector<BZPoint<M>> CubicTraits<M>::getAllBZPoints(const KMesh& kGrid)
+{
+    size_t ksize = kGrid.getSize();
+    size_t totalqpts = size_t(pow(ksize,M));
+    std::vector<BZPoint<M>> out(totalqpts);
+
+    std::array<KMesh::point, M> q;
+    for (size_t nq=0; nq<totalqpts; ++nq) { // iterate over all kpoints
+        size_t offset = 0;
+        for (size_t i=0; i<M; ++i) { 
+            q[M-1-i]=kGrid[(nq-offset)/(int(pow(ksize,i)))%ksize]; 
+            offset+=(int(pow(ksize,i)))*size_t(q[M-1-i]); 
+            };
+        out[nq]=q;
+        }
+    return out;
+}
+
+template <size_t M>
+inline std::map<std::array<KMesh::point, M>, size_t> CubicTraits<M>::getUniqueBZPoints(const KMesh& kGrid)
+{
+    auto all_pts = getAllBZPoints(kGrid);
+    auto totalqpts = all_pts.size();
+    std::map<std::array<KMesh::point, M>, size_t> unique_pts;
+    for (size_t nq=0; nq<totalqpts; ++nq) {
+        auto q = all_pts[nq];
+      //  INFO_NONEWLINE("Considering: " << nq << "/" << totalqpts << " ");
+      //  printKPoint(q);
+        BZPoint<M> q_unique = q;
+        // Flip all pi+x to pi-x
+        for (size_t i=0; i<M; ++i) {
+            if (RealType(q[i])>PI) q_unique[i]=kGrid.findClosest(2.0*PI-RealType(q_unique[i]));
+            }
+        // Order x,y,z. Ensures x<=y<=z
+        std::sort(q_unique.begin(), q_unique.end());
+
+    //    INFO_NONEWLINE("Got "); printKPoint(q_unique);
+        if (unique_pts.find(q_unique)==unique_pts.end()) 
+            unique_pts[q_unique]=1;
+        else if (q_unique != q)  
+            unique_pts[q_unique]++;
+        };
+    size_t count = 0;
+    for (auto it = unique_pts.begin(); it!=unique_pts.end(); it++) { /*printKPoint(it->first); DEBUG(" : " << it->second);*/ count+=it->second; };
+    //DEBUG(totalqpts << " == " << count);
+    assert(totalqpts == count);
+    return unique_pts;
+} 
 
 //
 // CubicDMFT
