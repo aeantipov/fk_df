@@ -50,12 +50,12 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
     SC.GLatLoc.savetxt("gloc.dat");
-    //SC.getGLoc().savetxt("gloc-.dat");
 
     if (extraops>=1) {
         std::array<RealType, D> q;
         q.fill(PI);
-        auto stat_susc_pi = SC.getStaticLatticeSusceptibility(q);
+        size_t n_freq = std::max(int(beta*2), 512);
+        auto stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
         __num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
     }
 
@@ -223,7 +223,8 @@ int main(int argc, char *argv[])
     auto &SC_DMFT = *SC_DMFT_ptr;
     auto &SC_DF   = *SC_DF_ptr;
   
-    RealType diff=1.0;
+    RealType diff=1.0, diff_min = 1.0;
+    size_t diff_min_count = 0;
     std::ofstream diff_stream("diff.dat",std::ios::out);
     diff_stream.close();
     bool calc_DMFT = (NDMFTRuns>0);
@@ -255,9 +256,17 @@ int main(int argc, char *argv[])
         auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
         diff = Delta_new.diff(Solver.Delta);
         INFO("diff = " << diff);
+
+        if (diff<diff_min) { diff_min = diff; diff_min_count = 0; }
+            else diff_min_count++;
+        if (diff_min_count > 5 ) {
+            ERROR("\n\tCaught loop cycle. Reducing main loop mixing to " << mix/2. << " .\n");
+            mix/=2.;
+            diff_min_count = 0;
+            };
         if (!calc_DMFT) {
             diff_stream.open("diff.dat",std::ios::app);
-            diff_stream << diff << std::endl;
+            diff_stream << diff << "  " << mix << std::endl;
             diff_stream.close();
         };
         

@@ -76,9 +76,9 @@ inline typename DFLadder<D>::GKType DFLadder<D>::getGLat(const FMatsubaraGrid &g
 }
 
 template <size_t D>
-inline typename DFLadder<D>::GKType DFLadder<D>::getGLatDMFT() const 
+inline typename DFLadder<D>::GKType DFLadder<D>::getGLatDMFT(const FMatsubaraGrid& gridF) const 
 { 
-    return CubicDMFTSC<D>::getGLat(_fGrid); 
+    return CubicDMFTSC<D>::getGLat(gridF); 
 };
 
 template <size_t D>
@@ -101,13 +101,18 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
     Delta = _S.Delta;
     GLocalType Delta_out(_fGrid); Delta_out=0.0;
     auto wkgrids = std::tuple_cat(std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid));
-    auto Wqgrids = std::tuple_cat(std::make_tuple(_bGrid),__repeater<KMesh,D>::get_tuple(_kGrid));
+    //typedef typename ArgBackGenerator<D,KMeshPatch,GridObject,ComplexType,FMatsubaraGrid>::type SigmaPatchType;
+    //auto reduced_grids = std::tuple_cat(FMatsubaraGrid(0,_fGrid._max,bea), __repeater<KMeshPatch,D>::get_tuple(
     _initialize();
 
     // Put here operations with GD
-    size_t ksize = _kGrid.getSize();
-    RealType knorm = pow(ksize,D);
-    size_t totalqpts = size_t(knorm);
+
+    // Generate a list of unique q-points
+    //size_t ksize = _kGrid.getSize();
+    //const auto all_q_pts = CubicTraits<D>::getAllBZPoints(_kGrid); 
+    const auto unique_q_pts = CubicTraits<D>::getUniqueBZPoints(_kGrid);
+    size_t totalqpts = size_t(pow(_kGrid.getSize(),D)); 
+    RealType knorm = RealType(totalqpts);
 
     // Prepare static vertex
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> StaticVertex4(std::forward_as_tuple(_fGrid,_fGrid)); 
@@ -115,31 +120,31 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
     StaticVertex4.fill(VertexF2);
     auto StaticV4 = StaticVertex4.getData().getAsMatrix();
 
+    // Prepare dynamic vertex
     GLocalType DynVertex4(_fGrid), FullDualDynVertex4(_fGrid), DualDynBubble(_fGrid);
+    // Miscelanneous - stream for checking convergence
     std::ofstream diffDF_stream("diffDF.dat",std::ios::out);
     diffDF_stream.close();
 
     INFO("Starting ladder dual fermion calculations")
     INFO("Beginning with GD sum = " << std::abs(GD.sum())/RealType(_fGrid.getSize())/knorm);
 
-    RealType diffGD = 1.0;
+    RealType diffGD = 1.0, diffGD_min = 1.0; 
+    size_t diffGD_min_count = 0; // A counter to estimate, how many iterations have passed after the minimal achieved diff
     for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > _SC_cutoff; ++nd_iter) { 
         INFO("DF iteration " << nd_iter << ". Evaluating BS equation.");
         GKType addSigma(this->SigmaD.getGrids()), GD_shift(this->GD.getGrids());
 
-        std::array<KMesh::point, D> q;
-        for (size_t nq=0; nq<totalqpts; ++nq) { // iterate over all kpoints
-            INFO_NONEWLINE(nq << "/" << totalqpts<< ": [");
-            size_t offset = 0;
-            for (size_t i=0; i<D; ++i) { 
-                q[D-1-i]=_kGrid[(nq-offset)/(int(pow(ksize,i)))%ksize]; 
-                offset+=(int(pow(ksize,i)))*size_t(q[D-1-i]); 
-                INFO_NONEWLINE(RealType(q[D-1-i]) << " ");
-                };
-            INFO("]. ");
+        size_t nq = 1;
+        // iterate over all unique kpoints (patch of BZ)
+        for (auto pts_it = unique_q_pts.begin(); pts_it != unique_q_pts.end(); pts_it++) { 
+            std::array<KMesh::point, D> q = pts_it->first; // point
+            RealType q_weight = RealType(pts_it->second); // it's weight
+            INFO_NONEWLINE(nq << "/" << unique_q_pts.size() << ": [");
+            for (size_t i=0; i<D; ++i) INFO_NONEWLINE(RealType(q[i]) << " "); INFO("]. Weight : " << q_weight);
+
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
             GD_shift = GD.shift(Wq_args_static);
-
             auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
             auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
             decltype(StaticV4) FullStaticV4;
@@ -147,8 +152,6 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
                 INFO_NONEWLINE("\tStatic contribution...");
                 FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
             };
-            //const auto FullStaticV42 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, true, 1000, _BSmix);
-
             
             decltype(StaticVertex4) DualBubbleDynamic(StaticVertex4.getGrids());
             decltype(StaticVertex4)::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
@@ -168,7 +171,7 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
                             }
                         };
                 INFO2("Sigma dynamic contribution diff = " << addSigma.diff(SigmaD*0));
-                SigmaD+=addSigma/RealType(totalqpts);
+                SigmaD+=addSigma/RealType(totalqpts)*q_weight;
                 };
 
             if (_EvaluateStaticDiagrams) { 
@@ -182,8 +185,9 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
                 SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
                 addSigma.fill(SigmaF);
                 INFO2("Sigma static contribution diff = " << addSigma.diff(SigmaD*0));
-                SigmaD+=addSigma/RealType(totalqpts);
+                SigmaD+=addSigma/RealType(totalqpts)*q_weight;
                 };
+            nq++;
             }; // end of q loop
 
         //GLocalType SigmaD0(_fGrid),__GD0(_fGrid), __GDnew0(_fGrid);
@@ -199,10 +203,17 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
         //DEBUG(__GD0);
         //DEBUG(__GDnew0);
         diffGD = GD_new.diff(GD);
+        if (diffGD<diffGD_min) { diffGD_min = diffGD; diffGD_min_count = 0; }
+        else diffGD_min_count++;
         INFO2("DF diff = " << diffGD);
+        if (diffGD_min_count > 6 ) {
+            ERROR("\n\tCaught loop cycle. Reducing DF mixing to " << _GDmix/2 << " .\n");
+            _GDmix/=2.;
+            diffGD_min_count = 0;
+            }
 
         diffDF_stream.open("diffDF.dat",std::ios::app);
-        diffDF_stream << diffGD << std::endl;
+        diffDF_stream << diffGD << "  " << _GDmix << std::endl;
         diffDF_stream.close();
         GD=GD_new;
         GD._f = GD0._f; // assume DMFT asymptotics are good 
@@ -247,7 +258,7 @@ std::tuple<typename DFLadder<D>::SuscType> DFLadder<D>::calculateLatticeData(con
 {
     SuscType LatticeSusc(std::tuple_cat(std::forward_as_tuple(gridB),qgrids));
     //RealType T = 1.0/_fGrid._beta;
-    GKType Lwk = this->getGLatDMFT()/GD0*(-1.0);
+    GKType Lwk = this->getGLatDMFT(_fGrid)/GD0*(-1.0);
     Lwk._f = __fun_traits<typename GKType::FunctionType>::constant(-1.0);
     auto GDL = GD*Lwk;
     GLocalType DynVertex4(_fGrid), Chi0(_fGrid), FullDualDynVertex4(_fGrid), ChiLat(_fGrid), GDL_chi0(_fGrid);
@@ -303,7 +314,7 @@ std::tuple<typename DFLadder<D>::SuscType> DFLadder<D>::calculateLatticeData(con
 
 template struct DFLadder<1>;  
 template struct DFLadder<2>;  
-//template struct DFLadder<3>;  
+template struct DFLadder<3>;  
 //template struct DFLadder<4>;  
 
 /*
