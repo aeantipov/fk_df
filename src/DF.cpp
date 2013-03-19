@@ -208,7 +208,7 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
         INFO2("DF diff = " << diffGD);
         if (diffGD_min_count > 6 ) {
             ERROR("\n\tCaught loop cycle. Reducing DF mixing to " << _GDmix/2 << " .\n");
-            _GDmix/=2.;
+            _GDmix=std::max(_GDmix/2., 0.05);
             diffGD_min = diffGD;
             diffGD_min_count = 0;
             }

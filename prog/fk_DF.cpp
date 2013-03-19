@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
             else diff_min_count++;
         if (diff_min_count > 5 ) {
             ERROR("\n\tCaught loop cycle. Reducing main loop mixing to " << mix/2. << " .\n");
-            mix/=2.;
+            mix=std::max(mix/2., 0.01);
             diff_min_count = 0;
             diff_min = diff;
             };
