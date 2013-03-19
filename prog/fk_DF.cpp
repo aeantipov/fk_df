@@ -178,14 +178,14 @@ int main(int argc, char *argv[])
             DF_ptr.reset(static_cast<DFLadder<2>*> (SC_DF_ptr.get()));
             D=2; break;
         case enumSC::DFCubic3d: 
-//            SC_DMFT_ptr.reset(new CubicDMFTSC<3>(Solver, t, kGrid));
-//            SC_DF_ptr.reset(new DFLadder<3>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
-//            DF_ptr.reset(static_cast<DFLadder<3>*> (SC_DF_ptr.get()));
+            SC_DMFT_ptr.reset(new CubicDMFTSC<3>(Solver, t, kGrid));
+            SC_DF_ptr.reset(new DFLadder<3>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            DF_ptr.reset(static_cast<DFLadder<3>*> (SC_DF_ptr.get()));
             D=3; break;
         case enumSC::DFCubic4d: 
-//            SC_DMFT_ptr.reset(new CubicDMFTSC<4>(Solver, t, kGrid));
-//            SC_DF_ptr.reset(new DFLadder<4>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
-//             DF_ptr.reset(static_cast<DFLadder<4>*> (SC_DF_ptr.get()));
+            SC_DMFT_ptr.reset(new CubicDMFTSC<4>(Solver, t, kGrid));
+            SC_DF_ptr.reset(new DFLadder<4>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            DF_ptr.reset(static_cast<DFLadder<4>*> (SC_DF_ptr.get()));
             D=4; break;
         default:
             ERROR("Couldn't find the desired SC type. Exiting.");
@@ -301,10 +301,10 @@ int main(int argc, char *argv[])
                 getExtraData(*(static_cast<DFLadder<2>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic3d: 
-//                getExtraData(*(static_cast<DFLadder<3>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<3>*> (SC_DF_ptr.get())), gridF); 
                 break;
             case enumSC::DFCubic4d: 
-//                getExtraData(*(static_cast<DFLadder<4>*> (SC_DF_ptr.get())), gridF); 
+                getExtraData(*(static_cast<DFLadder<4>*> (SC_DF_ptr.get())), gridF); 
                 break;
             default: break;
             }; 

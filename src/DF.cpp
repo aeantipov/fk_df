@@ -315,7 +315,7 @@ std::tuple<typename DFLadder<D>::SuscType> DFLadder<D>::calculateLatticeData(con
 template struct DFLadder<1>;  
 template struct DFLadder<2>;  
 template struct DFLadder<3>;  
-//template struct DFLadder<4>;  
+template struct DFLadder<4>;  
 
 /*
             for (auto iW : _bGrid.getPoints()) {
