@@ -263,6 +263,7 @@ int main(int argc, char *argv[])
             ERROR("\n\tCaught loop cycle. Reducing main loop mixing to " << mix/2. << " .\n");
             mix/=2.;
             diff_min_count = 0;
+            diff_min = diff;
             };
         if (!calc_DMFT) {
             diff_stream.open("diff.dat",std::ios::app);
