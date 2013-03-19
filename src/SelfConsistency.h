@@ -59,32 +59,40 @@ public:
     template <typename MPoint> GFType getBubble0(MPoint in) const;
     template <typename MPoint> GFType getBubblePI(MPoint in) const;
 };
+
+/** A typedef for a point in the Brillouin zone. */
+template <size_t D>
+using BZPoint = typename std::array<KMesh::point,D>;
+
+/** Stream the BZPoint. */
+template <size_t D>
+std::ostream& operator<<(std::ostream& out, BZPoint<D> in)
+{ out << "["; for (size_t i=0; i<D; ++i) out << RealType(in[i]) << " "; out << "]"; return out; } 
     
 template <size_t M> 
 struct CubicTraits{ 
-    //const KMesh grid = KMesh(ksize);
-    //typedef Eigen::Matrix<RealType,__power<ksize,M>::value,1,Eigen::ColMajor> EkStorage;
-    //typedef typename ArgBackGenerator<M,KMesh,std::tuple>::type KMeshTupleType;
-    typedef typename std::array<KMesh,M> KMeshTupleType;
-    //template <class ... GridTypes> static void gen_tuples(std::tuple<GridTypes...> grids){gen_tuples<GridTypes...,KMesh>(std::tuple_cat(grids,KMesh(ksize)));}
-    static KMeshTupleType getTuples(const KMesh &grid){std::array<KMesh,M> out; out.fill(grid); return out;};
+    /** Returns an analytic std::function of the dispersion. */
+    template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t);
+    /** Fills a container with a given iterator. */
     template <class IteratorType, typename ...ArgTypes> static void fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
+    /** Fills a given container. */
     template <class ContainerType, typename ...ArgTypes> static void fillContainer(ContainerType &in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
-    template <class ObjType, typename ...ArgTypes> static void setAnalytics(ObjType &in, RealType t);
-    template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t)
-        { return CubicTraits<M-1>::template get_dispersion<FunctionType,ArgTypes...,RealType>(t); }
-    //static RealType ek(RealType t, ArgTypes... kpoints); 
+    /** Returns a vector of D-dimensional arrays of points on the KMesh, which covers the Brillouin zone */
+    static std::vector<std::array<KMesh::point, M>> getAllBZPoints(const KMesh& in);
+    /** Returns a vector of a pair of a D-dimensional arrays of points on the KMesh and the amount of points that can be obtained from a symmetry operation in the lattice. */
+    static std::map<std::array<KMesh::point, M>, size_t> getUniqueBZPoints(const KMesh& kGrid);
 };
 
 template <>
 struct CubicTraits<0>{ 
+    /** Fills a container with a given iterator. */
     template <class IteratorType, typename ...ArgTypes> static void fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
+    /** Fills a given container. */
     template <class DataType, typename ...ArgTypes> static void fillContainer(DataType &in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
-    template <typename ...GridTypes> static std::tuple<GridTypes...> getKMeshTuple(GridTypes ... extra_grids)
-        {return std::make_tuple(extra_grids...);};
-    //template <typename ...ArgTypes> static RealType ek(RealType t, ArgTypes... kpoints) { return 1.0; } ; 
+    /** Actual dispersion relation. */
     template <typename ArgType1, typename ...ArgTypes> static RealType ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints); 
     template <typename ArgType1> static RealType ek(RealType t, ArgType1 kpoint1); 
+    /** Returns an analytic std::function of the dispersion. */
     template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t) { return [t](ArgTypes ... in){return ek(t,in...);};};
 };
 
