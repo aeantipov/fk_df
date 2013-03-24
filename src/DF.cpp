@@ -10,10 +10,9 @@ namespace FK {
 // __repeater<KMesh,D>::get_tuple(_kGrid) - returns a tuple of D kmeshes
 
 template <size_t D>
-DFLadder<D>::DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, const BMatsubaraGrid& bGrid, RealType t):
+DFLadder<D>::DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t):
     CubicDMFTSC<D>(S,t,kGrid),
     _fGrid(fGrid),
-    _bGrid(bGrid),
     GD0(std::tuple_cat(std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))),
     GD(GD0.getGrids()),
     SigmaD(GD0.getGrids()), 
@@ -196,17 +195,11 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
         //DEBUG(SigmaD0);
 
         auto GD_new = _GDmix/(1.0/GD0 - SigmaD) + GD*(1.0-_GDmix); // Dyson eq;
-        //std::function<ComplexType(FMatsubaraGrid::point)> gdf = [&](FMatsubaraGrid::point w){return GD[size_t(w)][0][0];};
-        //std::function<ComplexType(FMatsubaraGrid::point)> gdnewf = [&](FMatsubaraGrid::point w){return GD_new[size_t(w)][0][0];};
-        //__GD0.fill(gdf);
-        //__GDnew0.fill(gdnewf);
-        //DEBUG(__GD0);
-        //DEBUG(__GDnew0);
         diffGD = GD_new.diff(GD);
         if (diffGD<diffGD_min) { diffGD_min = diffGD; diffGD_min_count = 0; }
         else diffGD_min_count++;
         INFO2("DF diff = " << diffGD);
-        if (diffGD_min_count > 6 ) {
+        if (diffGD_min_count > 7 ) {
             ERROR("\n\tCaught loop cycle. Reducing DF mixing to " << _GDmix/2 << " .\n");
             _GDmix=std::max(_GDmix/2., 0.05);
             diffGD_min = diffGD;

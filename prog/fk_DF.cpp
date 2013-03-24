@@ -169,22 +169,22 @@ int main(int argc, char *argv[])
     switch (sc_switch) {
         case enumSC::DFCubic1d: 
             SC_DMFT_ptr.reset(new CubicDMFTSC<1>(Solver, t, kGrid));
-            SC_DF_ptr.reset(new DFLadder<1>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            SC_DF_ptr.reset(new DFLadder<1>(Solver, gridF, kGrid, t)); 
             DF_ptr.reset(static_cast<DFLadder<1>*> (SC_DF_ptr.get()));
             D=1; break;
         case enumSC::DFCubic2d: 
             SC_DMFT_ptr.reset(new CubicDMFTSC<2>(Solver, t, kGrid));
-            SC_DF_ptr.reset(new DFLadder<2>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            SC_DF_ptr.reset(new DFLadder<2>(Solver, gridF, kGrid, t)); 
             DF_ptr.reset(static_cast<DFLadder<2>*> (SC_DF_ptr.get()));
             D=2; break;
         case enumSC::DFCubic3d: 
             SC_DMFT_ptr.reset(new CubicDMFTSC<3>(Solver, t, kGrid));
-            SC_DF_ptr.reset(new DFLadder<3>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            SC_DF_ptr.reset(new DFLadder<3>(Solver, gridF, kGrid, t)); 
             DF_ptr.reset(static_cast<DFLadder<3>*> (SC_DF_ptr.get()));
             D=3; break;
         case enumSC::DFCubic4d: 
             SC_DMFT_ptr.reset(new CubicDMFTSC<4>(Solver, t, kGrid));
-            SC_DF_ptr.reset(new DFLadder<4>(Solver, gridF, kGrid, BMatsubaraGrid(-n_dual_freq+1,n_dual_freq, beta), t)); 
+            SC_DF_ptr.reset(new DFLadder<4>(Solver, gridF, kGrid, t)); 
             DF_ptr.reset(static_cast<DFLadder<4>*> (SC_DF_ptr.get()));
             D=4; break;
         default:

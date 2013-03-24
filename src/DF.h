@@ -42,7 +42,6 @@ struct DFLadder : CubicDMFTSC<D>, DFBase {
     using CubicDMFTSC<D>::_kGrid;
     using CubicDMFTSC<D>::_ek;
     const FMatsubaraGrid _fGrid;
-    const BMatsubaraGrid _bGrid;
     GKType GD0;
     GKType GD;
     GKType SigmaD;
@@ -51,7 +50,7 @@ struct DFLadder : CubicDMFTSC<D>, DFBase {
 private:
     void _initialize();
 public:
-    DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, const BMatsubaraGrid& bGrid, RealType t);
+    DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t);
     template <typename ...KP> GLocalType getBubble(const typename DFLadder<D>::GKType& GF, BMatsubaraGrid::point W, KP...kpoints) const;
     GLocalType getBubble(const GKType& GF, const WQTupleType& in) const;
     GKType getGLatDMFT(const FMatsubaraGrid& gridF) const ;
@@ -61,6 +60,7 @@ public:
     GLocalType operator()();
     std::tuple<SuscType> calculateLatticeData(const BMatsubaraGrid& gridB);
     std::tuple<SuscType> calculateLatticeData(const BMatsubaraGrid& gridB, const std::array<KMeshPatch, D>& kpoints);
+    template <typename KPoint> std::vector<ComplexType> getStaticLatticeSusceptibility(const std::vector<std::array<KPoint, D>>& q, const FMatsubaraGrid& fGrid);
     template <typename KPoint> ComplexType getStaticLatticeSusceptibility(const std::array<KPoint, D>& q, const FMatsubaraGrid& fGrid);
     template <typename KPoint> ComplexType getStaticLatticeSusceptibility(const std::array<KPoint, D>& q);
     GLocalType getGLoc();

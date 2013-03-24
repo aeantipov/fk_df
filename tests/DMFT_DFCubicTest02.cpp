@@ -61,7 +61,7 @@ int main()
         Solver.Delta = Delta; 
         }
 
-    DFLadder<2> SC_DF(Solver, gridF, kGrid, gridB, t);
+    DFLadder<2> SC_DF(Solver, gridF, kGrid, t);
     SC_DF._n_GD_iter = 0;
     SC_DF();
 
