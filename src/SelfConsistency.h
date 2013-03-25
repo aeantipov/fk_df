@@ -67,7 +67,7 @@ using BZPoint = typename std::array<KMesh::point,D>;
 /** Stream the BZPoint. */
 template <size_t D>
 std::ostream& operator<<(std::ostream& out, BZPoint<D> in)
-{ out << "["; for (size_t i=0; i<D; ++i) out << RealType(in[i]) << " "; out << "]"; return out; } 
+{for (size_t i=0; i<D; ++i) out << RealType(in[i]) << " "; return out; } 
     
 template <size_t M> 
 struct CubicTraits{ 
@@ -77,10 +77,13 @@ struct CubicTraits{
     template <class IteratorType, typename ...ArgTypes> static void fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
     /** Fills a given container. */
     template <class ContainerType, typename ...ArgTypes> static void fillContainer(ContainerType &in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
+    /** Finds the equivalent point, which is used is calculations. */
+    static std::array<RealType,M> findSymmetricBZPoint(const std::array<RealType,M>& in);
+    static BZPoint<M> findSymmetricBZPoint(const BZPoint<M>& in, const KMesh& kGrid);
     /** Returns a vector of D-dimensional arrays of points on the KMesh, which covers the Brillouin zone */
-    static std::vector<std::array<KMesh::point, M>> getAllBZPoints(const KMesh& in);
+    static std::vector<BZPoint<M>> getAllBZPoints(const KMesh& in);
     /** Returns a vector of a pair of a D-dimensional arrays of points on the KMesh and the amount of points that can be obtained from a symmetry operation in the lattice. */
-    static std::map<std::array<KMesh::point, M>, size_t> getUniqueBZPoints(const KMesh& kGrid);
+    static std::map<BZPoint<M>, std::vector<BZPoint<M>>> getUniqueBZPoints(const KMesh& kGrid);
 };
 
 template <>

@@ -51,51 +51,84 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     RealType T=1.0/beta;
     SC.GLatLoc.savetxt("gloc.dat");
 
-    if (extraops>=1) {
-        std::array<RealType, D> q;
-        q.fill(PI);
-        size_t n_freq = std::max(int(beta*2), 512);
-        auto stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
-        __num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
+    size_t static_flag = extraops%10;
+    size_t dynamic_flag = extraops/10;
+
+    if (static_flag) {
+
+        if (static_flag>=1) {
+            std::array<RealType, D> q;
+            q.fill(PI);
+            size_t n_freq = std::max(int(beta*2), 512);
+            auto stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
+            __num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
+        }
+        if (static_flag>=2) {
+            auto bzpoints_map = CubicTraits<D>::getUniqueBZPoints(SC._kGrid); 
+            std::vector<BZPoint<D>> bzpoints;
+            for (auto map_it = bzpoints_map.begin(); map_it!=bzpoints_map.end(); map_it++){
+                bzpoints.push_back(map_it->first);
+                }
+            size_t n_freq = std::max(int(beta*2), 256);
+            auto stat_susc_bz = SC.getStaticLatticeSusceptibility(bzpoints, FMatsubaraGrid(-n_freq,n_freq,beta));
+            std::map<BZPoint<D>, RealType> susc_map;
+            for (size_t nq=0; nq<stat_susc_bz.size(); ++nq) susc_map[bzpoints[nq]] = std::real(stat_susc_bz[nq]);
+            auto all_bz_points = CubicTraits<D>::getAllBZPoints(SC._kGrid);
+            size_t nqpts = all_bz_points.size();
+            size_t dimsize = SC._kGrid.getSize();
+            std::ofstream out;
+            out.open("StaticChiDFCC.dat");
+            for (size_t nq=0; nq<nqpts; ++nq) {
+                BZPoint<D> current_point = all_bz_points[nq];
+                BZPoint<D> sym_point = CubicTraits<D>::findSymmetricBZPoint(current_point,SC._kGrid);
+                out << all_bz_points[nq] << susc_map[sym_point] << std::endl;
+                if ((nq+1)%dimsize==0) out << std::endl;
+            }
+            //__num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
+            out.close();
+        }
     }
 
-    if (extraops >= 2) {
-        size_t n_b_freq = gridF._w_max/2; // std::max(gridF._w_max/2,int(beta));
-        BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
+    if (dynamic_flag) {
 
-        auto glat = SC.getGLat();
-        auto gloc = SC.GLatLoc;
-        size_t ksize = SC._kGrid.getSize();
-        
-        GF iw_gf(gridF); 
-        iw_gf.fill([](ComplexType w){return w;});
-        GridObject<ComplexType,BMatsubaraGrid> chi_q0(gridB), chi_qPI(gridB);
+        if (dynamic_flag >= 2) {
+            size_t n_b_freq = gridF._w_max/2; // std::max(gridF._w_max/2,int(beta));
+             BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
+
+             auto glat = SC.getGLat();
+             auto gloc = SC.GLatLoc;
+             size_t ksize = SC._kGrid.getSize();
+             
+             GF iw_gf(gridF); 
+             iw_gf.fill([](ComplexType w){return w;});
+             GridObject<ComplexType,BMatsubaraGrid> chi_q0(gridB), chi_qPI(gridB);
 
 
-        KMeshPatch grid0PI(SC._kGrid, {{0, SC._kGrid.getSize()/2}} );
-        std::array<KMeshPatch, D> qgrids = __repeater<KMeshPatch,D>::get_array(grid0PI); 
-        auto data = SC.calculateLatticeData(gridB, qgrids); // Heavy operation
+             KMeshPatch grid0PI(SC._kGrid, {{0, SC._kGrid.getSize()/2}} );
+             std::array<KMeshPatch, D> qgrids = __repeater<KMeshPatch,D>::get_array(grid0PI); 
+             auto data = SC.calculateLatticeData(gridB, qgrids); // Heavy operation
 
-        auto LatticeSusc = std::get<0>(data);
+             auto LatticeSusc = std::get<0>(data);
 
-        std::array<KMesh::point,SCType::NDim> q_0, q_PI;
-        q_0.fill(SC._kGrid[0]);
-        q_PI.fill(SC._kGrid[ksize/2]);
+             std::array<KMesh::point,SCType::NDim> q_0, q_PI;
+             q_0.fill(SC._kGrid[0]);
+             q_PI.fill(SC._kGrid[ksize/2]);
 
-        for (auto iW : gridB.getPoints()) {
-            auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),q_0);
-            auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),q_PI);
-            chi_q0[size_t(iW)] = LatticeSusc(args_0);
-            chi_qPI[size_t(iW)] = LatticeSusc(args_pi);
-            };
+             for (auto iW : gridB.getPoints()) {
+                 auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),q_0);
+                 auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),q_PI);
+                 chi_q0[size_t(iW)] = LatticeSusc(args_0);
+                 chi_qPI[size_t(iW)] = LatticeSusc(args_pi);
+                 };
 
-        chi_q0.savetxt("Chiq0.dat");
-        chi_qPI.savetxt("ChiqPI.dat");
-        auto chi_q0_0 = -T*chi_q0.sum();
-        auto chi_qPI_0 = -T*chi_qPI.sum();
-        INFO("Chi0(q=0) sum  = " << chi_q0_0);
-        INFO("Chi0(q=pi) sum = " << chi_qPI_0);
-    };
+             chi_q0.savetxt("Chiq0.dat");
+             chi_qPI.savetxt("ChiqPI.dat");
+             auto chi_q0_0 = -T*chi_q0.sum();
+             auto chi_qPI_0 = -T*chi_qPI.sum();
+             INFO("Chi0(q=0) sum  = " << chi_q0_0);
+             INFO("Chi0(q=pi) sum = " << chi_qPI_0);
+         };
+     };
 
 }
 

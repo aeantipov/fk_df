@@ -138,7 +138,7 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
         // iterate over all unique kpoints (patch of BZ)
         for (auto pts_it = unique_q_pts.begin(); pts_it != unique_q_pts.end(); pts_it++) { 
             std::array<KMesh::point, D> q = pts_it->first; // point
-            RealType q_weight = RealType(pts_it->second); // it's weight
+            RealType q_weight = RealType(pts_it->second.size()); // it's weight
             INFO_NONEWLINE(nq << "/" << unique_q_pts.size() << ": [");
             for (size_t i=0; i<D; ++i) INFO_NONEWLINE(RealType(q[i]) << " "); INFO("]. Weight : " << q_weight);
 

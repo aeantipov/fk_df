@@ -108,32 +108,55 @@ inline std::vector<BZPoint<M>> CubicTraits<M>::getAllBZPoints(const KMesh& kGrid
 }
 
 template <size_t M>
-inline std::map<std::array<KMesh::point, M>, size_t> CubicTraits<M>::getUniqueBZPoints(const KMesh& kGrid)
+inline std::array<RealType,M> CubicTraits<M>::findSymmetricBZPoint(const std::array<RealType,M>& in)
+{
+    std::array<RealType,M> out;
+    for (size_t i=0; i<M; ++i) {
+            in[i] = std::fmod(in[i],2.0*PI);
+            if (RealType(in[i])>PI) out[i]=2.0*PI-in[i];
+            }
+        // Order x,y,z. Ensures x<=y<=z
+        std::sort(out.begin(), out.end());
+    return out;
+}
+
+template <size_t M>
+inline BZPoint<M> CubicTraits<M>::findSymmetricBZPoint(const BZPoint<M>& in, const KMesh& kGrid)
+{
+    BZPoint<M> out(in);
+    // Flip all pi+x to pi-x
+    for (size_t i=0; i<M; ++i) {
+        if (RealType(in[i])>PI) out[i]=kGrid.findClosest(2.0*PI-RealType(in[i]));
+        }
+    // Order x,y,z. Ensures x<=y<=z
+    std::sort(out.begin(), out.end());
+    return out;
+}
+
+template <size_t M>
+inline std::map<BZPoint<M>, std::vector<BZPoint<M>>> CubicTraits<M>::getUniqueBZPoints(const KMesh& kGrid)
 {
     auto all_pts = getAllBZPoints(kGrid);
     auto totalqpts = all_pts.size();
-    std::map<std::array<KMesh::point, M>, size_t> unique_pts;
+    std::map<std::array<KMesh::point, M>, std::vector<BZPoint<M>>> unique_pts;
     for (size_t nq=0; nq<totalqpts; ++nq) {
         auto q = all_pts[nq];
-      //  INFO_NONEWLINE("Considering: " << nq << "/" << totalqpts << " ");
-      //  printKPoint(q);
-        BZPoint<M> q_unique = q;
-        // Flip all pi+x to pi-x
-        for (size_t i=0; i<M; ++i) {
-            if (RealType(q[i])>PI) q_unique[i]=kGrid.findClosest(2.0*PI-RealType(q_unique[i]));
-            }
-        // Order x,y,z. Ensures x<=y<=z
-        std::sort(q_unique.begin(), q_unique.end());
+//        INFO_NONEWLINE("Considering: " << nq << "/" << totalqpts << " " << q);
+        BZPoint<M> q_unique = findSymmetricBZPoint(q, kGrid);
 
-    //    INFO_NONEWLINE("Got "); printKPoint(q_unique);
-        if (unique_pts.find(q_unique)==unique_pts.end()) 
-            unique_pts[q_unique]=1;
+        if (unique_pts.find(q_unique)==unique_pts.end()) {
+            unique_pts[q_unique]=std::vector<BZPoint<M>>();
+            unique_pts[q_unique].push_back(q_unique);
+            }
         else if (q_unique != q)  
-            unique_pts[q_unique]++;
+            unique_pts[q_unique].push_back(q);
         };
     size_t count = 0;
-    for (auto it = unique_pts.begin(); it!=unique_pts.end(); it++) { /*printKPoint(it->first); DEBUG(" : " << it->second);*/ count+=it->second; };
-    //DEBUG(totalqpts << " == " << count);
+    for (auto it = unique_pts.begin(); it!=unique_pts.end(); it++) { 
+//        DEBUG(it->first << " : " << it->second.size()); 
+        count+=it->second.size(); 
+        };
+//    DEBUG(totalqpts << " == " << count);
     assert(totalqpts == count);
     return unique_pts;
 } 

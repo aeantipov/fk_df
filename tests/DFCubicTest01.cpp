@@ -88,10 +88,16 @@ int main()
        
     std::array<RealType, D> q;
     q.fill(PI);
+/*
     auto ChiPiVal = SC_DF.getStaticLatticeSusceptibility<RealType>(q,FMatsubaraGrid(-512,512,beta));
     INFO(ChiPiVal);
-
     if (!is_equal(ChiPiVal,0.8715,1e-3)) return EXIT_FAILURE;
+*/
+
+    auto ChiPiVal = SC_DF.getStaticLatticeSusceptibility<RealType>(q,FMatsubaraGrid(-32,32,beta));
+    INFO(ChiPiVal);
+    ChiPiVal = SC_DF.getStaticLatticeSusceptibility<RealType>(q,FMatsubaraGrid(-33,33,beta));
+    INFO(ChiPiVal);
 
     return EXIT_SUCCESS;
 }
