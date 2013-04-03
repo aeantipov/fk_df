@@ -99,7 +99,7 @@ inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::operator()()
 }
 
 
-
+// Most important line for compilation.
 template struct CubicDMFTSC<1>;
 template struct CubicDMFTSC<2>;
 template struct CubicDMFTSC<3>;

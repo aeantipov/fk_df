@@ -42,81 +42,44 @@ void sighandler(int signal)
 
 template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& gridF)
 {
-    const auto &Solver = SC._S;
-    auto gw = Solver.gw;
-    auto Sigma = Solver.Sigma;
-    auto w_0 = Solver.w_0;
-    auto w_1 = Solver.w_1;
-    auto K0 = Solver.K0;
-    auto K1 = Solver.K1;
-    auto U = Solver.U;
-    //auto mu = Solver.mu;
-    RealType beta = Solver.beta;
-    RealType T=1.0/beta;
-
     INFO("Calculating additional statistics.");
     INFO("Static susceptibility");
 
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4_2(std::forward_as_tuple(gridF,gridF)); 
-    decltype(Vertex4_2)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getVertex4(0.0, w1,w2);};
-    Vertex4_2.fill(VertexF2);
-    auto V4 = Vertex4_2.getData().getAsMatrix();
-
+    const auto &Solver = SC._S;
     auto Bubbleq0 = SC.getBubble0(0.0);
     auto BubbleqPI = SC.getBubblePI(0.0); 
     std::vector<std::string> names = {"local", "pi", "zero"};
-    std::vector<GF> bubbles = { -T*gw*gw, BubbleqPI, Bubbleq0 };
-    std::map<std::string,ComplexType> chi_cc_vals, chi_ff_vals, chi_cf_vals;
-
-    std::map<std::string,ComplexType> chi_cc_vertex_vals, chi_cc_bare_susc_vals;
-
-    auto Lambda = 1.0 + gw*(2.0*Sigma - U); 
-    auto Lambda2 = (1. + gw*Sigma)*(1.+gw*(Sigma-U));
+    GF gw_interp(gridF);
+    gw_interp.copyInterpolate(Solver.gw);
+    RealType T=1.0/Solver.beta;
+    std::vector<GF> bubbles = { -T*gw_interp*gw_interp, BubbleqPI, Bubbleq0 };
+    
+    auto skeleton_vals = getStaticLatticeDMFTSkeletonSusceptibility(Solver,bubbles,gridF); 
+    auto bs_vals = getStaticLatticeDMFTSusceptibility(Solver,bubbles,gridF);
 
     for (size_t i=0; i<bubbles.size(); ++i) { 
 
-        auto bubble = bubbles[i];
-        auto dual_bubble = bubbles[i]+T*gw*gw;
-        auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
-        auto FullVertex = Diagrams::BS(dual_bubble_matrix, V4, true);
-        ComplexType susc = 0.0;
-        ComplexType bare_susc = 0.0;
-
         /** Skeleton expansion. */
-        auto nu = gw*(-1.0/gw/gw - T/bubble);
-        auto d1 = Lambda*gw*nu + Lambda2;
-        auto ugamma_down = 1.0 - (w_0*w_1*U*U*gw*gw*gw*nu/(Lambda2 * (d1))).sum();
-        auto ugamma = (w_0*w_1*U*U*gw*gw/(d1)).sum() / (ugamma_down); 
-
-        auto chi_cf = ugamma/U;
-        auto chi_ff = w_0*w_1/T/ugamma_down;
-        auto chi_cc = -T*((Lambda - ugamma)*gw*gw/d1).sum();
+        auto chi_cc = skeleton_vals[i][0];
+        auto chi_cf = skeleton_vals[i][1];
+        auto chi_ff = skeleton_vals[i][2];
         
         /** Vertex expansion. */
-        for (auto w1: gridF.getPoints()) { 
-            bare_susc+=bubble(w1);
-            for (auto w2: gridF.getPoints()) {
-                susc+=bubble(w1)*FullVertex(size_t(w1),size_t(w2))*bubble(w2); 
-                }
-            };
-        susc+=bare_susc;
-        chi_cc_vals[names[i]] = chi_cc;
-        chi_cc_vertex_vals[names[i]] = susc;
-        chi_cc_vals[names[i]] = chi_cc;
-        chi_cf_vals[names[i]] = chi_cf;
-        chi_ff_vals[names[i]] = chi_ff;
-        chi_cc_bare_susc_vals[names[i]] = bare_susc;
-        INFO2("Static susc " << names[i] <<" (bs) = " << susc);
-        INFO2("Static susc " << names[i] <<" (exact) = " << chi_cc);
+        auto susc = bs_vals[i];
 
-        __num_format<ComplexType>(susc).savetxt("StaticChiCC_" + names[i] + ".dat");
-        __num_format<ComplexType>(bare_susc).savetxt("StaticChi0CC_" + names[i] + ".dat");
-        __num_format<ComplexType>(chi_cc).savetxt("StaticChiCC_" + names[i] + "_skeleton.dat");
-        __num_format<ComplexType>(chi_cf).savetxt("StaticChiCF_" + names[i] + "_skeleton.dat");
-        __num_format<ComplexType>(chi_ff).savetxt("StaticChiFF_" + names[i] + "_skeleton.dat");
+        INFO2("Static cc susc " << names[i] <<" (bs) = " << susc);
+        INFO2("Static cc susc " << names[i] <<" (exact) = " << chi_cc);
+        INFO2("Static cf susc " << names[i] <<" (exact) = " << chi_cf);
+        INFO2("Static ff susc " << names[i] <<" (exact) = " << chi_ff);
+
+        __num_format<RealType>(susc).savetxt("StaticChiCC_" + names[i] + ".dat");
+        __num_format<RealType>(chi_cc).savetxt("StaticChiCC_" + names[i] + "_skeleton.dat");
+        __num_format<RealType>(chi_cf).savetxt("StaticChiCF_" + names[i] + "_skeleton.dat");
+        __num_format<RealType>(chi_ff).savetxt("StaticChiFF_" + names[i] + "_skeleton.dat");
+        //__num_format<ComplexType>(bare_susc).savetxt("StaticChi0CC_" + names[i] + ".dat");
         };
 
-    if (extra_ops>=2) { 
+/*    if (extra_ops>=2) { 
     INFO("Dynamic susceptibility");
     size_t n_b_freq = std::max(std::min(Solver.w_grid._w_max/2,int(2*beta)),10);
     BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
@@ -160,6 +123,7 @@ template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& g
     chi_q0_dmft_vals.savetxt("DynamicChiq0_DMFT.dat");
     chi_qPI_vals.savetxt("DynamicChiqPI.dat");
     };
+*/
 }
 
 int main(int argc, char *argv[])
