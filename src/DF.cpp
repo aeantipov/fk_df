@@ -196,7 +196,7 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
 
         auto GD_new = _GDmix/(1.0/GD0 - SigmaD) + GD*(1.0-_GDmix); // Dyson eq;
         diffGD = GD_new.diff(GD);
-        if (diffGD<diffGD_min) { diffGD_min = diffGD; diffGD_min_count = 0; }
+        if (diffGD<diffGD_min-_SC_cutoff/10.) { diffGD_min = diffGD; diffGD_min_count = 0; }
         else diffGD_min_count++;
         INFO2("DF diff = " << diffGD);
         if (diffGD_min_count > 7 ) {
