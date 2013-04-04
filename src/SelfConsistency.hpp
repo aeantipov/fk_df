@@ -212,13 +212,11 @@ ComplexType CubicDMFTSC<D>::glat_analytic(std::tuple<MPoint,ArgTypes...> in) con
     return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-dispersion(kpts));
 }
 
+
 template <size_t D>
-template <typename MPoint>
-inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::getBubble0(MPoint in) const
+template <typename MPoint, typename KPoint> 
+inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::getBubble(MPoint in, std::array<KPoint,D> q) const
 {
-    std::array<KMesh::point,D> q;
-    auto q1 = _kGrid.findClosest(0.0);
-    q.fill(q1);
     auto args = std::tuple_cat(std::forward_as_tuple(in),q);
     auto out = Diagrams::getBubble(this->getGLat(_S.w_grid),args);
     auto T = 1.0/_S.beta; auto w_1 = _S.w_1; auto mu = _S.mu; auto U = _S.U;
@@ -228,16 +226,22 @@ inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::getBubble0(MPoint in) con
 
 template <size_t D>
 template <typename MPoint>
+inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::getBubble0(MPoint in) const
+{
+    std::array<KMesh::point,D> q;
+    auto q1 = _kGrid.findClosest(0.0);
+    q.fill(q1);
+    return getBubble(in,q);
+}
+
+template <size_t D>
+template <typename MPoint>
 inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::getBubblePI(MPoint in) const
 {
     std::array<KMesh::point,D> q;
     auto q1 = _kGrid.findClosest(PI);
     q.fill(q1);
-    auto args = std::tuple_cat(std::forward_as_tuple(in),q);
-    auto out = Diagrams::getBubble(this->getGLat(_S.w_grid),args);
-    auto T = 1.0/_S.beta; auto w_1 = _S.w_1; auto mu = _S.mu; auto U = _S.U;
-    out._f = std::bind([T,in,w_1,mu,U](ComplexType w){return -T/(w*(w+ComplexType(in)))*(1.0 - (1.0/w + 1.0/((w+ComplexType(in))))*(mu-w_1*U));},std::placeholders::_1); 
-    return out;
+    return getBubble(in,q);
 }
 
 //

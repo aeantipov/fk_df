@@ -20,7 +20,7 @@ using namespace FK;
 
 RealType beta;
 size_t D=0;
-size_t extra_ops;
+size_t extraops;
  
 typedef GFWrap GF;
 
@@ -40,46 +40,88 @@ void sighandler(int signal)
     if (count >= 3) { INFO("Force exiting"); exit(signal); }
 }
 
-template <class SCType> void calcStats(const SCType& SC, const FMatsubaraGrid& gridF)
+template <class SCType> void getExtraDMFTData(const SCType& SC)
 {
     INFO("Calculating additional statistics.");
     INFO("Static susceptibility");
 
+    size_t static_flag = extraops%10;
+    size_t dynamic_flag = extraops/10;
+
     const auto &Solver = SC._S;
-    auto Bubbleq0 = SC.getBubble0(0.0);
-    auto BubbleqPI = SC.getBubblePI(0.0); 
-    std::vector<std::string> names = {"local", "pi", "zero"};
-    GF gw_interp(gridF);
-    gw_interp.copyInterpolate(Solver.gw);
-    RealType T=1.0/Solver.beta;
-    std::vector<GF> bubbles = { -T*gw_interp*gw_interp, BubbleqPI, Bubbleq0 };
-    
-    auto skeleton_vals = getStaticLatticeDMFTSkeletonSusceptibility(Solver,bubbles,gridF); 
-    auto bs_vals = getStaticLatticeDMFTSusceptibility(Solver,bubbles,gridF);
 
-    for (size_t i=0; i<bubbles.size(); ++i) { 
+    if (static_flag) {
 
-        /** Skeleton expansion. */
-        auto chi_cc = skeleton_vals[i][0];
-        auto chi_cf = skeleton_vals[i][1];
-        auto chi_ff = skeleton_vals[i][2];
-        
-        /** Vertex expansion. */
-        auto susc = bs_vals[i];
+        if (static_flag>=1) {
+            size_t n_freq = std::max(int(beta*2), 512);
+            FMatsubaraGrid gridF(-n_freq, n_freq, beta);
+            auto Bubbleq0 = SC.getBubble0(0.0);
+            auto BubbleqPI = SC.getBubblePI(0.0); 
+            std::vector<std::string> names = {"local", "pi", "zero"};
+            GF gw_interp(gridF);
+            gw_interp.copyInterpolate(Solver.gw);
+            RealType T=1.0/Solver.beta;
+            std::vector<GF> bubbles = { -T*gw_interp*gw_interp, BubbleqPI, Bubbleq0 };
+            
+            INFO("Calculating static susceptibilities");
+            auto skeleton_vals = getStaticLatticeDMFTSkeletonSusceptibility(Solver,bubbles,gridF); 
+            auto bs_vals = getStaticLatticeDMFTSusceptibility(Solver,bubbles,gridF);
 
-        INFO2("Static cc susc " << names[i] <<" (bs) = " << susc);
-        INFO2("Static cc susc " << names[i] <<" (exact) = " << chi_cc);
-        INFO2("Static cf susc " << names[i] <<" (exact) = " << chi_cf);
-        INFO2("Static ff susc " << names[i] <<" (exact) = " << chi_ff);
+            for (size_t i=0; i<bubbles.size(); ++i) { 
 
-        __num_format<RealType>(susc).savetxt("StaticChiCC_" + names[i] + ".dat");
-        __num_format<RealType>(chi_cc).savetxt("StaticChiCC_" + names[i] + "_skeleton.dat");
-        __num_format<RealType>(chi_cf).savetxt("StaticChiCF_" + names[i] + "_skeleton.dat");
-        __num_format<RealType>(chi_ff).savetxt("StaticChiFF_" + names[i] + "_skeleton.dat");
-        //__num_format<ComplexType>(bare_susc).savetxt("StaticChi0CC_" + names[i] + ".dat");
+                /** Skeleton expansion. */
+                auto chi_cc = skeleton_vals[i][0];
+                auto chi_cf = skeleton_vals[i][1];
+                auto chi_ff = skeleton_vals[i][2];
+                
+                /** Vertex expansion. */
+                auto susc = bs_vals[i];
+
+                INFO2("Static cc susc " << names[i] <<" (bs) = " << susc);
+                INFO2("Static cc susc " << names[i] <<" (exact) = " << chi_cc);
+                INFO2("Static cf susc " << names[i] <<" (exact) = " << chi_cf);
+                INFO2("Static ff susc " << names[i] <<" (exact) = " << chi_ff);
+
+                __num_format<RealType>(susc).savetxt("StaticChiCC_" + names[i] + ".dat");
+                __num_format<RealType>(chi_cc).savetxt("StaticChiCC_" + names[i] + "_skeleton.dat");
+                __num_format<RealType>(chi_cf).savetxt("StaticChiCF_" + names[i] + "_skeleton.dat");
+                __num_format<RealType>(chi_ff).savetxt("StaticChiFF_" + names[i] + "_skeleton.dat");
+                //__num_format<ComplexType>(bare_susc).savetxt("StaticChi0CC_" + names[i] + ".dat");
+            };
         };
 
-/*    if (extra_ops>=2) { 
+       if (static_flag>=2) {
+            constexpr size_t D = SCType::NDim;
+            auto bzpoints_map = CubicTraits<D>::getUniqueBZPoints(SC._kGrid); 
+            std::vector<BZPoint<D>> bzpoints;
+            std::vector<GF> bubbles;
+            for (auto map_it = bzpoints_map.begin(); map_it!=bzpoints_map.end(); map_it++){
+                bzpoints.push_back(map_it->first);
+                bubbles.push_back(SC.getBubble(0.0,map_it->first));
+                }
+            size_t n_freq = std::max(int(beta*2), 1024);
+            INFO("Calculating lattice susceptibility for " << bubbles.size() << " BZ points");
+            auto stat_susc_bz = getStaticLatticeDMFTSkeletonSusceptibility(Solver, bubbles, FMatsubaraGrid(-n_freq,n_freq,beta));
+            std::map<BZPoint<D>, RealType> susc_map;
+            for (size_t nq=0; nq<stat_susc_bz.size(); ++nq) susc_map[bzpoints[nq]] = std::real(stat_susc_bz[nq][0]);
+            auto all_bz_points = CubicTraits<D>::getAllBZPoints(SC._kGrid);
+            size_t nqpts = all_bz_points.size();
+            size_t dimsize = SC._kGrid.getSize();
+            std::ofstream out;
+            out.open("StaticChiDMFTCC.dat");
+            for (size_t nq=0; nq<nqpts; ++nq) {
+                BZPoint<D> current_point = all_bz_points[nq];
+                BZPoint<D> sym_point = CubicTraits<D>::findSymmetricBZPoint(current_point,SC._kGrid);
+                out << all_bz_points[nq] << susc_map[sym_point] << std::endl;
+                if ((nq+1)%dimsize==0) out << std::endl;
+            }
+            //__num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
+            out.close();
+        }
+
+    };
+
+/*    if (extraops>=2) { 
     INFO("Dynamic susceptibility");
     size_t n_b_freq = std::max(std::min(Solver.w_grid._w_max/2,int(2*beta)),10);
     BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
@@ -163,7 +205,7 @@ int main(int argc, char *argv[])
     size_t maxit = opt.n_iter;
     RealType mix = opt.mix;
     auto sc_switch = opt.sc_index;
-    extra_ops = opt.extra_ops;
+    extraops = opt.extra_ops;
     size_t kpoints = opt.kpts;
 
     KMesh kgrid(kpoints);
@@ -223,22 +265,22 @@ int main(int argc, char *argv[])
     Delta_large.savetxt("Delta_full.dat");
 
     // Everything important is finished by here
-    if (extra_ops) {
+    if (extraops) {
         switch (sc_switch) {
             case enumSC::DMFTCubic1d: 
-                calcStats(*(static_cast<CubicDMFTSC<1>*> (SC_ptr.get())), gridF); 
+                getExtraDMFTData(*(static_cast<CubicDMFTSC<1>*> (SC_ptr.get()))); 
                 break;
             case enumSC::DMFTCubic2d: 
-                calcStats(*(static_cast<CubicDMFTSC<2>*> (SC_ptr.get())), gridF); 
+                getExtraDMFTData(*(static_cast<CubicDMFTSC<2>*> (SC_ptr.get()))); 
                 break;
             case enumSC::DMFTCubic3d: 
-                calcStats(*(static_cast<CubicDMFTSC<3>*> (SC_ptr.get())), gridF); 
+                getExtraDMFTData(*(static_cast<CubicDMFTSC<3>*> (SC_ptr.get()))); 
                 break;
             case enumSC::DMFTCubic4d: 
-                calcStats(*(static_cast<CubicDMFTSC<4>*> (SC_ptr.get())), gridF); 
+                getExtraDMFTData(*(static_cast<CubicDMFTSC<4>*> (SC_ptr.get()))); 
                 break;
             case enumSC::DMFTCubicInfd: 
-                calcStats(*(static_cast<CubicInfDMFTSC*> (SC_ptr.get())), gridF); 
+   //             getExtraDMFTData(*(static_cast<CubicInfDMFTSC*> (SC_ptr.get())), gridF); 
                 break;
  
             default: break;

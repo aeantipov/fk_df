@@ -58,6 +58,7 @@ public:
     
     template <typename MPoint> GFType getBubble0(MPoint in) const;
     template <typename MPoint> GFType getBubblePI(MPoint in) const;
+    template <typename MPoint, typename KPoint> GFType getBubble(MPoint in, std::array<KPoint,D> q) const;
 };
 
 /** A typedef for a point in the Brillouin zone. */
