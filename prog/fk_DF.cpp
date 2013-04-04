@@ -51,44 +51,40 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     RealType T=1.0/beta;
     SC.GLatLoc.savetxt("gloc.dat");
 
-    size_t static_flag = extraops%10;
-    size_t dynamic_flag = extraops/10;
+    std::bitset<10> flags(extraops);
 
-    if (static_flag) {
+    if (flags[0]) {
+        std::array<RealType, D> q;
+        q.fill(PI);
+        size_t n_freq = std::max(int(beta*2), 512);
+        auto stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
+        __num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
+    };
 
-        if (static_flag>=1) {
-            std::array<RealType, D> q;
-            q.fill(PI);
-            size_t n_freq = std::max(int(beta*2), 512);
-            auto stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
-            __num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
-        }
-        if (static_flag>=2) {
-            auto bzpoints_map = CubicTraits<D>::getUniqueBZPoints(SC._kGrid); 
-            std::vector<BZPoint<D>> bzpoints;
-            for (auto map_it = bzpoints_map.begin(); map_it!=bzpoints_map.end(); map_it++){
-                bzpoints.push_back(map_it->first);
-                }
-            size_t n_freq = std::max(int(beta*2), 256);
-            auto stat_susc_bz = SC.getStaticLatticeSusceptibility(bzpoints, FMatsubaraGrid(-n_freq,n_freq,beta));
-            std::map<BZPoint<D>, RealType> susc_map;
-            for (size_t nq=0; nq<stat_susc_bz.size(); ++nq) susc_map[bzpoints[nq]] = std::real(stat_susc_bz[nq]);
-            auto all_bz_points = CubicTraits<D>::getAllBZPoints(SC._kGrid);
-            size_t nqpts = all_bz_points.size();
-            size_t dimsize = SC._kGrid.getSize();
-            std::ofstream out;
-            out.open("StaticChiDFCC.dat");
-            for (size_t nq=0; nq<nqpts; ++nq) {
-                BZPoint<D> current_point = all_bz_points[nq];
-                BZPoint<D> sym_point = CubicTraits<D>::findSymmetricBZPoint(current_point,SC._kGrid);
-                out << all_bz_points[nq] << susc_map[sym_point] << std::endl;
-                if ((nq+1)%dimsize==0) out << std::endl;
+    if (flags[1]) {
+        auto bzpoints_map = CubicTraits<D>::getUniqueBZPoints(SC._kGrid); 
+        std::vector<BZPoint<D>> bzpoints;
+        for (auto map_it = bzpoints_map.begin(); map_it!=bzpoints_map.end(); map_it++){
+            bzpoints.push_back(map_it->first);
             }
-            //__num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
-            out.close();
+        size_t n_freq = std::max(int(beta*2), 256);
+        auto stat_susc_bz = SC.getStaticLatticeSusceptibility(bzpoints, FMatsubaraGrid(-n_freq,n_freq,beta));
+        std::map<BZPoint<D>, RealType> susc_map;
+        for (size_t nq=0; nq<stat_susc_bz.size(); ++nq) susc_map[bzpoints[nq]] = std::real(stat_susc_bz[nq]);
+        auto all_bz_points = CubicTraits<D>::getAllBZPoints(SC._kGrid);
+        size_t nqpts = all_bz_points.size();
+        size_t dimsize = SC._kGrid.getSize();
+        std::ofstream out;
+        out.open("StaticChiDFCC.dat");
+        for (size_t nq=0; nq<nqpts; ++nq) {
+            BZPoint<D> current_point = all_bz_points[nq];
+            BZPoint<D> sym_point = CubicTraits<D>::findSymmetricBZPoint(current_point,SC._kGrid);
+            out << all_bz_points[nq] << susc_map[sym_point] << std::endl;
+            if ((nq+1)%dimsize==0) out << std::endl;
         }
-    }
-
+        out.close();
+    };
+/*
     if (dynamic_flag) {
 
         if (dynamic_flag >= 2) {
@@ -128,8 +124,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
              INFO("Chi0(q=0) sum  = " << chi_q0_0);
              INFO("Chi0(q=pi) sum = " << chi_qPI_0);
          };
-     };
-
+        */
 }
 
 
