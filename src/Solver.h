@@ -25,6 +25,7 @@ public:
     GFType gw; 
     GFType K0;
     GFType K1;
+    GFType Lambda;
     GFType Sigma;
     RealType w_0;
     RealType w_1;
@@ -55,6 +56,8 @@ public:
         
         };
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubble() const;
+
+    GFType getLambda() const;
 };
 
 } // end of namespace FK

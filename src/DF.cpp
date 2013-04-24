@@ -114,6 +114,8 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
     RealType knorm = RealType(totalqpts);
 
     // Prepare static vertex
+    GLocalType Lambda(_fGrid);
+    Lambda.copyInterpolate(_S.getLambda());
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> StaticVertex4(std::forward_as_tuple(_fGrid,_fGrid)); 
     decltype(StaticVertex4)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getVertex4(0.0, w1,w2);};
     StaticVertex4.fill(VertexF2);
@@ -144,36 +146,29 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
 
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
             GD_shift = GD.shift(Wq_args_static);
-            auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
-            auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
-            decltype(StaticV4) FullStaticV4;
+
             if (_EvaluateStaticDiagrams) {
                 INFO_NONEWLINE("\tStatic contribution...");
-                FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
-            };
-            
-            decltype(StaticVertex4) DualBubbleDynamic(StaticVertex4.getGrids());
-            decltype(StaticVertex4)::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
-                return -T*(GD[size_t(w1)]*GD_shift[size_t(w2)]).sum()/RealType(totalqpts);
-                };
-            decltype(StaticVertex4) DynamicFullVertex4(StaticVertex4.getGrids());
-            if (_EvaluateDynamicDiagrams) { 
-                INFO_NONEWLINE("\tDynamic contribution...");
-                DualBubbleDynamic.fill(dbfill);
-                DynamicFullVertex4 = Diagrams::BS(DualBubbleDynamic, StaticVertex4*(-1.0), true, _eval_BS_SC,(_n_BS_iter>0?_n_BS_iter-1:0),_BSmix);
-                DualBubbleDynamic*=(-1.0)*StaticVertex4*DynamicFullVertex4;
-                addSigma=0.0;
-                for (auto w : _fGrid.getPoints()) { 
-                    for (auto w1 : _fGrid.getPoints()) { 
-                        //addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*(-1.0)*StaticVertex4(w,w1)*DualBubbleDynamic(w,w1)*DynamicFullVertex4(w,w1);
-                        addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*DualBubbleDynamic(w,w1);
-                            }
-                        };
-                INFO2("Sigma dynamic contribution diff = " << addSigma.diff(SigmaD*0));
-                SigmaD+=addSigma/RealType(totalqpts)*q_weight;
-                };
+                auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
+                auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
+                auto m1 = mult*dual_bubble*Lambda*Lambda;
+                ComplexType B=(m1/(1.0+m1)).getData().sum();
+                GLocalType B1=m1*Lambda/(1.0+m1);
+                GLocalType FullVertex11 = mult*Lambda/(1.0+m1)*(Lambda*B - B1)/(1.0-B); // Diagonal part of vertex 
+                typename GKType::PointFunctionType SigmaF;
+                auto SigmaF2 = [&](wkPointTupleType in)->ComplexType { 
+                    FMatsubaraGrid::point w = std::get<0>(in);
+                    auto kpts = __tuple_tail(in); 
+                    auto out_static = (1.0*T)*( FullVertex11(w)*GD_shift(in)); // Here the fact that StaticVertex4(w,w) = 0 is used.
+                    return out_static;
+                    };
+                SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
+                addSigma.fill(SigmaF);
 
-            if (_EvaluateStaticDiagrams) { 
+                /*
+                auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
+                decltype(StaticV4) FullStaticV4;
+                FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
                 typename GKType::PointFunctionType SigmaF;
                 auto SigmaF2 = [&](wkPointTupleType in)->ComplexType { 
                     FMatsubaraGrid::point w = std::get<0>(in);
@@ -182,10 +177,36 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
                     return out_static;
                     };
                 SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
+
                 addSigma.fill(SigmaF);
+                */
                 INFO2("Sigma static contribution diff = " << addSigma.diff(SigmaD*0));
                 SigmaD+=addSigma/RealType(totalqpts)*q_weight;
+
                 };
+
+            
+            if (_EvaluateDynamicDiagrams) { 
+                INFO_NONEWLINE("\tDynamic contribution...");
+                decltype(StaticVertex4) DualBubbleDynamic(StaticVertex4.getGrids());
+                decltype(StaticVertex4)::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
+                    return -T*(GD[size_t(w1)]*GD_shift[size_t(w2)]).sum()/RealType(totalqpts);
+                    };
+                decltype(StaticVertex4) DynamicFullVertex4(StaticVertex4.getGrids());
+                DualBubbleDynamic.fill(dbfill);
+                //DynamicFullVertex4 = Diagrams::BS(DualBubbleDynamic, StaticVertex4*(-1.0), true, _eval_BS_SC,(_n_BS_iter>0?_n_BS_iter-1:0),_BSmix);
+                //DualBubbleDynamic*=(-1.0)*StaticVertex4*DynamicFullVertex4;
+                addSigma=0.0;
+                for (auto w : _fGrid.getPoints()) { 
+                    for (auto w1 : _fGrid.getPoints()) { 
+                        //addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*(-1.0)*StaticVertex4(w,w1)*DualBubbleDynamic(w,w1)*DynamicFullVertex4(w,w1);
+                        addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*(-_S.getVertex4(0.0, w,w1))/(1.0 + _S.getVertex4(0.0, w,w1)*DualBubbleDynamic(w,w1));
+                            }
+                        };
+                INFO2("Sigma dynamic contribution diff = " << addSigma.diff(SigmaD*0));
+                SigmaD+=addSigma/RealType(totalqpts)*q_weight;
+                };
+
             nq++;
             }; // end of q loop
 
