@@ -53,7 +53,7 @@ public:
           kpts(32),
           n_dual_freq(128), 
           NDMFTRuns(1000), 
-          NDFRuns(100), 
+          NDFRuns(1), 
           DFCutoff(1e-8),
           DFNumberOfSelfConsistentIterations(200), 
           DFSCMixing(0.8),
