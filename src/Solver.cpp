@@ -9,7 +9,7 @@ FKImpuritySolver::FKImpuritySolver(RealType U, RealType mu, RealType e_d, GFType
     half_grid(0,std::max(w_grid._w_max*2,int(beta)*10),w_grid._beta),
     beta(w_grid._beta), 
     Delta(Delta), 
-    gw(GFType(w_grid)), K0(GFType(w_grid)), K1(GFType(w_grid)), Sigma(GFType(w_grid))
+    gw(GFType(w_grid)), K0(GFType(w_grid)), K1(GFType(w_grid)), Lambda(GFType(w_grid)), Sigma(GFType(w_grid))
 {
 };
 
@@ -47,11 +47,15 @@ void FKImpuritySolver::run(bool calc_weight)
   */  
     _v_mult = beta*U*U*w_0*w_1;
     INFO("w_0 = " << w_0 << "; w_1 = " << w_1 );
+
     gw = K0*w_0 + K1*w_1;
+    Lambda = K0*K1/gw/gw;
     Sigma = U*U*w_1*w_0/(1.0/K0-w_0*U) + w_1*U; 
+
     Sigma._f = std::bind([=](ComplexType w){return w_1*U + w_0*w_1*U*U/w + w_0*w_1*U*U*(mu-w_0*U)/std::abs(w*w);}, std::placeholders::_1);
     //gw._f = std::bind([=](ComplexType w){return (mu-w_1*U-real(Delta._f(w)))/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
     gw._f = std::bind([=](ComplexType w){return (mu-w_1*U)/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
+    Lambda._f = std::bind([=](ComplexType w){return 1.0 - U*(w_1*w_1 - w_0*w_0)/w;}, std::placeholders::_1);
     //DEBUG("Sigma = " << Sigma);
 }
 
@@ -66,6 +70,11 @@ GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> FKImpuritySolver::getBubbl
     out.fill(f);
     out._f = [&](ComplexType w1, ComplexType w2){return -T*gw._f(w1)*gw._f(w2);};
     return out;
+}
+
+typename FKImpuritySolver::GFType FKImpuritySolver::getLambda() const
+{
+    return Lambda;
 }
 
 } // end of namespace FK
