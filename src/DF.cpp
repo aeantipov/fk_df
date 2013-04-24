@@ -194,8 +194,8 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
                     };
                 decltype(StaticVertex4) DynamicFullVertex4(StaticVertex4.getGrids());
                 DualBubbleDynamic.fill(dbfill);
-                DynamicFullVertex4 = Diagrams::BS(DualBubbleDynamic, StaticVertex4*(-1.0), true, _eval_BS_SC,(_n_BS_iter>0?_n_BS_iter-1:0),_BSmix);
-                DualBubbleDynamic*=(-1.0)*StaticVertex4*DynamicFullVertex4;
+                //DynamicFullVertex4 = Diagrams::BS(DualBubbleDynamic, StaticVertex4*(-1.0), true, _eval_BS_SC,(_n_BS_iter>0?_n_BS_iter-1:0),_BSmix);
+                //DualBubbleDynamic*=(-1.0)*StaticVertex4*DynamicFullVertex4;
                 addSigma=0.0;
                 for (auto w : _fGrid.getPoints()) { 
                     for (auto w1 : _fGrid.getPoints()) { 
