@@ -56,8 +56,26 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     if (flags[0]) {
         std::array<RealType, D> q;
         q.fill(PI);
-        size_t n_freq = std::max(int(beta*2), 512);
-        auto stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
+        size_t n_freq;
+        ComplexType stat_susc_pi;
+        switch(D)
+        {
+            case 1: 
+                n_freq = std::max(int(beta*2), 1024); 
+                stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
+                break;
+            case 2: 
+                n_freq = std::max(int(beta*2), 512); 
+                stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
+                break;
+            case 3: 
+                n_freq = 256; 
+                stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
+                break;
+            case 4: 
+                stat_susc_pi = SC.getStaticLatticeSusceptibility(q, Solver.w_grid);
+                break;
+        };
         __num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
     };
 
@@ -141,6 +159,7 @@ int main(int argc, char *argv[])
         INFO("Hi! Doing Falicov-Kimball. ");
         std::cout << "FK. Parameters " << std::endl;
         std::cout << "beta                 : " << opt.beta << std::endl;
+        std::cout << "T                    : " << 1.0/opt.beta << std::endl;
         std::cout << "U                    : " << opt.U    << std::endl;
         std::cout << "t                    : " << opt.t    << std::endl;
         std::cout << "mu                   : " << opt.mu   << std::endl;

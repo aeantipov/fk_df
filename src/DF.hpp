@@ -27,9 +27,17 @@ std::vector<ComplexType> DFLadder<D>::getStaticLatticeSusceptibility(const std::
 
     // Prepate interpolated Green's functions
     GKType GD0_interp (grids), GD_interp(grids), GLat_interp(grids);
-    GD0_interp.copyInterpolate(GD0);
-    GD_interp.copyInterpolate(GD);
-    GLat_interp.copyInterpolate(GLat);
+    if (gridF._w_max != _fGrid._w_max || gridF._w_min != _fGrid._w_min) {
+        GD0_interp.copyInterpolate(GD0);
+        GD_interp.copyInterpolate(GD);
+        GLat_interp.copyInterpolate(GLat);
+        }
+    else { 
+        GD0_interp = GD0;
+        GD_interp = GD;
+        GLat_interp=GLat;
+        };
+        
     GLocalType Lambda(gridF);
     Lambda.copyInterpolate(_S.getLambda());
     GKType Lwk = this->getGLatDMFT(gridF)/GD0_interp*(-1.0);
