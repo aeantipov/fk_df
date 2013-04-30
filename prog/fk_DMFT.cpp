@@ -46,21 +46,22 @@ template <class SCType> void getExtraDMFTData(const SCType& SC)
     std::bitset<10> flags(extraops);
 
     const auto &Solver = SC._S;
+    RealType T=1.0/Solver.beta;
+    RealType U = Solver.U;
 
     if (flags[0]) {
         INFO("\nCalculating static cc, cf, ff susceptibilities at q=0, q=pi and r=0");
         size_t n_freq = std::max(int(beta*2), 512);
         FMatsubaraGrid gridF(-n_freq, n_freq, beta);
+        GF gw_interp(gridF);
+        gw_interp.copyInterpolate(Solver.gw);
         auto Bubbleq0 = SC.getBubble0(0.0);
         auto BubbleqPI = SC.getBubblePI(0.0); 
         std::vector<std::string> names = {"local", "pi", "zero"};
-        GF gw_interp(gridF);
-        gw_interp.copyInterpolate(Solver.gw);
-        RealType T=1.0/Solver.beta;
         std::vector<GF> bubbles = { -T*gw_interp*gw_interp, BubbleqPI, Bubbleq0 };
         
         auto skeleton_vals = getStaticLatticeDMFTSkeletonSusceptibility(Solver,bubbles,gridF); 
-        auto bs_vals = getStaticLatticeDMFTSusceptibility(Solver,bubbles,gridF);
+        //auto bs_vals = getStaticLatticeDMFTSusceptibility(Solver,bubbles,gridF);
 
         for (size_t i=0; i<bubbles.size(); ++i) { 
 
@@ -70,14 +71,15 @@ template <class SCType> void getExtraDMFTData(const SCType& SC)
             auto chi_ff = skeleton_vals[i][2];
             
             /** Vertex expansion. */
-            auto susc = bs_vals[i];
+            //auto susc = bs_vals[i];
 
-            INFO2("Static cc susc " << names[i] <<" (bs) = " << susc);
+            //INFO2("Static cc susc " << names[i] <<" (bs) = " << susc);
             INFO2("Static cc susc " << names[i] <<" (exact) = " << chi_cc);
             INFO2("Static cf susc " << names[i] <<" (exact) = " << chi_cf);
             INFO2("Static ff susc " << names[i] <<" (exact) = " << chi_ff);
 
-            __num_format<RealType>(susc).savetxt("StaticChiCC_" + names[i] + ".dat");
+            //__num_format<RealType>(susc).savetxt("StaticChiCC_" + names[i] + ".dat");
+            __num_format<RealType>(chi_cc).savetxt("StaticChiCC_" + names[i] + ".dat");
             __num_format<RealType>(chi_cc).savetxt("StaticChiCC_" + names[i] + "_skeleton.dat");
             __num_format<RealType>(chi_cf).savetxt("StaticChiCF_" + names[i] + "_skeleton.dat");
             __num_format<RealType>(chi_ff).savetxt("StaticChiFF_" + names[i] + "_skeleton.dat");
@@ -116,6 +118,20 @@ template <class SCType> void getExtraDMFTData(const SCType& SC)
         //__num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
         out.close();
     };
+
+    if (flags[2]) {
+        INFO2("Calculating B(q=pi)");
+        auto BubbleqPI = SC.getBubblePI(0.0); 
+        auto dual_bubble_pi = BubbleqPI + T*Solver.gw*Solver.gw;
+        auto Bw1 = beta*Solver.w_0*Solver.w_1*U*U*Solver.getLambda()*Solver.getLambda()*dual_bubble_pi;
+        auto Bw = Bw1/(1.0+Bw1);
+        dual_bubble_pi.savetxt("DualBubbleCC_pi.dat");
+        Bw1.savetxt("BwNominator_pi.dat");
+        Bw.savetxt("Bw_pi.dat");
+        ComplexType B = Bw.sum();
+        INFO("B(pi) = " << B);
+        __num_format<ComplexType>(B).savetxt("B_pi.dat");
+    }
 
 /*    if (extraops>=2) { 
     INFO("Dynamic susceptibility");

@@ -102,6 +102,23 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         }
         out.close();
     };
+
+    if (flags[2]) {
+        INFO2("Calculating B(q=pi)");
+        std::array<RealType, D> q;
+        q.fill(PI);
+        auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
+        auto dual_bubble_pi = Diagrams::getBubble(SC.GD, Wq_args_static);
+        auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble_pi;
+        auto Bw = Bw1/(1.0+Bw1);
+        ComplexType B = Bw.sum();
+        dual_bubble_pi.savetxt("DualBubbleCC_pi.dat");
+        Bw1.savetxt("BwNominator_pi.dat");
+        Bw.savetxt("Bw_pi.dat");
+        INFO("B(pi) = " << B);
+        __num_format<ComplexType>(B).savetxt("B_pi.dat");
+    }
+
 /*
     if (dynamic_flag) {
 
