@@ -69,8 +69,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
                 stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
                 break;
             case 3: 
-                n_freq = 256; 
-                stat_susc_pi = SC.getStaticLatticeSusceptibility(q, FMatsubaraGrid(-n_freq,n_freq,beta));
+                stat_susc_pi = SC.getStaticLatticeSusceptibility(q, Solver.w_grid);
                 break;
             case 4: 
                 stat_susc_pi = SC.getStaticLatticeSusceptibility(q, Solver.w_grid);
