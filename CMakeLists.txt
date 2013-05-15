@@ -57,7 +57,7 @@ include_directories(
 #    ${HDF5_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${GFTOOLS_INCLUDE_DIRS}
-    ${FFTW_INCLUDE_DIRS}
+    ${FFTW_INCLUDE_DIR}
     ./jsoncpp/include
     ./src
 )
