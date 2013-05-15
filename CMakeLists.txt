@@ -43,10 +43,12 @@ include(UseDoxygen)
 #find_package (HDF5 COMPONENTS CXX)
 find_package (Eigen3 3.1)
 find_package (GFTools)
+find_package (fftw)
 
 #message(STATUS "Boost includes: " ${Boost_INCLUDE_DIRS} )
 message(STATUS "Eigen3 includes: " ${EIGEN3_INCLUDE_DIR} )
 message(STATUS "GFTools includes: " ${GFTOOLS_INCLUDE_DIR} )
+message(STATUS "FFTW includes: " ${FFTW_INCLUDE_DIR} )
 #message(STATUS "Boost libs: " ${Boost_LIBRARIES} )
 #message(STATUS "HDF5 libs: " ${HDF5_LIBRARIES} )
 
@@ -55,6 +57,7 @@ include_directories(
 #    ${HDF5_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${GFTOOLS_INCLUDE_DIRS}
+    ${FFTW_INCLUDE_DIRS}
     ./jsoncpp/include
     ./src
 )
