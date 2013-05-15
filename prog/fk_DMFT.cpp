@@ -15,11 +15,12 @@
 #include <unordered_map>
 #include <csignal>
 
+#include <fftw3.h>
+
 using namespace GFTools;
 using namespace FK;
 
 RealType beta;
-size_t D=0;
 size_t extraops;
  
 typedef GFWrap GF;
@@ -40,6 +41,27 @@ void sighandler(int signal)
     if (count >= 3) { INFO("Force exiting"); exit(signal); }
 }
 
+template <typename ValueType, size_t D, typename std::enable_if<D==2, bool>::type=0> 
+Container<D,ValueType> run_fft (const Container<D,ValueType> &in)
+{
+    MatrixType<ComplexType> kdata = in.getAsMatrix();
+    MatrixType<ComplexType> out(kdata);
+    fftw_plan p;
+    p = fftw_plan_dft_2d(kdata.rows(), kdata.cols(), reinterpret_cast<fftw_complex*>(kdata.data()), reinterpret_cast<fftw_complex*>(out.data()), FFTW_BACKWARD, FFTW_ESTIMATE); 
+    fftw_execute(p);
+    out/=(kdata.rows()*kdata.cols());
+    return Container<2,ValueType>(out);
+}
+
+template <typename ValueType, size_t D, typename std::enable_if<D!=2, bool>::type=0> 
+Container<D,ValueType> run_fft (const Container<D,ValueType> &in)
+{
+    ERROR("No FFT defined for D="<<D);
+    return in; 
+}
+
+
+
 template <class SCType> void getExtraDMFTData(const SCType& SC)
 {
     INFO("\nCalculating extra statistics");
@@ -48,6 +70,7 @@ template <class SCType> void getExtraDMFTData(const SCType& SC)
     const auto &Solver = SC._S;
     RealType T=1.0/Solver.beta;
     RealType U = Solver.U;
+    constexpr size_t D = SCType::NDim;
 
     if (flags[0]) {
         INFO("\nCalculating static cc, cf, ff susceptibilities at q=0, q=pi and r=0");
@@ -89,7 +112,6 @@ template <class SCType> void getExtraDMFTData(const SCType& SC)
 
        if (flags[1]) {
         INFO("\nCalculating static cc susceptibility(q)");
-        constexpr size_t D = SCType::NDim;
         auto bzpoints_map = CubicTraits<D>::getUniqueBZPoints(SC._kGrid); 
         std::vector<BZPoint<D>> bzpoints;
         std::vector<GF> bubbles;
@@ -132,6 +154,43 @@ template <class SCType> void getExtraDMFTData(const SCType& SC)
         INFO("B(pi) = " << B);
         __num_format<ComplexType>(B).savetxt("B_pi.dat");
     }
+
+    if (flags[3]) {
+        INFO2("Saving G(w,k=pi)");
+        GF glat_pi(Solver.w_grid);
+        auto glat = SC.getGLat(Solver.w_grid); 
+        std::array<RealType, D> q;
+        q.fill(PI);
+        typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat(std::tuple_cat(std::make_tuple(w),q));};
+        glat_pi.fill(f);
+        glat_pi.savetxt("glat_pi.dat");
+    }
+
+    if (flags[4] && D==2) {
+        INFO2("Saving Green's functions - doing FFT");
+        auto glat_k = SC.getGLat(Solver.w_grid); 
+        typedef typename ArgBackGenerator<D,RealGrid,GridObject,ComplexType,FMatsubaraGrid>::type glat_r_type;
+        auto grid_r = RealGrid(0,SC._kGrid.getSize(),SC._kGrid.getSize(),false);
+        glat_r_type glat_r(std::tuple_cat(std::forward_as_tuple(Solver.w_grid),__repeater<RealGrid,D>::get_tuple(grid_r)));
+        for (auto w : Solver.w_grid.getPoints()) { 
+            glat_r[size_t(w)] = run_fft(glat_k[size_t(w)]);
+            }
+
+        size_t distance = 4;
+        GF glat_rp(Solver.w_grid);
+        for (size_t i=0; i<distance; ++i) {
+            std::array<typename decltype(grid_r)::point, D> r_p; r_p.fill(grid_r[0]); r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
+            typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat_r(std::tuple_cat(std::make_tuple(w),r_p));};
+            glat_rp.fill(f);
+            std::stringstream fname_stream;
+            fname_stream << "glat_r"; 
+            for (auto rr : r_p) fname_stream << size_t(rr);
+            fname_stream << ".dat";
+            std::string fname; fname_stream >> fname;
+            glat_rp.savetxt(fname);
+            };
+    }
+
 
 /*    if (extraops>=2) { 
     INFO("Dynamic susceptibility");
@@ -237,6 +296,7 @@ int main(int argc, char *argv[])
     std::unique_ptr<SelfConsistency> SC_ptr;
 
     typedef FKOptionParserDMFT::SC enumSC;
+    size_t D=0;
     switch (sc_switch) {
         case enumSC::Bethe:       SC_ptr.reset(new BetheSC(Solver, t)); break;
         case enumSC::DMFTCubic1d: SC_ptr.reset(new CubicDMFTSC<1>(Solver, t, kgrid)); D=1; break;
