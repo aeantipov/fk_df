@@ -10,6 +10,7 @@ using namespace GFTools;
 
 class GFWrap : public GridObject<ComplexType, FMatsubaraGrid>
 {
+    using GridObject<ComplexType, FMatsubaraGrid>::_data;
     GFWrap& copyAndInterpolate(const GFWrap &in);
 public:
     typedef FMatsubaraGrid::point point;

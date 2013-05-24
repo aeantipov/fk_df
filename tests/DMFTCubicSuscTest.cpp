@@ -95,9 +95,9 @@ int main()
     GF glat_cut0(gridF_half);
     GF glat_cutPI(gridF_half);
     GF glat_cut4(gridF_half);
-    glat_cut0.fill([&](ComplexType w){return glat(w,0.0,0.0);});
-    glat_cutPI.fill([&](ComplexType w){return glat(w,PI,PI);});
-    glat_cut4.fill([&](ComplexType w){return glat(w,PI/4,PI/4);});
+    glat_cut0.fill(typename GF::FunctionType([&](ComplexType w){return glat(w,0.0,0.0);}));
+    glat_cutPI.fill(typename GF::FunctionType([&](ComplexType w){return glat(w,PI,PI);}));
+    glat_cut4.fill(typename GF::FunctionType([&](ComplexType w){return glat(w,PI/4,PI/4);}));
     glat_cut0.savetxt("GlatK0,0.dat");
     glat_cutPI.savetxt("GlatKpi,pi.dat");
     glat_cut4.savetxt("GlatKpi|4,pi|4.dat");
@@ -117,7 +117,7 @@ int main()
     GridObject<RealType,BMatsubaraGrid> chi0_q0_vals(gridB), chi0_q0_dmft_vals(gridB), chi0_qPI_vals(gridB), chi0_qPI_dmft_vals(gridB);
     GridObject<RealType,BMatsubaraGrid> chi_q0_vals(gridB), chi_qPI_vals(gridB), chi_q0_dmft_vals(gridB), chi_qPI_dmft_vals(gridB);
     GF iw_gf(gridF); 
-    iw_gf.fill([](ComplexType w){return w;});
+    iw_gf.fill(typename GF::FunctionType([](ComplexType w){return w;}));
     decltype(chi0_q0_dmft_vals)::PointFunctionType chi0_q0_vals_f = [&](BMatsubaraGrid::point in)->RealType { 
             auto g_shift = Solver.gw.shift(in);
             auto sigma_shift = Solver.Sigma.shift(in);

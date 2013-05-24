@@ -19,8 +19,7 @@ inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const
     static_assert(GKType::N==sizeof...(ArgTypes), "Argument size mismatch");
     const auto _fGrid = std::get<0>(GF.getGrids()); 
     GLocalType out(_fGrid);
-    static GKType GF_shifted(GF.getGrids());
-    GF_shifted = GF.shift(args);
+    GKType GF_shifted = GF.shift(args);
     GF_shifted*=GF;
 
     RealType knorm = 1;

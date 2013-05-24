@@ -146,6 +146,8 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
 
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
             GD_shift = GD.shift(Wq_args_static);
+            //DEBUG(GD);
+            //DEBUG(GD_shift);
 
             if (_EvaluateStaticDiagrams) {
                 INFO_NONEWLINE("\tStatic contribution...");
@@ -194,13 +196,20 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
                     };
                 decltype(StaticVertex4) DynamicFullVertex4(StaticVertex4.getGrids());
                 DualBubbleDynamic.fill(dbfill);
+                //DEBUG(DualBubbleDynamic);
                 DynamicFullVertex4 = Diagrams::BS(DualBubbleDynamic, StaticVertex4*(-1.0), true, _eval_BS_SC,(_n_BS_iter>0?_n_BS_iter-1:0),_BSmix);
+                //DEBUG(DualBubbleDynamic);
                 DualBubbleDynamic*=(-1.0)*StaticVertex4*DynamicFullVertex4;
+                //DEBUG(DualBubbleDynamic);
                 addSigma=0.0;
                 for (auto w : _fGrid.getPoints()) { 
                     for (auto w1 : _fGrid.getPoints()) { 
                         //addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*(-1.0)*StaticVertex4(w,w1)*DualBubbleDynamic(w,w1)*DynamicFullVertex4(w,w1);
                         addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*DualBubbleDynamic(w,w1);
+                        //DEBUG(GD_shift[size_t(w1)]);
+                        //DEBUG(DualBubbleDynamic(w,w1));
+                        //DEBUG(T*GD_shift[size_t(w1)]*DualBubbleDynamic(w,w1));
+                        //DEBUG(addSigma[size_t(w)]);
                         //addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*(-_S.getVertex4(0.0, w,w1))/(1.0 + _S.getVertex4(0.0, w,w1)*DualBubbleDynamic(w,w1));
                             }
                         };

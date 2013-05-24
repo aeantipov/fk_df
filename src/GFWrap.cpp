@@ -13,11 +13,10 @@ GFWrap::GFWrap(const std::tuple<FMatsubaraGrid> & in):GridObject<ComplexType, FM
 {
 }
 
-GFWrap::GFWrap(GFWrap&& rhs):GridObject<ComplexType,FMatsubaraGrid>(rhs._grids)
+GFWrap::GFWrap(GFWrap&& rhs):GridObject<ComplexType,FMatsubaraGrid>(rhs)//, (this->_data)(rhs._data)
 {
-    _data.swap(rhs._data);
-    _dims.swap(rhs._dims);
-    _f.swap(rhs._f);
+    //_dims.swap(rhs._dims);
+    //_f.swap(rhs._f);
 }
 
 GFWrap::GFWrap(const GFWrap& in):GridObject<ComplexType,FMatsubaraGrid>(in)
@@ -72,7 +71,7 @@ ComplexType GFWrap::operator()(const ComplexType &in) const
 ComplexType GFWrap::operator()(const typename FMatsubaraGrid::point &in) const
 { 
     if (size_t(in) < std::get<0>(_grids).getSize() && std::abs(ComplexType(in) - ComplexType(std::get<0>(_grids)[size_t(in)]))<std::numeric_limits<RealType>::epsilon())
-        return (*_data)[in._index]; 
+        return _data[in._index]; 
     else return (*this)(in._val);
 };
 
@@ -117,7 +116,7 @@ GFWrap& GFWrap::operator=(const GFWrap& in)
 {
     assert(std::get<0>(_grids)._beta == std::get<0>(in._grids)._beta);
     if (std::get<0>(_grids).getPoints() == std::get<0>(in._grids).getPoints()) { 
-        (*_data) = *(in._data);
+        _data = in._data;
         _f = in._f;
         return (*this);
         }
@@ -127,7 +126,7 @@ GFWrap& GFWrap::operator=(const GFWrap& in)
 GFWrap& GFWrap::operator=(GFWrap&& in)
 {
     if (std::get<0>(_grids).getPoints() == std::get<0>(in._grids).getPoints()) {
-        _data.swap(in._data);
+        _data = (in._data);
         _f.swap(in._f);
         return (*this);
         }

@@ -41,8 +41,8 @@ void sighandler(int signal)
     if (count >= 3) { INFO("Force exiting"); exit(signal); }
 }
 
-template <typename ValueType, size_t D, typename std::enable_if<D==2, bool>::type=0> 
-Container<D,ValueType> run_fft (const Container<D,ValueType> &in)
+template <typename ValueType, size_t D, typename BC, typename std::enable_if<D==2, bool>::type=0> 
+Container<ValueType,D> run_fft (const ContainerBase<ValueType,D,BC> &in)
 {
     MatrixType<ComplexType> kdata = in.getAsMatrix();
     MatrixType<ComplexType> out(kdata);
@@ -50,11 +50,11 @@ Container<D,ValueType> run_fft (const Container<D,ValueType> &in)
     p = fftw_plan_dft_2d(kdata.rows(), kdata.cols(), reinterpret_cast<fftw_complex*>(kdata.data()), reinterpret_cast<fftw_complex*>(out.data()), FFTW_BACKWARD, FFTW_ESTIMATE); 
     fftw_execute(p);
     out/=(kdata.rows()*kdata.cols());
-    return Container<2,ValueType>(out);
+    return Container<ValueType,2>(out);
 }
 
-template <typename ValueType, size_t D, typename std::enable_if<D!=2, bool>::type=0> 
-Container<D,ValueType> run_fft (const Container<D,ValueType> &in)
+template <typename ValueType, size_t D, typename BC, typename std::enable_if<D!=2, bool>::type=0> 
+Container<ValueType,D> run_fft (const ContainerBase<ValueType,D,BC> &in)
 {
     ERROR("No FFT defined for D="<<D);
     return in; 

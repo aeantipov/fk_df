@@ -36,7 +36,7 @@ int main()
     FMatsubaraGrid gridF(-n_freq, n_freq, beta);
     BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
     GF iwn(gridF);
-    iwn.fill([](ComplexType w){return w;});
+    iwn.fill(typename GF::FunctionType([](ComplexType w){return w;}));
     GF Delta(gridF);
     std::function<ComplexType(ComplexType)> f1;
     f1 = [t](ComplexType w) -> ComplexType {return t*2.0*t/w;};

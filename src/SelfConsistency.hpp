@@ -15,7 +15,7 @@ inline typename SelfConsistency::GFType SelfConsistency::getBubblePI(MPoint in) 
          gw_shift = _S.gw.shift(in);
          Sigma_shift = _S.Sigma.shift(in);
         };
-    GFType iwn(this->_S.w_grid); iwn.fill([](ComplexType w){return w;});
+    GFType iwn(this->_S.w_grid); iwn.fill(typename GFType::FunctionType([](ComplexType w){return w;}));
     out = -T*(_S.gw+gw_shift)/(2*iwn+ComplexType(in)+2.0*_S.mu-_S.Sigma-Sigma_shift);
     return out;
 }
@@ -52,7 +52,7 @@ inline void CubicTraits<M>::fillContainer(ContainerType &in, RealType t, const K
     assert(grid.getSize() == in.getSize());
     size_t ksize = grid.getSize();
     for (size_t kx = 0; kx<ksize; ++kx) { 
-        CubicTraits<M-1>::fillContainer(in[kx], t, grid, otherpos..., grid[kx]);
+        CubicTraits<M-1>::template fillContainer<decltype(in[kx]), ArgTypes..., decltype(grid[kx])>(in[kx], t, grid, otherpos..., grid[kx]);
         }
 }
 
@@ -254,7 +254,7 @@ inline typename CubicInfDMFTSC::GFType CubicInfDMFTSC::getBubble0(MPoint in) con
 {
     auto T = 1.0/_S.w_grid._beta;
     GFType iwn(_S.w_grid);
-    iwn.fill([](ComplexType w){return w;});
+    iwn.fill(typename GFType::FunctionType([](ComplexType w){return w;}));
     return 2.0*T/_t/_t*(1.0-(iwn+_S.mu-_S.Sigma)*_S.gw);
 } 
 

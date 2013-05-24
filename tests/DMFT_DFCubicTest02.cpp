@@ -98,7 +98,7 @@ int main()
     GridObject<ComplexType,BMatsubaraGrid> chiDF1_qPI(gridB);
 
     GF iw_gf(gridF); 
-    iw_gf.fill([](ComplexType w){return w;});
+    iw_gf.fill(typename GF::FunctionType([](ComplexType w){return w;}));
     
     decltype(chiDMFT0_q0_2)::PointFunctionType chiDMFT0_q0_f = [&](BMatsubaraGrid::point in)->RealType { 
             auto g_shift = Solver.gw.shift(in);

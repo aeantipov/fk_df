@@ -52,7 +52,7 @@ std::vector<ComplexType> DFLadder<D>::getStaticLatticeSusceptibility(const std::
     for (auto q : qpts) {
 
         ComplexType susc=0.0;
-        INFO_NONEWLINE("Evaluation static susceptibility for q=["); for (int i=0; i<D; ++i) INFO_NONEWLINE(RealType(q[i])<<" "); INFO("]");
+        INFO_NONEWLINE("Evaluation of static susceptibility for q=["); for (int i=0; i<D; ++i) INFO_NONEWLINE(RealType(q[i])<<" "); INFO("]");
         auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
         auto GD_shift = GD_interp.shift(Wq_args_static);
         auto LatticeBubble = Diagrams::getBubble(GLat_interp, Wq_args_static);

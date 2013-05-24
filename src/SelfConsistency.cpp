@@ -12,7 +12,7 @@ GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> SelfConsistency::getBubble
 {
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> out(std::forward_as_tuple(this->_S.w_grid, this->_S.w_grid));
     RealType T = 1.0/_S.w_grid._beta;
-    GFType iwn(this->_S.w_grid); iwn.fill([](ComplexType w){return w;});
+    GFType iwn(this->_S.w_grid); iwn.fill(typename GFType::FunctionType([](ComplexType w){return w;}));
     decltype(out)::PointFunctionType f = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) { 
         return -T*(_S.gw(w1)+_S.gw(w2))/(ComplexType(w1)+ComplexType(w2)+2.0*_S.mu-_S.Sigma(w1)-_S.Sigma(w2));
     };
@@ -48,9 +48,10 @@ inline CubicDMFTSC<D>::CubicDMFTSC ( const FKImpuritySolver &S, RealType t, KMes
     _gloc(this->_S.w_grid)
 {
     //CubicTraits<D>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kGrid);
-    CubicTraits<D>::template fillContainer<Container<D,ComplexType>>(_ek.getData(), _t, _kGrid);
+    //CubicTraits<D>::template fillContainer<Container<ComplexType,D>>(_ek.getData(), _t, _kGrid);
     //CubicTraits<D>::template fillContainer<EkStorage>(_ek, _t, _kGrid);
     _ek._f = CubicTraits<D>::template get_dispersion<typename EkStorage::FunctionType> (t); 
+    _ek.fill(_ek._f);
 }
 
 template <size_t D>
