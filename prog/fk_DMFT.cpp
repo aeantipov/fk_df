@@ -22,45 +22,11 @@ using namespace FK;
 
 RealType beta;
 size_t extraops;
+bool INTERRUPT = false;
  
 typedef GFWrap GF;
 
-template <typename F1, typename F2>
-bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
-{
-    return (std::abs(x-y)<tolerance);
-}
-
-bool INTERRUPT = false;
-void sighandler(int signal)
-{
-    static size_t count = 0;
-    count++;
-    INFO("Caught INTERRUPT, signal " << signal <<" " << count << " times. ")
-    INTERRUPT = true;
-    if (count >= 3) { INFO("Force exiting"); exit(signal); }
-}
-
-template <typename ValueType, size_t D, typename BC, typename std::enable_if<D==2, bool>::type=0> 
-Container<ValueType,D> run_fft (const ContainerBase<ValueType,D,BC> &in)
-{
-    MatrixType<ComplexType> kdata = in.getAsMatrix();
-    MatrixType<ComplexType> out(kdata);
-    fftw_plan p;
-    p = fftw_plan_dft_2d(kdata.rows(), kdata.cols(), reinterpret_cast<fftw_complex*>(kdata.data()), reinterpret_cast<fftw_complex*>(out.data()), FFTW_BACKWARD, FFTW_ESTIMATE); 
-    fftw_execute(p);
-    out/=(kdata.rows()*kdata.cols());
-    return Container<ValueType,2>(out);
-}
-
-template <typename ValueType, size_t D, typename BC, typename std::enable_if<D!=2, bool>::type=0> 
-Container<ValueType,D> run_fft (const ContainerBase<ValueType,D,BC> &in)
-{
-    ERROR("No FFT defined for D="<<D);
-    return in; 
-}
-
-
+#include "statistics.hpp"
 
 template <class SCType> void getExtraDMFTData(const SCType& SC)
 {
@@ -106,7 +72,7 @@ template <class SCType> void getExtraDMFTData(const SCType& SC)
             __num_format<RealType>(chi_cc).savetxt("StaticChiCC_" + names[i] + "_skeleton.dat");
             __num_format<RealType>(chi_cf).savetxt("StaticChiCF_" + names[i] + "_skeleton.dat");
             __num_format<RealType>(chi_ff).savetxt("StaticChiFF_" + names[i] + "_skeleton.dat");
-            //__num_format<ComplexType>(bare_susc).savetxt("StaticChi0CC_" + names[i] + ".dat");
+            //__num_format<ComplexType>(bubbles[i].).savetxt("StaticChi0CC_" + names[i] + ".dat");
         };
     };
 
@@ -190,6 +156,24 @@ template <class SCType> void getExtraDMFTData(const SCType& SC)
             glat_rp.savetxt(fname);
             };
     }
+
+    if (flags[5] && D==2) {
+        INFO2("Saving G(w,k)");
+        auto glat = SC.getGLat(Solver.w_grid); 
+        GF glat_k(Solver.w_grid);
+        auto all_bz_points = CubicTraits<D>::getAllBZPoints(SC._kGrid);
+        size_t nqpts = all_bz_points.size();
+        for (size_t nq=0; nq<nqpts; ++nq) {
+            BZPoint<D> q = all_bz_points[nq];
+            typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat(std::tuple_cat(std::make_tuple(w),q));};
+            glat_k.fill(f);
+            std::stringstream s1;
+            s1 << "glat_k" << RealType(std::get<0>(q)) << "_" << RealType(std::get<1>(q)) << ".dat";
+            std::string s; s1>>s;
+            glat_k.savetxt(s);
+        }
+    };
+
 
 
 /*    if (extraops>=2) { 
