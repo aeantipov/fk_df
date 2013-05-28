@@ -151,7 +151,7 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
             for (auto q_pt : other_pts) { // Sum over different G(w,k+q) to obey symmetry
                 INFO_NONEWLINE("+");
                 auto Wq_args1 = std::tuple_cat(std::make_tuple(0.0),q_pt);
-                GD_sum += GD_shift(Wq_args1);
+                GD_sum += GD.shift(Wq_args1);
                 };
             INFO("");
 
