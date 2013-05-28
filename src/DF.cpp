@@ -134,18 +134,27 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
     size_t diffGD_min_count = 0; // A counter to estimate, how many iterations have passed after the minimal achieved diff
     for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > _SC_cutoff; ++nd_iter) { 
         INFO("DF iteration " << nd_iter << ". Evaluating BS equation.");
-        GKType addSigma(this->SigmaD.getGrids()), GD_shift(this->GD.getGrids());
+        GKType addSigma(this->SigmaD.getGrids()), GD_shift(this->GD.getGrids()), GD_sum(GD.getGrids());
 
         size_t nq = 1;
         // iterate over all unique kpoints (patch of BZ)
         for (auto pts_it = unique_q_pts.begin(); pts_it != unique_q_pts.end(); pts_it++) { 
             std::array<KMesh::point, D> q = pts_it->first; // point
             RealType q_weight = RealType(pts_it->second.size()); // it's weight
+            auto other_pts = pts_it -> second; // other points, equivalent by symmetry
             INFO_NONEWLINE(nq << "/" << unique_q_pts.size() << ": [");
-            for (size_t i=0; i<D; ++i) INFO_NONEWLINE(RealType(q[i]) << " "); INFO("]. Weight : " << q_weight);
+            for (size_t i=0; i<D; ++i) INFO_NONEWLINE(RealType(q[i]) << " "); INFO_NONEWLINE("]. Weight : " << q_weight << ". ");
 
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
             GD_shift = GD.shift(Wq_args_static);
+            GD_sum = 0.0;
+            for (auto q_pt : other_pts) { // Sum over different G(w,k+q) to obey symmetry
+                INFO_NONEWLINE("+");
+                auto Wq_args1 = std::tuple_cat(std::make_tuple(0.0),q_pt);
+                GD_sum += GD_shift(Wq_args1);
+                };
+            INFO("");
+
             //DEBUG(GD);
             //DEBUG(GD_shift);
 
@@ -161,11 +170,14 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
                 auto SigmaF2 = [&](wkPointTupleType in)->ComplexType { 
                     FMatsubaraGrid::point w = std::get<0>(in);
                     auto kpts = __tuple_tail(in); 
-                    auto out_static = (1.0*T)*( FullVertex11(w)*GD_shift(in)); // Here the fact that StaticVertex4(w,w) = 0 is used.
+                    auto out_static = (1.0*T)*( FullVertex11(w)*GD_sum(in)); // Here the fact that StaticVertex4(w,w) = 0 is used.
                     return out_static;
                     };
                 SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
                 addSigma.fill(SigmaF);
+                INFO2("Sigma static contribution diff = " << addSigma.diff(SigmaD*0)/q_weight);
+                SigmaD+=addSigma/RealType(totalqpts);
+
 
                 /*
                 auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
@@ -182,8 +194,6 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
 
                 addSigma.fill(SigmaF);
                 */
-                INFO2("Sigma static contribution diff = " << addSigma.diff(SigmaD*0));
-                SigmaD+=addSigma/RealType(totalqpts)*q_weight;
 
                 };
 
@@ -205,7 +215,7 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
                 for (auto w : _fGrid.getPoints()) { 
                     for (auto w1 : _fGrid.getPoints()) { 
                         //addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*(-1.0)*StaticVertex4(w,w1)*DualBubbleDynamic(w,w1)*DynamicFullVertex4(w,w1);
-                        addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*DualBubbleDynamic(w,w1);
+                        addSigma[size_t(w)] += T*GD_sum[size_t(w1)]*DualBubbleDynamic(w,w1);
                         //DEBUG(GD_shift[size_t(w1)]);
                         //DEBUG(DualBubbleDynamic(w,w1));
                         //DEBUG(T*GD_shift[size_t(w1)]*DualBubbleDynamic(w,w1));
@@ -213,8 +223,8 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
                         //addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*(-_S.getVertex4(0.0, w,w1))/(1.0 + _S.getVertex4(0.0, w,w1)*DualBubbleDynamic(w,w1));
                             }
                         };
-                INFO2("Sigma dynamic contribution diff = " << addSigma.diff(SigmaD*0));
-                SigmaD+=addSigma/RealType(totalqpts)*q_weight;
+                INFO2("Sigma dynamic contribution diff = " << addSigma.diff(SigmaD*0)/q_weight);
+                SigmaD+=addSigma/RealType(totalqpts);
                 };
 
             nq++;
