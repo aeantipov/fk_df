@@ -258,7 +258,8 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
 
         if (diffGD<= _SC_cutoff && _GDmix < 1.0) {
         ERROR("\n\tRestoring back DF mix");
-        _GDmix=std::min(1.0,_GDmix*1.25);
+        _SC_cutoff = diffGD;
+        _GDmix=std::min(1.0,_GDmix*1.1);
         diffGD_min_count = 0;
         diffGD_min = diffGD*1.5;
         diffGD=1.0;
