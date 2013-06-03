@@ -243,6 +243,8 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
         if (diffGD_min_count > 7 ) {
             ERROR("\n\tCaught loop cycle. Reducing DF mixing to " << _GDmix/2 << " .\n");
             _GDmix=std::max(_GDmix/2., 0.05);
+            GD_new = GD0;
+            SigmaD = 0.0;
             diffGD_min = diffGD;
             diffGD_min_count = 0;
             }
@@ -253,6 +255,14 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
         GD=GD_new;
         GD._f = GD0._f; // assume DMFT asymptotics are good 
         SigmaD = 0.0;
+
+        if (diffGD<= _SC_cutoff && _GDmix < 1.0) {
+        ERROR("\n\tRestoring back DF mix");
+        _GDmix=std::min(1.0,_GDmix*1.25);
+        diffGD_min_count = 0;
+        diffGD_min = diffGD*1.5;
+        diffGD=1.0;
+        }
 
        INFO2("GD sum = " << std::abs(GD.sum())/RealType(_fGrid.getSize())/knorm);
     };
