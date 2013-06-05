@@ -27,7 +27,7 @@ struct DFBase
 };
 
 template <size_t D>
-struct DFLadder : CubicDMFTSC<D>, DFBase {
+struct DFLadderCubic : CubicDMFTSC<D>, DFBase {
 
     using CubicDMFTSC<D>::NDim;
     using typename CubicDMFTSC<D>::EkStorage;
@@ -50,8 +50,8 @@ struct DFLadder : CubicDMFTSC<D>, DFBase {
 private:
     void _initialize();
 public:
-    DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t);
-    template <typename ...KP> GLocalType getBubble(const typename DFLadder<D>::GKType& GF, BMatsubaraGrid::point W, KP...kpoints) const;
+    DFLadderCubic(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t);
+    template <typename ...KP> GLocalType getBubble(const typename DFLadderCubic<D>::GKType& GF, BMatsubaraGrid::point W, KP...kpoints) const;
     GLocalType getBubble(const GKType& GF, const WQTupleType& in) const;
     GKType getGLatDMFT(const FMatsubaraGrid& gridF) const ;
     GKType getGLat() const ;

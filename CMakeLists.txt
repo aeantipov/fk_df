@@ -45,6 +45,18 @@ find_package (Eigen3 3.1)
 find_package (GFTools)
 find_package (fftw)
 
+# RPATH settings (see http://www.cmake.org/Wiki/CMake_RPATH_handling) 
+
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES
+    "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+IF("${isSystemDir}" STREQUAL "-1")
+    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+ENDIF("${isSystemDir}" STREQUAL "-1")
+
 message(STATUS "Boost includes: " ${Boost_INCLUDE_DIRS} )
 message(STATUS "Eigen3 includes: " ${EIGEN3_INCLUDE_DIR} )
 message(STATUS "GFTools includes: " ${GFTOOLS_INCLUDE_DIR} )

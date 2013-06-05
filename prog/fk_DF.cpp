@@ -9,22 +9,22 @@
 
 #ifdef LATTICE_cubic1d
     typedef FK::CubicDMFTSC<1> dmft_sc_type;
-    typedef FK::DFLadder<1> df_sc_type;
+    typedef FK::DFLadderCubic<1> df_sc_type;
     static constexpr size_t D=1;
     #define _calc_extra_stats
 #elif LATTICE_cubic2d
     typedef FK::CubicDMFTSC<2> dmft_sc_type;
-    typedef FK::DFLadder<2> df_sc_type;
+    typedef FK::DFLadderCubic<2> df_sc_type;
     static constexpr size_t D=2;
     #define _calc_extra_stats
 #elif LATTICE_cubic3d
     typedef FK::CubicDMFTSC<3> dmft_sc_type;
-    typedef FK::DFLadder<3> df_sc_type;
+    typedef FK::DFLadderCubic<3> df_sc_type;
     static constexpr size_t D=3;
     #define _calc_extra_stats
 #elif LATTICE_cubic4d
     typedef FK::CubicDMFTSC<4> dmft_sc_type;
-    typedef FK::DFLadder<4> df_sc_type;
+    typedef FK::DFLadderCubic<4> df_sc_type;
     static constexpr size_t D=4;
     #define _calc_extra_stats
 #endif
