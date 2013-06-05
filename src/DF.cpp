@@ -256,14 +256,14 @@ typename DFLadder<D>::GLocalType DFLadder<D>::operator()()
         GD._f = GD0._f; // assume DMFT asymptotics are good 
         SigmaD = 0.0;
 
-        if (diffGD<= _SC_cutoff && _GDmix < 1.0) {
+        /*if (diffGD<= _SC_cutoff && _GDmix < 1.0) {
         ERROR("\n\tRestoring back DF mix");
         _SC_cutoff = diffGD;
         _GDmix=std::min(1.0,_GDmix*1.1);
         diffGD_min_count = 0;
         diffGD_min = diffGD*1.5;
         diffGD=1.0;
-        }
+        }*/
 
        INFO2("GD sum = " << std::abs(GD.sum())/RealType(_fGrid.getSize())/knorm);
     };
