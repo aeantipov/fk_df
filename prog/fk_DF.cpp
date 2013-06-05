@@ -267,6 +267,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
 
     if (flags[1]) {
         
+        auto glat = SC.getGLat(); 
         auto bzpoints_map = CubicTraits<D>::getUniqueBZPoints(SC._kGrid); 
         std::vector<BZPoint<D>> bzpoints;
         for (auto map_it = bzpoints_map.begin(); map_it!=bzpoints_map.end(); map_it++){
@@ -279,15 +280,18 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         auto all_bz_points = CubicTraits<D>::getAllBZPoints(SC._kGrid);
         size_t nqpts = all_bz_points.size();
         size_t dimsize = SC._kGrid.getSize();
-        std::ofstream out, out2;
+        std::ofstream out, out2, out3;
         out.open("StaticChiDFCC.dat");
         out2.open("StaticChi0DFCC.dat");
+        out3.open("StaticDualBubbleCC.dat");
         for (size_t nq=0; nq<nqpts; ++nq) {
             BZPoint<D> current_point = all_bz_points[nq];
             BZPoint<D> sym_point = CubicTraits<D>::findSymmetricBZPoint(current_point,SC._kGrid);
             out << all_bz_points[nq] << susc_map[sym_point] << std::endl;
-            out2 << all_bz_points[nq] << susc_map[sym_point] << std::endl;
-            if ((nq+1)%dimsize==0) out << std::endl;
+            out2 << all_bz_points[nq] << std::real(Diagrams::getBubble(glat, std::tuple_cat(std::make_tuple(0.0), sym_point)).sum()) << std::endl;
+            RealType dual_bubble = std::real(Diagrams::getBubble(SC.GD, std::tuple_cat(std::make_tuple(0.0), sym_point)).sum());
+            out3 << all_bz_points[nq] << dual_bubble << std::endl;
+            if ((nq+1)%dimsize==0) { out << std::endl; out2 << std::endl; out3 << std::endl; }
         }
 
         /*std::vector<BZPoint<D>> bzpoints = CubicTraits<D>::getAllBZPoints(SC._kGrid);
