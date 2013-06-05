@@ -8,7 +8,6 @@
  */
 class FKOptionParserDF : public optparse {
 public:
-    enum class SC : size_t { DFCubic1d, DFCubic2d, DFCubic3d, DFCubic4d, Fail };
 	FK::RealType beta ;
 	FK::RealType U    ;
 	FK::RealType t    ;
@@ -33,8 +32,6 @@ public:
     bool DFEvaluateStaticDiagrams;
     bool DFEvaluateDynamicDiagrams;
     FK::RealType DFBSMixing;
-	std::string sc_type;
-    SC sc_index;
     size_t extraops;
 	std::string help;
 
@@ -63,8 +60,6 @@ public:
           DFEvaluateStaticDiagrams(true),
           DFEvaluateDynamicDiagrams(true),
           DFBSMixing(1.0),
-          sc_type(""), 
-          sc_index(SC::Fail), 
           extraops(0),
           help("") 
           {}
@@ -175,15 +170,6 @@ public:
             DFEvaluateDynamicDiagrams = std::atoi(arg);
             used_args = 1;
 
-
-        ON_OPTION(SHORTOPT('s') || LONGOPT("sc"))
-            sc_type = arg;
-            if (sc_type == "dfcubic1d") sc_index = SC::DFCubic1d;
-            else if (sc_type == "dfcubic2d") sc_index = SC::DFCubic2d;
-            else if (sc_type == "dfcubic3d") sc_index = SC::DFCubic3d;
-            else if (sc_type == "dfcubic4d") sc_index = SC::DFCubic4d;
-            used_args = 1;
-
         ON_OPTION(SHORTOPT('h') || LONGOPT("help"))
             std::cout << "Usage: fk_DF [options]" << std::endl;
             std::cout << "Options: " << std::endl;
@@ -192,8 +178,6 @@ public:
             std::cout << "-U     --U           : The value of U. Default: " << U << std::endl;
             std::cout << "-t     --t           : The value of t. Default: " << t << std::endl;
             std::cout << "--ed                 : The value of e_d. Default: " << e_d << std::endl;
-            std::cout << "--sc                 : The type of self-consistency. Default: " << sc_type << std::endl;
-            std::cout << "Possible values: dfcubic1d; dfcubic2d; dfcubic3d; dfcubic4d " << sc_type << std::endl;
             std::cout << "-m     --matsubaras  : Amount of Matsubara frequencies. Default: " << n_freq<< std::endl;
             std::cout << "--ndfreq             : Amount of bosonic Matsubara frequencies for DF calc. Default: " << n_dual_freq<< std::endl;
             std::cout << "--ndmftiter          : Total amount of DMFT iterations. Default: " << NDMFTRuns<< std::endl;

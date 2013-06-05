@@ -8,7 +8,6 @@
  */
 class FKOptionParserDMFT : public optparse {
 public:
-    enum class SC : size_t { Bethe, DMFTCubic1d, DMFTCubic2d, DMFTCubic3d, DMFTCubic4d, DMFTCubicInfd };
 	FK::RealType beta ;
 	FK::RealType U    ;
 	FK::RealType t    ;
@@ -21,8 +20,6 @@ public:
 	size_t n_freq;
 	size_t kpts;
 	size_t n_iter;
-	std::string sc_type;
-    SC sc_index;
     size_t extra_ops;
 	std::string help;
 
@@ -39,8 +36,6 @@ public:
           n_freq(1024), 
           kpts(32),
           n_iter(1000), 
-          sc_type(""), 
-          sc_index(), 
           extra_ops(0),
           help("") 
           {}
@@ -105,16 +100,6 @@ public:
 			used_args = 1;	// Notify the parser of a consumption of argument.
 			// no need of the notification: used_args variable will be set to 1.
 
-        ON_OPTION_WITH_ARG(SHORTOPT('s') || LONGOPT("sc"))
-            sc_type = arg;
-            if (sc_type == "bethe") sc_index = SC::Bethe;
-            else if (sc_type == "dmftcubic1d") sc_index = SC::DMFTCubic1d;
-            else if (sc_type == "dmftcubic2d") sc_index = SC::DMFTCubic2d;
-            else if (sc_type == "dmftcubic3d") sc_index = SC::DMFTCubic3d;
-            else if (sc_type == "dmftcubic4d") sc_index = SC::DMFTCubic4d;
-            else if (sc_type == "dmftcubicinfd") sc_index = SC::DMFTCubicInfd;
-            used_args = 1;
-
         ON_OPTION(SHORTOPT('h') || LONGOPT("help"))
             std::cout << "Usage: fk_DF [options]" << std::endl;
             std::cout << "Options: " << std::endl;
@@ -123,8 +108,6 @@ public:
             std::cout << "--mu                 : The value of mu. Default: " << U << std::endl;
             std::cout << "-t     --t           : The value of t. Default: " << t << std::endl;
             std::cout << "--ed                 : The value of e_d. Default: " << e_d << std::endl;
-            std::cout << "--sc                 : The type of self-consistency. Default: " << sc_type << std::endl;
-            std::cout << "Possible values: bethe; dmftcubic1d; dmftcubic2d; dmftcubic3d; dmftcubic4d; dmftcubicinfd" << sc_type << std::endl;
             std::cout << "-m     --matsubaras  : Amount of Matsubara frequencies. Default: " << n_freq<< std::endl;
             std::cout << "-n     --niter       : Amount of iterations. Default: " << n_iter<< std::endl;
             std::cout << "--extraopt           : Generate additional statistics" << std::endl;

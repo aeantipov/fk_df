@@ -63,7 +63,12 @@ include_directories(
 )
 
 add_subdirectory(src)
-add_subdirectory(prog)
+option(Execs "Enable executables" ON)
+if (Execs)
+    set (dmft_lattices ${DMFT_LATTICES} CACHE STRING "Lattices for DMFT calculation" FORCE)
+    set (df_lattices ${DF_LATTICES} CACHE STRING "Lattices for DF calculation" FORCE)
+    add_subdirectory(prog)
+endif (Execs)
 
 option(Testing "Enable testing" OFF)
 if (Testing)

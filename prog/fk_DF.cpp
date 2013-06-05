@@ -7,6 +7,28 @@
 #include "Solver.h"
 #include "DF.h"
 
+#ifdef LATTICE_cubic1d
+    typedef FK::CubicDMFTSC<1> dmft_sc_type;
+    typedef FK::DFLadder<1> df_sc_type;
+    static constexpr size_t D=1;
+    #define _calc_extra_stats
+#elif LATTICE_cubic2d
+    typedef FK::CubicDMFTSC<2> dmft_sc_type;
+    typedef FK::DFLadder<2> df_sc_type;
+    static constexpr size_t D=2;
+    #define _calc_extra_stats
+#elif LATTICE_cubic3d
+    typedef FK::CubicDMFTSC<3> dmft_sc_type;
+    typedef FK::DFLadder<3> df_sc_type;
+    static constexpr size_t D=3;
+    #define _calc_extra_stats
+#elif LATTICE_cubic4d
+    typedef FK::CubicDMFTSC<4> dmft_sc_type;
+    typedef FK::DFLadder<4> df_sc_type;
+    static constexpr size_t D=4;
+    #define _calc_extra_stats
+#endif
+
 #include "FKOptionParserDF.h"
 
 #include <iostream>
@@ -22,7 +44,6 @@ using namespace FK;
 //extern template GridObject<ComplexType,FMatsubaraGrid>;
 
 RealType beta;
-size_t D = 0;
 size_t extraops=0;
 bool INTERRUPT = false;
 
@@ -30,6 +51,184 @@ typedef GFWrap GF;
 
 #include "statistics.hpp"
 
+#ifdef _calc_extra_stats
+template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& gridF);
+#endif
+
+
+int main(int argc, char *argv[])
+{
+  // Catch CTRL-C
+  std::signal(SIGABRT, &sighandler);
+  std::signal(SIGTERM, &sighandler);
+  std::signal(SIGINT , &sighandler);
+
+  FKOptionParserDF opt;
+   try {
+        opt.parse(&argv[1], argc-1); // Skip argv[0].
+        INFO("Hi! Doing Falicov-Kimball. ");
+        std::cout << "FK. Parameters " << std::endl;
+        std::cout << "beta                 : " << opt.beta << std::endl;
+        std::cout << "T                    : " << 1.0/opt.beta << std::endl;
+        std::cout << "U                    : " << opt.U    << std::endl;
+        std::cout << "t                    : " << opt.t    << std::endl;
+        std::cout << "mu                   : " << opt.mu   << std::endl;
+        std::cout << "e_d                  : " << opt.e_d << std::endl;
+        std::cout << "Number Of Matsubaras : " << opt.n_freq << std::endl;
+        std::cout << "Max number of DMFT iterations : " << opt.NDMFTRuns << std::endl;
+        std::cout << "Max number of DF   iterations : " << opt.NDFRuns << std::endl;
+        INFO("Extra options flag: " << opt.extraops);
+    } catch (const optparse::unrecognized_option& e) {
+        std::cout << "unrecognized option: " << e.what() << std::endl;
+        return 1;
+    } catch (const optparse::invalid_value& e) {
+        std::cout << "invalid value: " << e.what() << std::endl;
+        return 1;
+    }
+    
+    RealType U = opt.U;
+    RealType mu = opt.mu;
+    RealType e_d = opt.e_d;
+    beta = opt.beta;
+    RealType t = opt.t; 
+    size_t n_freq = opt.n_freq;
+    size_t ksize = opt.kpts;
+    //size_t n_dual_freq = opt.n_dual_freq;
+    RealType mix = opt.mix;
+    extraops = opt.extraops;
+    size_t NDMFTRuns = opt.NDMFTRuns;
+    size_t NDFRuns = opt.NDFRuns;
+    RealType DFCutoff = opt.DFCutoff;
+
+    KMesh kGrid(ksize);
+
+    FMatsubaraGrid gridF(-n_freq, n_freq, beta);
+    FMatsubaraGrid gridF_half(0, 2*n_freq, beta);
+    int __msize = std::max(n_freq*5,size_t(1024));
+    FMatsubaraGrid gridF_large(-__msize, __msize, beta);
+
+    GF Delta(gridF);
+    std::function<ComplexType(ComplexType)> f1, f2;
+    f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
+
+    try { GF Delta2("Delta_full.dat", beta); Delta = Delta2;} 
+    catch (std::exception &e) { Delta.fill(f1); };
+    Delta.savetxt("Delta_0.dat");
+    
+    FKImpuritySolver Solver(U,mu,e_d,Delta);
+    
+    KMeshPatch qGrid(kGrid);
+
+    dmft_sc_type SC_DMFT(Solver, t, kGrid);
+    df_sc_type SC_DF(Solver, gridF, kGrid, t);
+
+    SC_DF._n_GD_iter = opt.DFNumberOfSelfConsistentIterations;
+    SC_DF._GDmix = opt.DFSCMixing;
+    SC_DF._SC_cutoff = opt.DFSCCutoff;
+    SC_DF._eval_BS_SC = opt.DFEvaluateBSSelfConsistent;
+    SC_DF._n_BS_iter = opt.DFNumberOfBSIterations;
+    SC_DF._BSmix = opt.DFBSMixing;
+    SC_DF._EvaluateStaticDiagrams = opt.DFEvaluateStaticDiagrams;
+    SC_DF._EvaluateDynamicDiagrams = opt.DFEvaluateDynamicDiagrams;
+
+    bool update_weights = opt.update_weights;
+    bool read_weights = opt.read_weights;
+    Solver.w_0 = opt.w_0;
+    Solver.w_1 = opt.w_1;
+
+    if (read_weights) {
+        try {
+                __num_format<RealType> wf(0.0); 
+                wf.loadtxt("w_0.dat");
+                Solver.w_0 = wf;
+                wf.loadtxt("w_1.dat");
+                Solver.w_1 = wf;
+                if (std::abs(Solver.w_0 + Solver.w_1 - 1.0)<std::numeric_limits<RealType>::epsilon()) throw(1);
+            }
+        catch (...)
+            {
+                INFO("Couldn't load weights from file.");
+            }
+        };
+
+    RealType diff=1.0, diff_min = 1.0;
+    size_t diff_min_count = 0;
+    std::ofstream diff_stream("diff.dat",std::ios::out);
+    diff_stream.close();
+    bool calc_DMFT = (NDMFTRuns>0);
+
+    size_t i_dmft = 0; 
+    size_t i_df = 0;
+
+    for (; i_dmft<=NDMFTRuns-calc_DMFT && i_df<=NDFRuns && diff>1e-8+(1-calc_DMFT)*(DFCutoff-1e-8) &&!INTERRUPT; (calc_DMFT)?i_dmft++:i_df++) {
+        INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
+
+        update_weights = update_weights && diff/mix>1e-3 && calc_DMFT;
+        Solver.run(update_weights);
+
+        if (calc_DMFT) {  
+            Delta = SC_DMFT();
+            }
+        else { 
+            Delta = SC_DF();
+            std::stringstream tmp;
+            tmp << "GwDF" << i_df << ".dat";
+            Solver.gw.savetxt(tmp.str());
+            tmp.str( std::string() ); tmp.clear();
+            tmp << "DeltaDF" << i_df << ".dat";
+            Delta.savetxt(tmp.str());
+            tmp.str( std::string() ); tmp.clear();
+            tmp << "glocDF" << i_df << ".dat";
+            SC_DF.getGLoc().savetxt(tmp.str());
+             }
+        auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
+        diff = Delta_new.diff(Solver.Delta);
+        INFO("diff = " << diff);
+
+        if (diff<diff_min) { diff_min = diff; diff_min_count = 0; }
+            else diff_min_count++;
+        if (diff_min_count > 5 ) {
+            ERROR("\n\tCaught loop cycle. Reducing main loop mixing to " << mix/2. << " .\n");
+            mix=std::max(mix/2., 0.01);
+            diff_min_count = 0;
+            diff_min = diff;
+            };
+        if (!calc_DMFT) {
+            diff_stream.open("diff.dat",std::ios::app);
+            diff_stream << diff << "  " << mix << std::endl;
+            diff_stream.close();
+        };
+        
+        Solver.Delta = Delta_new;
+        if (diff<=1e-8 && calc_DMFT) { 
+            GF Delta_large(gridF_large); Delta_large = Solver.Delta;
+            Delta_large.savetxt("DeltaDMFT.dat");
+            Solver.Sigma.savetxt("SigmaDMFT.dat"); 
+            Solver.gw.savetxt("GwDMFT.dat");
+            __num_format<RealType>(Solver.w_0).savetxt("w_0DMFT.dat");
+            __num_format<RealType>(Solver.w_1).savetxt("w_1DMFT.dat");
+            diff = 1.0; calc_DMFT = false; }; // now continue with DF 
+        }
+   
+    GF Delta_half(gridF_half); Delta_half = Delta;
+    GF gw_half(gridF_half); gw_half = Solver.gw;
+    GF sigma_half(gridF_half); sigma_half = Solver.Sigma;
+    sigma_half.savetxt("Sigma.dat");
+    gw_half.savetxt("Gw.dat");
+    Delta_half.savetxt("Delta.dat");
+    GF Delta_large(gridF_large); Delta_large = Delta;
+    Delta_large.savetxt("Delta_full.dat");
+    __num_format<RealType>(Solver.w_0).savetxt("w_0.dat");
+    __num_format<RealType>(Solver.w_1).savetxt("w_1.dat");
+
+    #ifdef _calc_extra_stats
+    getExtraData(SC_DF,gridF);
+    #endif
+}
+
+
+
+#ifdef _calc_extra_stats
 template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& gridF)
 {
     constexpr size_t D = SCType::NDim;
@@ -220,223 +419,5 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
          };
         */
 }
-
-
-int main(int argc, char *argv[])
-{
-  // Catch CTRL-C
-  std::signal(SIGABRT, &sighandler);
-  std::signal(SIGTERM, &sighandler);
-  std::signal(SIGINT , &sighandler);
-
-  FKOptionParserDF opt;
-   try {
-        opt.parse(&argv[1], argc-1); // Skip argv[0].
-        INFO("Hi! Doing Falicov-Kimball. ");
-        std::cout << "FK. Parameters " << std::endl;
-        std::cout << "beta                 : " << opt.beta << std::endl;
-        std::cout << "T                    : " << 1.0/opt.beta << std::endl;
-        std::cout << "U                    : " << opt.U    << std::endl;
-        std::cout << "t                    : " << opt.t    << std::endl;
-        std::cout << "mu                   : " << opt.mu   << std::endl;
-        std::cout << "e_d                  : " << opt.e_d << std::endl;
-        std::cout << "Selfconsistency      : " << opt.sc_type << std::endl;
-        std::cout << "Number Of Matsubaras : " << opt.n_freq << std::endl;
-        std::cout << "Max number of DMFT iterations : " << opt.NDMFTRuns << std::endl;
-        std::cout << "Max number of DF   iterations : " << opt.NDFRuns << std::endl;
-        INFO("Extra options flag: " << opt.extraops);
-    } catch (const optparse::unrecognized_option& e) {
-        std::cout << "unrecognized option: " << e.what() << std::endl;
-        return 1;
-    } catch (const optparse::invalid_value& e) {
-        std::cout << "invalid value: " << e.what() << std::endl;
-        return 1;
-    }
-    
-    RealType U = opt.U;
-    RealType mu = opt.mu;
-    RealType e_d = opt.e_d;
-    beta = opt.beta;
-    RealType t = opt.t; 
-    size_t n_freq = opt.n_freq;
-    size_t ksize = opt.kpts;
-    size_t n_dual_freq = opt.n_dual_freq;
-    RealType mix = opt.mix;
-    auto sc_switch = opt.sc_index;
-    extraops = opt.extraops;
-    size_t NDMFTRuns = opt.NDMFTRuns;
-    size_t NDFRuns = opt.NDFRuns;
-    RealType DFCutoff = opt.DFCutoff;
-
-    KMesh kGrid(ksize);
-
-    FMatsubaraGrid gridF(-n_freq, n_freq, beta);
-    FMatsubaraGrid gridF_half(0, 2*n_freq, beta);
-    int __msize = std::max(n_freq*5,size_t(1024));
-    FMatsubaraGrid gridF_large(-__msize, __msize, beta);
-
-    GF Delta(gridF);
-    std::function<ComplexType(ComplexType)> f1, f2;
-    f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
-
-    try { GF Delta2("Delta_full.dat", beta); Delta = Delta2;} 
-    catch (std::exception &e) { Delta.fill(f1); };
-    Delta.savetxt("Delta_0.dat");
-    
-    FKImpuritySolver Solver(U,mu,e_d,Delta);
-    
-    std::unique_ptr<SelfConsistency> SC_DF_ptr, SC_DMFT_ptr;
-    std::unique_ptr<DFBase> DF_ptr;
-    typedef FKOptionParserDF::SC enumSC;
-    KMeshPatch qGrid(kGrid);
-    switch (sc_switch) {
-        case enumSC::DFCubic1d: 
-            SC_DMFT_ptr.reset(new CubicDMFTSC<1>(Solver, t, kGrid));
-            SC_DF_ptr.reset(new DFLadder<1>(Solver, gridF, kGrid, t)); 
-            DF_ptr.reset(static_cast<DFLadder<1>*> (SC_DF_ptr.get()));
-            D=1; break;
-        case enumSC::DFCubic2d: 
-            SC_DMFT_ptr.reset(new CubicDMFTSC<2>(Solver, t, kGrid));
-            SC_DF_ptr.reset(new DFLadder<2>(Solver, gridF, kGrid, t)); 
-            DF_ptr.reset(static_cast<DFLadder<2>*> (SC_DF_ptr.get()));
-            D=2; break;
-        case enumSC::DFCubic3d: 
-            SC_DMFT_ptr.reset(new CubicDMFTSC<3>(Solver, t, kGrid));
-            SC_DF_ptr.reset(new DFLadder<3>(Solver, gridF, kGrid, t)); 
-            DF_ptr.reset(static_cast<DFLadder<3>*> (SC_DF_ptr.get()));
-            D=3; break;
-        case enumSC::DFCubic4d: 
-            SC_DMFT_ptr.reset(new CubicDMFTSC<4>(Solver, t, kGrid));
-            SC_DF_ptr.reset(new DFLadder<4>(Solver, gridF, kGrid, t)); 
-            DF_ptr.reset(static_cast<DFLadder<4>*> (SC_DF_ptr.get()));
-            D=4; break;
-        default:
-            ERROR("Couldn't find the desired SC type. Exiting.");
-            exit(0);
-    };
-    DF_ptr->_n_GD_iter = opt.DFNumberOfSelfConsistentIterations;
-    DF_ptr->_GDmix = opt.DFSCMixing;
-    DF_ptr->_SC_cutoff = opt.DFSCCutoff;
-    DF_ptr->_eval_BS_SC = opt.DFEvaluateBSSelfConsistent;
-    DF_ptr->_n_BS_iter = opt.DFNumberOfBSIterations;
-    DF_ptr->_BSmix = opt.DFBSMixing;
-    DF_ptr->_EvaluateStaticDiagrams = opt.DFEvaluateStaticDiagrams;
-    DF_ptr->_EvaluateDynamicDiagrams = opt.DFEvaluateDynamicDiagrams;
-
-    bool update_weights = opt.update_weights;
-    bool read_weights = opt.read_weights;
-    Solver.w_0 = opt.w_0;
-    Solver.w_1 = opt.w_1;
-
-    if (read_weights) {
-        try {
-                __num_format<RealType> wf(0.0); 
-                wf.loadtxt("w_0.dat");
-                Solver.w_0 = wf;
-                wf.loadtxt("w_1.dat");
-                Solver.w_1 = wf;
-                if (std::abs(Solver.w_0 + Solver.w_1 - 1.0)<std::numeric_limits<RealType>::epsilon()) throw(1);
-            }
-        catch (...)
-            {
-                INFO("Couldn't load weights from file.");
-            }
-        };
-
-    auto &SC_DMFT = *SC_DMFT_ptr;
-    auto &SC_DF   = *SC_DF_ptr;
-  
-    RealType diff=1.0, diff_min = 1.0;
-    size_t diff_min_count = 0;
-    std::ofstream diff_stream("diff.dat",std::ios::out);
-    diff_stream.close();
-    bool calc_DMFT = (NDMFTRuns>0);
-
-    size_t i_dmft = 0; 
-    size_t i_df = 0;
-
-    for (; i_dmft<=NDMFTRuns-calc_DMFT && i_df<=NDFRuns && diff>1e-8+(1-calc_DMFT)*(DFCutoff-1e-8) &&!INTERRUPT; (calc_DMFT)?i_dmft++:i_df++) {
-        INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
-
-        update_weights = update_weights && diff/mix>1e-3 && calc_DMFT;
-        Solver.run(update_weights);
-
-        if (calc_DMFT) {  
-            Delta = SC_DMFT();
-            }
-        else { 
-            Delta = SC_DF();
-            std::stringstream tmp;
-            tmp << "GwDF" << i_df << ".dat";
-            Solver.gw.savetxt(tmp.str());
-            tmp.str( std::string() ); tmp.clear();
-            tmp << "DeltaDF" << i_df << ".dat";
-            Delta.savetxt(tmp.str());
-            tmp.str( std::string() ); tmp.clear();
-            tmp << "glocDF" << i_df << ".dat";
-            DF_ptr->getGLoc().savetxt(tmp.str());
-             }
-        auto Delta_new = Delta*mix+(1.0-mix)*Solver.Delta;
-        diff = Delta_new.diff(Solver.Delta);
-        INFO("diff = " << diff);
-
-        if (diff<diff_min) { diff_min = diff; diff_min_count = 0; }
-            else diff_min_count++;
-        if (diff_min_count > 5 ) {
-            ERROR("\n\tCaught loop cycle. Reducing main loop mixing to " << mix/2. << " .\n");
-            mix=std::max(mix/2., 0.01);
-            diff_min_count = 0;
-            diff_min = diff;
-            };
-        if (!calc_DMFT) {
-            diff_stream.open("diff.dat",std::ios::app);
-            diff_stream << diff << "  " << mix << std::endl;
-            diff_stream.close();
-        };
-        
-        Solver.Delta = Delta_new;
-        if (diff<=1e-8 && calc_DMFT) { 
-            GF Delta_large(gridF_large); Delta_large = Solver.Delta;
-            Delta_large.savetxt("DeltaDMFT.dat");
-            Solver.Sigma.savetxt("SigmaDMFT.dat"); 
-            Solver.gw.savetxt("GwDMFT.dat");
-            __num_format<RealType>(Solver.w_0).savetxt("w_0DMFT.dat");
-            __num_format<RealType>(Solver.w_1).savetxt("w_1DMFT.dat");
-            diff = 1.0; calc_DMFT = false; }; // now continue with DF 
-        }
-   
-    GF Delta_half(gridF_half); Delta_half = Delta;
-    GF gw_half(gridF_half); gw_half = Solver.gw;
-    GF sigma_half(gridF_half); sigma_half = Solver.Sigma;
-    sigma_half.savetxt("Sigma.dat");
-    gw_half.savetxt("Gw.dat");
-    Delta_half.savetxt("Delta.dat");
-    GF Delta_large(gridF_large); Delta_large = Delta;
-    Delta_large.savetxt("Delta_full.dat");
-    __num_format<RealType>(Solver.w_0).savetxt("w_0.dat");
-    __num_format<RealType>(Solver.w_1).savetxt("w_1.dat");
-
-    if (extraops>0) {
-        switch (sc_switch) {
-            case enumSC::DFCubic1d: 
-                getExtraData(*(static_cast<DFLadder<1>*> (SC_DF_ptr.get())), gridF); 
-                break;
-            case enumSC::DFCubic2d: 
-                getExtraData(*(static_cast<DFLadder<2>*> (SC_DF_ptr.get())), gridF); 
-                break;
-            case enumSC::DFCubic3d: 
-                getExtraData(*(static_cast<DFLadder<3>*> (SC_DF_ptr.get())), gridF); 
-                break;
-            case enumSC::DFCubic4d: 
-                getExtraData(*(static_cast<DFLadder<4>*> (SC_DF_ptr.get())), gridF); 
-                break;
-            default: break;
-            }; 
-        };
-
-
-    SC_DMFT_ptr.release(); 
-    SC_DF_ptr.release();
-    DF_ptr.release();
-}
+#endif
 

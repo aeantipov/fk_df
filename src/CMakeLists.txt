@@ -6,7 +6,8 @@ set (fk_src
     Solver.h Solver.cpp
     SelfConsistency.h SelfConsistency.hpp SelfConsistency.cpp
     Diagrams.h Diagrams.hpp
-    DF.h DF.hpp DF.cpp
+    DF.h DF.hpp 
+    #DF.cpp
     )
 add_library(fk SHARED ${fk_src})
 set_target_properties(fk PROPERTIES LINKER_LANGUAGE CXX)
