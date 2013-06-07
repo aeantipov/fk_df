@@ -185,6 +185,7 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                 else {
                     size_t n_iter = 10;
                     auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
+                    ERROR("DF iteration" << nd_iter << ". Evaluating BS equation using iterations.");
                     decltype(StaticV4) FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, true, n_iter, _BSmix).diagonal();
                     std::copy(FullStaticV4.data(), FullStaticV4.data()+FullStaticV4.size(), FullVertex11.getData()._data.data());
                     //DEBUG(FullVertex11);
@@ -264,9 +265,9 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
         if (diffGD<diffGD_min-_SC_cutoff/10.) { diffGD_min = diffGD; diffGD_min_count = 0; }
         else diffGD_min_count++;
         INFO2("DF diff = " << diffGD);
-        if (diffGD_min_count > 7 ) {
+        if (diffGD_min_count > 7 && std::abs(_GDmix-0.02)>1e-3) {
             ERROR("\n\tCaught loop cycle. Reducing DF mixing to " << _GDmix/2 << " .\n");
-            _GDmix=std::max(_GDmix/2., 0.05);
+            _GDmix=std::max(_GDmix/2., 0.02);
             GD_new = GD0;
             SigmaD = 0.0;
             diffGD_min = diffGD;
