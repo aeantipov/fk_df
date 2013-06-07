@@ -174,6 +174,7 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                 auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
                 auto m1 = mult*dual_bubble*Lambda*Lambda;
                 ComplexType B=(m1/(1.0+m1)).getData().sum();
+                INFO("\t\tB = "<<B);
                 GLocalType B1=m1*Lambda/(1.0+m1);
                 GLocalType FullVertex11 = mult*Lambda/(1.0+m1)*(Lambda*B - B1)/(1.0-B); // Diagonal part of vertex 
                 typename GKType::PointFunctionType SigmaF;

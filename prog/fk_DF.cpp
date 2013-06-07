@@ -221,8 +221,14 @@ int main(int argc, char *argv[])
     __num_format<RealType>(Solver.w_0).savetxt("w_0.dat");
     __num_format<RealType>(Solver.w_1).savetxt("w_1.dat");
 
+    FMatsubaraGrid stat_grid(-128, 128, beta);
     #ifdef _calc_extra_stats
-    getExtraData(SC_DF,gridF);
+    switch (D){
+        case 1: getExtraData(SC_DF,FMatsubaraGrid(-256, 256, beta)); break;
+        case 2: getExtraData(SC_DF,FMatsubaraGrid(-512, 512, beta)); break;
+        case 3: getExtraData(SC_DF,FMatsubaraGrid(-128, 128, beta)); break;
+        case 4: getExtraData(SC_DF,gridF); break; 
+    }
     #endif
 }
 
