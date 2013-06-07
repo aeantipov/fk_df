@@ -80,12 +80,12 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     for (size_t n=0; n<n_iter && diffBS > 1e-8; ++n) { 
         INFO_NONEWLINE("\t\t" << n+1 << "/" << n_iter<< ". ")
         if (forward)
-            V4 = IrrVertex4 + V4Chi*V4_old;
+            V4 = (IrrVertex4 + V4Chi*V4_old)*mix + (1.0-mix)*V4_old;
         else 
-            V4 = IrrVertex4 - V4_old*V4Chi;
+            V4 = (IrrVertex4 - V4_old*V4Chi)*mix + (1.0-mix)*V4_old;
         diffBS = (V4-V4_old).norm();
         INFO("vertex diff = " << diffBS);
-        V4_old = V4*mix+(1.0-mix)*V4_old;
+        V4_old = V4;
         }
     return V4;
 }

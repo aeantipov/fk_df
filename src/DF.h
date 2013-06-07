@@ -17,7 +17,7 @@ struct DFBase
     size_t _n_GD_iter = 200;
 
     bool _eval_BS_SC = false;
-    RealType _BSmix = 1.0;
+    RealType _BSmix = 0.1;
     size_t _n_BS_iter = 1000;
 
     bool _EvaluateStaticDiagrams = true;
@@ -64,6 +64,7 @@ public:
     template <typename KPoint> ComplexType getStaticLatticeSusceptibility(const std::array<KPoint, D>& q, const FMatsubaraGrid& fGrid);
     template <typename KPoint> ComplexType getStaticLatticeSusceptibility(const std::array<KPoint, D>& q);
     GLocalType getGLoc();
+    struct exRuntimeError : public std::runtime_error { exRuntimeError(const std::string &s):std::runtime_error(s){};};
 };
 
 } // end of namespace FK

@@ -173,10 +173,23 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                 auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
                 auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
                 auto m1 = mult*dual_bubble*Lambda*Lambda;
-                ComplexType B=(m1/(1.0+m1)).getData().sum();
+                ComplexType B_=(m1/(1.0+m1)).getData().sum();
+                if (std::imag(B_)>1e-5) throw (exRuntimeError("B is imaginary."));
+                RealType B = std::real(B_);
                 INFO("\t\tB = "<<B);
                 GLocalType B1=m1*Lambda/(1.0+m1);
-                GLocalType FullVertex11 = mult*Lambda/(1.0+m1)*(Lambda*B - B1)/(1.0-B); // Diagonal part of vertex 
+                GLocalType FullVertex11(_fGrid);
+                if (B < 1.0 && (!_eval_BS_SC)) {
+                    FullVertex11 = mult*Lambda/(1.0+m1)*(Lambda*B - B1)/(1.0-B); // Diagonal part of vertex 
+                    }
+                else {
+                    size_t n_iter = 10;
+                    auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
+                    decltype(StaticV4) FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, true, n_iter, _BSmix).diagonal();
+                    std::copy(FullStaticV4.data(), FullStaticV4.data()+FullStaticV4.size(), FullVertex11.getData()._data.data());
+                    //DEBUG(FullVertex11);
+                    //exit(1);
+                    }
                 typename GKType::PointFunctionType SigmaF;
                 auto SigmaF2 = [&](wkPointTupleType in)->ComplexType { 
                     FMatsubaraGrid::point w = std::get<0>(in);
