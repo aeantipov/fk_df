@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
     size_t NDMFTRuns = opt.NDMFTRuns;
     size_t NDFRuns = opt.NDFRuns;
     RealType DFCutoff = opt.DFCutoff;
+    bool update_mixing = opt.update_mixing;
 
     KMesh kGrid(ksize);
 

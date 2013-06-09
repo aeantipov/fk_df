@@ -23,6 +23,8 @@ struct DFBase
     bool _EvaluateStaticDiagrams = true;
     bool _EvaluateDynamicDiagrams = true;
 
+    bool _update_mixing = true;
+
     virtual GLocalType getGLoc() = 0;
 };
 

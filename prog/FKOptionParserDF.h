@@ -33,6 +33,7 @@ public:
     bool DFEvaluateDynamicDiagrams;
     FK::RealType DFBSMixing;
     size_t extraops;
+    bool update_mixing;
 	std::string help;
 
 	FKOptionParserDF() : 
@@ -61,6 +62,7 @@ public:
           DFEvaluateDynamicDiagrams(true),
           DFBSMixing(1.0),
           extraops(0),
+          update_mixing(true),
           help("") 
           {}
 

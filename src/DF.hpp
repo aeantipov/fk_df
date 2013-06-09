@@ -265,9 +265,9 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
         if (diffGD<diffGD_min-_SC_cutoff/10.) { diffGD_min = diffGD; diffGD_min_count = 0; }
         else diffGD_min_count++;
         INFO2("DF diff = " << diffGD);
-        if (diffGD_min_count > 7 && std::abs(_GDmix-0.02)>1e-3) {
+        if (diffGD_min_count > 7 && std::abs(_GDmix-0.05)>1e-3 && _update_mixing) {
             ERROR("\n\tCaught loop cycle. Reducing DF mixing to " << _GDmix/2 << " .\n");
-            _GDmix=std::max(_GDmix/2., 0.02);
+            _GDmix=std::max(_GDmix/2., 0.05);
             GD_new = GD0;
             SigmaD = 0.0;
             diffGD_min = diffGD;
