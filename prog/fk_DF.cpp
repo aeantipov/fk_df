@@ -273,7 +273,95 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     };
 
     if (flags[1]) {
+        size_t n_freq = 256; 
+        FMatsubaraGrid local_grid(-n_freq,n_freq,beta);
+        GridObject<ComplexType, FMatsubaraGrid> Lambda(local_grid);
+        Lambda.copyInterpolate(Solver.getLambda());
+        auto glat = SC.getGLat(); 
+        GridObject<RealType,KMesh> out_b(SC._kGrid), out_chi(SC._kGrid), out_dual_bubble(SC._kGrid), out_lattice_bubble(SC._kGrid);
+        std::array<KMesh::point, D> q;
+        q.fill(SC._kGrid.findClosest(PI));
+        for (auto q_pt : SC._kGrid.getPoints()) {
+            std::get<D-1>(q) = q_pt;
+            auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
+
+            ComplexType susc_val = SC.getStaticLatticeSusceptibility(q,Solver.w_grid);
+            out_chi[size_t(q_pt)]= std::real(susc_val);
+            
+            auto dual_bubble = Diagrams::getBubble(SC.GD, Wq_args_static);
+            auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble;
+            auto Bw = Bw1/(1.0+Bw1);
+            ComplexType B = Bw.sum();
+            out_b[size_t(q_pt)]= std::real(B);
+            
+            RealType dual_bubble_val = std::real(dual_bubble.sum());
+            out_dual_bubble[size_t(q_pt)]= dual_bubble_val;
+
+            RealType lattice_bubble_val =  std::real(Diagrams::getBubble(glat, Wq_args_static).sum());
+            out_lattice_bubble[size_t(q_pt)] = lattice_bubble_val;
+            };
+        out_chi.savetxt("Susc_dir.dat");
+        out_b.savetxt("B_dir.dat");
+        out_dual_bubble.savetxt("dual_bubble_dir.dat");
+        out_lattice_bubble.savetxt("lattice_bubble_dir.dat");
+        }
         
+    
+    if (flags[2]) {
+        INFO2("Calculating B(q=pi)");
+        std::array<RealType, D> q;
+        q.fill(PI);
+        auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
+        auto dual_bubble_pi = Diagrams::getBubble(SC.GD, Wq_args_static);
+        auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble_pi;
+        auto Bw = Bw1/(1.0+Bw1);
+        ComplexType B = Bw.sum();
+        dual_bubble_pi.savetxt("DualBubbleCC_pi.dat");
+        Bw1.savetxt("BwNominator_pi.dat");
+        Bw.savetxt("Bw_pi.dat");
+        INFO("B(pi) = " << B);
+        __num_format<ComplexType>(B).savetxt("B_pi.dat");
+    }
+
+    if (flags[3]) {
+        INFO2("Saving G(w,k=pi)");
+        GF glat_pi(Solver.w_grid);
+        auto glat = SC.getGLat(); 
+        std::array<RealType, D> q;
+        q.fill(PI);
+        typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat(std::tuple_cat(std::make_tuple(w),q));};
+        glat_pi.fill(f);
+        glat_pi.savetxt("glat_pi.dat");
+    }
+
+    if (flags[4] && D==2) {
+        INFO2("Saving Green's functions - doing FFT");
+        auto glat_k = SC.getGLat(); 
+        typedef typename ArgBackGenerator<D,RealGrid,GridObject,ComplexType,FMatsubaraGrid>::type glat_r_type;
+        auto grid_r = RealGrid(0,SC._kGrid.getSize(),SC._kGrid.getSize(),false);
+        glat_r_type glat_r(std::tuple_cat(std::forward_as_tuple(SC._fGrid),__repeater<RealGrid,D>::get_tuple(grid_r)));
+        for (auto w : SC._fGrid.getPoints()) { 
+            glat_r[size_t(w)] = run_fft(glat_k[size_t(w)]);
+            }
+
+        size_t distance = 5;
+        GF glat_rp(Solver.w_grid);
+        for (size_t i=0; i<distance; ++i) {
+            std::array<typename decltype(grid_r)::point, D> r_p; r_p.fill(grid_r[0]); r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
+            typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat_r(std::tuple_cat(std::make_tuple(w),r_p));};
+            glat_rp.fill(f);
+            std::stringstream fname_stream;
+            fname_stream << "glat_r"; 
+            for (auto rr : r_p) fname_stream << size_t(rr);
+            fname_stream << ".dat";
+            std::string fname; fname_stream >> fname;
+            glat_rp.savetxt(fname);
+            };
+    }
+
+
+
+    if (flags[5]) {
         auto glat = SC.getGLat(); 
         auto bzpoints_map = CubicTraits<D>::getUniqueBZPoints(SC._kGrid); 
         std::vector<BZPoint<D>> bzpoints;
@@ -319,59 +407,8 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         out.close();
     };
 
-    if (flags[2]) {
-        INFO2("Calculating B(q=pi)");
-        std::array<RealType, D> q;
-        q.fill(PI);
-        auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
-        auto dual_bubble_pi = Diagrams::getBubble(SC.GD, Wq_args_static);
-        auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble_pi;
-        auto Bw = Bw1/(1.0+Bw1);
-        ComplexType B = Bw.sum();
-        dual_bubble_pi.savetxt("DualBubbleCC_pi.dat");
-        Bw1.savetxt("BwNominator_pi.dat");
-        Bw.savetxt("Bw_pi.dat");
-        INFO("B(pi) = " << B);
-        __num_format<ComplexType>(B).savetxt("B_pi.dat");
-    }
 
-    if (flags[3]) {
-        INFO2("Saving G(w,k=pi)");
-        GF glat_pi(Solver.w_grid);
-        auto glat = SC.getGLat(); 
-        std::array<RealType, D> q;
-        q.fill(PI);
-        typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat(std::tuple_cat(std::make_tuple(w),q));};
-        glat_pi.fill(f);
-        glat_pi.savetxt("glat_pi.dat");
-    }
-
-    if (flags[4] && D==2) {
-        INFO2("Saving Green's functions - doing FFT");
-        auto glat_k = SC.getGLat(); 
-        typedef typename ArgBackGenerator<D,RealGrid,GridObject,ComplexType,FMatsubaraGrid>::type glat_r_type;
-        auto grid_r = RealGrid(0,SC._kGrid.getSize(),SC._kGrid.getSize(),false);
-        glat_r_type glat_r(std::tuple_cat(std::forward_as_tuple(SC._fGrid),__repeater<RealGrid,D>::get_tuple(grid_r)));
-        for (auto w : SC._fGrid.getPoints()) { 
-            glat_r[size_t(w)] = run_fft(glat_k[size_t(w)]);
-            }
-
-        size_t distance = 4;
-        GF glat_rp(Solver.w_grid);
-        for (size_t i=0; i<distance; ++i) {
-            std::array<typename decltype(grid_r)::point, D> r_p; r_p.fill(grid_r[0]); r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
-            typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat_r(std::tuple_cat(std::make_tuple(w),r_p));};
-            glat_rp.fill(f);
-            std::stringstream fname_stream;
-            fname_stream << "glat_r"; 
-            for (auto rr : r_p) fname_stream << size_t(rr);
-            fname_stream << ".dat";
-            std::string fname; fname_stream >> fname;
-            glat_rp.savetxt(fname);
-            };
-    }
-
-    if (flags[5] && D==2) {
+    if (flags[6] && D==2) {
         INFO2("Saving G(w,k)");
         auto glat = SC.getGLat(); 
         GF glat_k(Solver.w_grid);
