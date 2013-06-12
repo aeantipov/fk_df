@@ -6,6 +6,7 @@
 #include "GFWrap.h"
 #include "Solver.h"
 #include "SelfConsistency.h"
+#include "FFT.hpp"
 
 #ifdef LATTICE_bethe
     typedef FK::BetheSC sc_type;
@@ -50,12 +51,25 @@ bool INTERRUPT = false;
  
 typedef GFWrap GF;
 
-#include "statistics.hpp"
+template <typename F1, typename F2>
+bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
+{
+    return (std::abs(x-y)<tolerance);
+}
+
+void sighandler(int signal)
+{
+    static size_t count = 0;
+    count++;
+    INFO("Caught INTERRUPT, signal " << signal <<" " << count << " times. ")
+    INTERRUPT = true;
+    if (count >= 3) { INFO("Force exiting"); exit(signal); }
+}
+
 
 #ifdef _calc_extra_stats
 void getExtraDMFTData(const sc_type& SC);
 #endif
-
 
 int main(int argc, char *argv[])
 {

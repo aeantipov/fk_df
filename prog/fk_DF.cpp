@@ -6,6 +6,7 @@
 #include "GFWrap.h"
 #include "Solver.h"
 #include "DF.h"
+#include "FFT.hpp"
 
 #ifdef LATTICE_cubic1d
     typedef FK::CubicDMFTSC<1> dmft_sc_type;
@@ -49,7 +50,22 @@ bool INTERRUPT = false;
 
 typedef GFWrap GF;
 
-#include "statistics.hpp"
+template <typename F1, typename F2>
+bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
+{
+    return (std::abs(x-y)<tolerance);
+}
+
+void sighandler(int signal)
+{
+    static size_t count = 0;
+    count++;
+    INFO("Caught INTERRUPT, signal " << signal <<" " << count << " times. ")
+    INTERRUPT = true;
+    if (count >= 3) { INFO("Force exiting"); exit(signal); }
+}
+
+
 
 #ifdef _calc_extra_stats
 template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& gridF);
@@ -334,7 +350,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         glat_pi.savetxt("glat_pi.dat");
     }
 
-    if (flags[4] && D==2) {
+    if (flags[4] && (D==2 || D==3)) {
         INFO2("Saving Green's functions - doing FFT");
         auto glat_k = SC.getGLat(); 
         typedef typename ArgBackGenerator<D,RealGrid,GridObject,ComplexType,FMatsubaraGrid>::type glat_r_type;
@@ -351,9 +367,8 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
             typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat_r(std::tuple_cat(std::make_tuple(w),r_p));};
             glat_rp.fill(f);
             std::stringstream fname_stream;
-            fname_stream << "glat_r"; 
-            for (auto rr : r_p) fname_stream << size_t(rr);
-            fname_stream << ".dat";
+            fname_stream << "glat_r" << i << ".dat";
+            //for (auto rr : r_p) fname_stream << size_t(rr);
             std::string fname; fname_stream >> fname;
             glat_rp.savetxt(fname);
             };
