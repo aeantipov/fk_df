@@ -147,7 +147,6 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     size_t diffGD_min_count = 0; // A counter to estimate, how many iterations have passed after the minimal achieved diff
     for (size_t nd_iter=0; nd_iter<_n_GD_iter && diffGD > _SC_cutoff; ++nd_iter) { 
         INFO("DF iteration " << nd_iter << ". Evaluating BS equation.");
-        GKType addSigma(this->SigmaD.getGrids()), GD_shift(this->GD.getGrids()), GD_sum(GD.getGrids());
 
         size_t nq = 1;
         // iterate over all unique kpoints (patch of BZ)
@@ -159,8 +158,8 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
             for (size_t i=0; i<D; ++i) INFO_NONEWLINE(RealType(q[i]) << " "); INFO_NONEWLINE("]. Weight : " << q_weight << ". ");
 
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
-            GD_shift = GD.shift(Wq_args_static);
             /*
+            GD_shift = GD.shift(Wq_args_static);
             GD_sum = 0.0;
             for (auto q_pt : other_pts) { // Sum over different G(w,k+q) to obey symmetry
                 INFO_NONEWLINE("+");
@@ -193,8 +192,6 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                     ERROR("DF iteration" << nd_iter << ". Evaluating BS equation using iterations.");
                     decltype(StaticV4) FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, true, n_iter, _BSmix).diagonal();
                     std::copy(FullStaticV4.data(), FullStaticV4.data()+FullStaticV4.size(), FullVertex11.getData()._data.data());
-                    //DEBUG(FullVertex11);
-                    //exit(1);
                     }
                 for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
                     auto f_val = FullVertex11(iw1);
@@ -202,40 +199,10 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                         FullStaticVertex.get(std::tuple_cat(std::make_tuple(iw1),q_pt)) = f_val;
                         };
                     };
-                /*typename GKType::PointFunctionType SigmaF;
-                auto SigmaF2 = [&](wkPointTupleType in)->ComplexType { 
-                    FMatsubaraGrid::point w = std::get<0>(in);
-                    auto kpts = __tuple_tail(in); 
-                    auto out_static = (1.0*T)*( FullVertex11(w)*GD_sum(in)); // Here the fact that StaticVertex4(w,w) = 0 is used.
-                    return out_static;
-                    };
-                SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
-                addSigma.fill(SigmaF);
-                INFO2("Sigma static contribution diff = " << addSigma.diff(SigmaD*0)/q_weight);
-                SigmaD+=addSigma/RealType(totalqpts);
-                */
-
-
-                /*
-                auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
-                decltype(StaticV4) FullStaticV4;
-                FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
-                typename GKType::PointFunctionType SigmaF;
-                auto SigmaF2 = [&](wkPointTupleType in)->ComplexType { 
-                    FMatsubaraGrid::point w = std::get<0>(in);
-                    auto kpts = __tuple_tail(in); 
-                    auto out_static = (1.0*T)*( (FullStaticV4(size_t(w),size_t(w)))*GD_shift(in)); // Here the fact that StaticVertex4(w,w) = 0 is used.
-                    return out_static;
-                    };
-                SigmaF = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(SigmaF2);
-
-                addSigma.fill(SigmaF);
-                */
-
                 };
 
             
-            if (_EvaluateDynamicDiagrams) { 
+            /*if (_EvaluateDynamicDiagrams) { 
                 INFO_NONEWLINE("\tDynamic contribution...");
                 decltype(StaticVertex4) DualBubbleDynamic(StaticVertex4.getGrids());
                 decltype(StaticVertex4)::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
@@ -262,7 +229,7 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                         };
                 INFO2("Sigma dynamic contribution diff = " << addSigma.diff(SigmaD*0)/q_weight);
                 SigmaD+=addSigma/RealType(totalqpts);
-                };
+                };*/
 
             nq++;
             }; // end of q loop
