@@ -132,7 +132,7 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     StaticVertex4.fill(VertexF2);
     auto StaticV4 = StaticVertex4.getData().getAsMatrix();
 
-    //GKType FullVertex(wkgrids);
+    GKType FullStaticVertex(wkgrids);
 
     // Prepare dynamic vertex
     GLocalType DynVertex4(_fGrid), FullDualDynVertex4(_fGrid), DualDynBubble(_fGrid);
@@ -160,12 +160,14 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
 
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
             GD_shift = GD.shift(Wq_args_static);
+            /*
             GD_sum = 0.0;
             for (auto q_pt : other_pts) { // Sum over different G(w,k+q) to obey symmetry
                 INFO_NONEWLINE("+");
                 auto Wq_args1 = std::tuple_cat(std::make_tuple(0.0),q_pt);
                 GD_sum += GD.shift(Wq_args1);
                 };
+            */
             INFO("");
 
             //DEBUG(GD);
@@ -194,7 +196,13 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                     //DEBUG(FullVertex11);
                     //exit(1);
                     }
-                typename GKType::PointFunctionType SigmaF;
+                for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
+                    auto f_val = FullVertex11(iw1);
+                    for (auto q_pt : other_pts) { 
+                        FullStaticVertex.get(std::tuple_cat(std::make_tuple(iw1),q_pt)) = f_val;
+                        };
+                    };
+                /*typename GKType::PointFunctionType SigmaF;
                 auto SigmaF2 = [&](wkPointTupleType in)->ComplexType { 
                     FMatsubaraGrid::point w = std::get<0>(in);
                     auto kpts = __tuple_tail(in); 
@@ -205,6 +213,7 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                 addSigma.fill(SigmaF);
                 INFO2("Sigma static contribution diff = " << addSigma.diff(SigmaD*0)/q_weight);
                 SigmaD+=addSigma/RealType(totalqpts);
+                */
 
 
                 /*
@@ -258,10 +267,17 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
             nq++;
             }; // end of q loop
 
-        //GLocalType SigmaD0(_fGrid),__GD0(_fGrid), __GDnew0(_fGrid);
-        //std::function<ComplexType(FMatsubaraGrid::point)> sf = [&](FMatsubaraGrid::point w){return SigmaD[size_t(w)][0][0];};
-        //SigmaD0.fill(sf);        
-        //DEBUG(SigmaD0);
+        // Finished obtaining vertex
+        if (_EvaluateStaticDiagrams) {
+            INFO("Updating dual self-energy with the static contribution...");
+            INFO("Running FFT");
+            for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
+                auto v4r = run_fft(FullStaticVertex[iw1._index], FFTW_FORWARD)/knorm;
+                auto gdr = run_fft(GD[iw1._index], FFTW_BACKWARD);
+                SigmaD[iw1._index]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
+                };
+        };
+        INFO("Total sigma diff = " << SigmaD.diff(SigmaD*0));
 
         auto GD_new = _GDmix/(1.0/GD0 - SigmaD) + GD*(1.0-_GDmix); // Dyson eq;
         diffGD = GD_new.diff(GD);

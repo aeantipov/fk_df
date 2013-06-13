@@ -293,7 +293,7 @@ void getExtraDMFTData(const sc_type& SC)
         auto grid_r = RealGrid(0,SC._kGrid.getSize(),SC._kGrid.getSize(),false);
         glat_r_type glat_r(std::tuple_cat(std::forward_as_tuple(Solver.w_grid),__repeater<RealGrid,D>::get_tuple(grid_r)));
         for (auto w : Solver.w_grid.getPoints()) { 
-            glat_r[size_t(w)] = run_fft(glat_k[size_t(w)]);
+            glat_r[size_t(w)] = run_fft(glat_k[size_t(w)],FFTW_BACKWARD);
             }
 
         size_t distance = 4;

@@ -60,7 +60,9 @@ Container<ComplexType,D> run_fft (const ContainerBase<ComplexType,D,BC> &in, int
 {
     Container<ComplexType,D> out(in);
     fftw_plan p;
-    const std::array<int,4> shape = {{ out._data.shape()[0], out._data.shape()[1], out._data.shape()[2], out._data.shape()[3] }};
+    const std::array<int,4> shape = {{ static_cast<int>(out._data.shape()[0]), static_cast<int>(out._data.shape()[1]), 
+                                       static_cast<int>(out._data.shape()[2]), static_cast<int>(out._data.shape()[3]) 
+                                    }};
     p = fftw_plan_dft(4, shape.data(),
                          reinterpret_cast<fftw_complex*>( in._data.origin()), 
                          reinterpret_cast<fftw_complex*>(out._data.origin()), 

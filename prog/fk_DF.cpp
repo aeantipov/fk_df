@@ -351,7 +351,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         glat_pi.savetxt("glat_pi.dat");
     }
 
-    if (flags[4] && (D==2 || D==3)) {
+    if (flags[4]) {
         INFO2("Saving Green's functions - doing FFT");
         auto glat_k = SC.getGLat(); 
         typedef typename ArgBackGenerator<D,EnumerateGrid,GridObject,ComplexType,FMatsubaraGrid>::type glat_r_type;
@@ -424,7 +424,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     };
 
 
-    if (flags[6] && D==2) {
+    if (flags[6]) {
         INFO2("Saving G(w,k)");
         auto glat = SC.getGLat(); 
         GF glat_k(Solver.w_grid);
