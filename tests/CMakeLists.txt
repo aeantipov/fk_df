@@ -2,12 +2,14 @@ include_directories (. ../jsoncpp/include ../src)
 
 link_libraries(
 fk
+${FFTW_LIBRARIES}
 )
 
 enable_testing()
 
 # Here all the tests are set. The source is file is assumed to be ${test}.cpp
 set (tests 
+FFTTest
 SolverTest
 DMFTCubicTest
 DMFTBetheTest

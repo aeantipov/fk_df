@@ -24,6 +24,7 @@ int main()
 {
     std::srand(std::time(0));
     size_t ksize=rand()%10+12;
+    INFO("Ksize = " << ksize << std::endl);
     KMesh k1(ksize);
     EnumerateGrid rgrid(0,k1.getSize());
 
@@ -65,9 +66,29 @@ int main()
     if (t_matrix_int[ksize-1][0]!=-1) return EXIT_FAILURE;
     INFO ("PASSED ELEMENTS TEST");
 
+
+    GridObject<ComplexType, KMesh> disp1d (std::forward_as_tuple(k1));
+    disp1d.fill(CubicTraits<1>::template get_dispersion<typename decltype(disp1d)::FunctionType> (1.0));
+    auto disp1d_backup(disp1d);
+    disp1d.getData() = run_fft(run_fft(disp1d.getData(), FFTW_BACKWARD), FFTW_FORWARD);
+    if (!is_equal(disp1d_backup.diff(disp1d),0)) return EXIT_FAILURE;
+    INFO("PASSED FFT1d")
+
     disp2d_complex.getData() = run_fft(run_fft(disp2d_complex.getData(), FFTW_BACKWARD), FFTW_FORWARD);
     if (!is_equal(disp2d_complex.diff(disp2d_complex_backup),0)) return EXIT_FAILURE;
-    INFO("PASSED FFT3");
+    INFO("PASSED FFT2d")
+
+    GridObject<ComplexType, KMesh, KMesh, KMesh> disp3d (std::forward_as_tuple(k1,k1,k1));
+    disp3d.fill(CubicTraits<3>::template get_dispersion<typename decltype(disp3d)::FunctionType> (1.0));
+    auto disp3d_backup(disp3d);
+    if (!is_equal(disp3d_backup.diff(disp3d),0)) return EXIT_FAILURE;
+    INFO("PASSED FFT3d")
+
+    GridObject<ComplexType, KMesh, KMesh, KMesh, KMesh> disp4d (std::forward_as_tuple(k1,k1,k1,k1));
+    disp4d.fill(CubicTraits<4>::template get_dispersion<typename decltype(disp4d)::FunctionType> (1.0));
+    auto disp4d_backup(disp4d);
+    if (!is_equal(disp4d_backup.diff(disp4d),0)) return EXIT_FAILURE;
+    INFO("PASSED FFT4d")
 
     return EXIT_SUCCESS;
 }

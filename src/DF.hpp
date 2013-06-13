@@ -2,6 +2,7 @@
 #define __FK_DF_HPP__
 
 #include "DF.h"
+#include "FFT.hpp"
 
 // Some hints
 // GLocalType - g(w)
@@ -130,6 +131,8 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     decltype(StaticVertex4)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getVertex4(0.0, w1,w2);};
     StaticVertex4.fill(VertexF2);
     auto StaticV4 = StaticVertex4.getData().getAsMatrix();
+
+    //GKType FullVertex(wkgrids);
 
     // Prepare dynamic vertex
     GLocalType DynVertex4(_fGrid), FullDualDynVertex4(_fGrid), DualDynBubble(_fGrid);

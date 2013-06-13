@@ -3,6 +3,7 @@
 #include <MatsubaraGrid.hpp>
 #include <KMesh.hpp>
 #include <GridObject.hpp>
+#include <EnumerateGrid.hpp>
 #include "GFWrap.h"
 #include "Solver.h"
 #include "DF.h"
@@ -353,11 +354,11 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     if (flags[4] && (D==2 || D==3)) {
         INFO2("Saving Green's functions - doing FFT");
         auto glat_k = SC.getGLat(); 
-        typedef typename ArgBackGenerator<D,RealGrid,GridObject,ComplexType,FMatsubaraGrid>::type glat_r_type;
-        auto grid_r = RealGrid(0,SC._kGrid.getSize(),SC._kGrid.getSize(),false);
-        glat_r_type glat_r(std::tuple_cat(std::forward_as_tuple(SC._fGrid),__repeater<RealGrid,D>::get_tuple(grid_r)));
+        typedef typename ArgBackGenerator<D,EnumerateGrid,GridObject,ComplexType,FMatsubaraGrid>::type glat_r_type;
+        auto grid_r = EnumerateGrid(0,SC._kGrid.getSize(),false);
+        glat_r_type glat_r(std::tuple_cat(std::forward_as_tuple(SC._fGrid),__repeater<EnumerateGrid,D>::get_tuple(grid_r)));
         for (auto w : SC._fGrid.getPoints()) { 
-            glat_r[size_t(w)] = run_fft(glat_k[size_t(w)]);
+            glat_r[size_t(w)] = run_fft(glat_k[size_t(w)],FFTW_BACKWARD);
             }
 
         size_t distance = 5;
