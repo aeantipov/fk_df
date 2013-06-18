@@ -59,7 +59,7 @@ int main()
     RealType DFCutoff=1e-7;
 
     size_t NDMFTRuns = 100;
-    size_t NDFRuns = 100;
+    size_t NDFRuns = 1;
 
     for (; i_dmft<=NDMFTRuns-calc_DMFT && i_df<=NDFRuns && diff>1e-8+(1-calc_DMFT)*(DFCutoff-1e-8); (calc_DMFT)?i_dmft++:i_df++) {
         INFO("Iteration " << i_dmft+i_df <<". Mixing = " << mix);
@@ -82,22 +82,20 @@ int main()
 
     auto gloc = SC_DF.GLatLoc;
     DEBUG(gloc[n_freq]);
-    if (!is_equal(gloc[n_freq],-2.156531283632e-01*I,1e-4)) return EXIT_FAILURE;
+    if (!is_equal(gloc[n_freq],-2.285624025387e-01*I,1e-4)) return EXIT_FAILURE;
     DEBUG(gloc[n_freq+1]);
-    if (!is_equal(gloc[n_freq+1],-2.071054102717e-01*I,1e-4)) return EXIT_FAILURE;
+    if (!is_equal(gloc[n_freq+1],-2.095296954079e-01*I,1e-4)) return EXIT_FAILURE;
        
     std::array<RealType, D> q;
     q.fill(PI);
-/*
-    auto ChiPiVal = SC_DF.getStaticLatticeSusceptibility<RealType>(q,FMatsubaraGrid(-512,512,beta));
-    INFO(ChiPiVal);
-    if (!is_equal(ChiPiVal,0.8715,1e-3)) return EXIT_FAILURE;
-*/
 
     auto ChiPiVal = SC_DF.getStaticLatticeSusceptibility<RealType>(q,FMatsubaraGrid(-32,32,beta));
     INFO(ChiPiVal);
     ChiPiVal = SC_DF.getStaticLatticeSusceptibility<RealType>(q,FMatsubaraGrid(-33,33,beta));
     INFO(ChiPiVal);
+    ChiPiVal = SC_DF.getStaticLatticeSusceptibility<RealType>(q,FMatsubaraGrid(-1024,1024,beta));
+    INFO(ChiPiVal);
+    if (!is_equal(ChiPiVal,0.923208,1e-2)) return EXIT_FAILURE;
 
     return EXIT_SUCCESS;
 }
