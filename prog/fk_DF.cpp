@@ -290,6 +290,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     };
 
     if (flags[1]) {
+        INFO ("\nCalculating static susceptibility along (pi,0)->(pi,2*pi) direction");
         size_t n_freq = 256; 
         FMatsubaraGrid local_grid(-n_freq,n_freq,beta);
         GridObject<ComplexType, FMatsubaraGrid> Lambda(local_grid);
@@ -299,6 +300,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         std::array<KMesh::point, D> q;
         q.fill(SC._kGrid.findClosest(PI));
         for (auto q_pt : SC._kGrid.getPoints()) {
+            INFO2("q = " << RealType(q_pt));
             std::get<D-1>(q) = q_pt;
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
 
