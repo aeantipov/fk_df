@@ -230,12 +230,10 @@ int main(int argc, char *argv[])
    
     GF Delta_half(gridF_half); Delta_half = Delta;
     GF gw_half(gridF_half); gw_half = Solver.gw;
-    GF sigma_half(gridF_half); sigma_half = Solver.Sigma;
-    sigma_half.savetxt("Sigma.dat");
     gw_half.savetxt("Gw.dat");
-    Delta_half.savetxt("Delta.dat");
+    //Delta_half.savetxt("Delta.dat");
     GF Delta_large(gridF_large); Delta_large = Delta;
-    Delta_large.savetxt("Delta_full.dat");
+    //Delta_large.savetxt("Delta_full.dat");
     __num_format<RealType>(Solver.w_0).savetxt("w_0.dat");
     __num_format<RealType>(Solver.w_1).savetxt("w_1.dat");
 
