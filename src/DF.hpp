@@ -133,9 +133,14 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     auto StaticV4 = StaticVertex4.getData().getAsMatrix();
 
     GKType FullStaticVertex(wkgrids);
-
+    
     // Prepare dynamic vertex
-    GLocalType DynVertex4(_fGrid), FullDualDynVertex4(_fGrid), DualDynBubble(_fGrid);
+   
+    std::unique_ptr<FullVertexType> full_dyn_vertex; 
+    if (_EvaluateDynamicDiagrams) { 
+        INFO2("Allocating memory for dynamic vertex");
+        full_dyn_vertex.reset(new FullVertexType(std::tuple_cat(std::make_tuple(_fGrid),std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))));
+    }
     // Miscelanneous - stream for checking convergence
     std::ofstream diffDF_stream("diffDF.dat",std::ios::out);
     diffDF_stream.close();
@@ -158,8 +163,8 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
             for (size_t i=0; i<D; ++i) INFO_NONEWLINE(RealType(q[i]) << " "); INFO_NONEWLINE("]. Weight : " << q_weight << ". ");
 
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
+            auto GD_shift = GD.shift(Wq_args_static);
             /*
-            GD_shift = GD.shift(Wq_args_static);
             GD_sum = 0.0;
             for (auto q_pt : other_pts) { // Sum over different G(w,k+q) to obey symmetry
                 INFO_NONEWLINE("+");
@@ -169,12 +174,9 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
             */
             INFO("");
 
-            //DEBUG(GD);
-            //DEBUG(GD_shift);
-
             if (_EvaluateStaticDiagrams) {
                 INFO_NONEWLINE("\tStatic contribution...");
-                auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
+                auto dual_bubble = Diagrams::getBubble(this->GD, GD_shift);
                 auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
                 auto m1 = mult*dual_bubble*Lambda*Lambda;
                 ComplexType B_=(m1/(1.0+m1)).getData().sum();
@@ -187,10 +189,10 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                     FullVertex11 = mult*Lambda/(1.0+m1)*(Lambda*B - B1)/(1.0-B); // Diagonal part of vertex 
                     }
                 else {
-                    size_t n_iter = 10;
+                    //size_t n_iter = 10;
                     auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
                     ERROR("DF iteration" << nd_iter << ". Evaluating BS equation using iterations.");
-                    decltype(StaticV4) FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, true, n_iter, _BSmix).diagonal();
+                    decltype(StaticV4) FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, true, _n_BS_iter, _BSmix).diagonal();
                     std::copy(FullStaticV4.data(), FullStaticV4.data()+FullStaticV4.size(), FullVertex11.getData()._data.data());
                     }
                 for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
@@ -202,7 +204,7 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                 };
 
             
-            /*if (_EvaluateDynamicDiagrams) { 
+            if (_EvaluateDynamicDiagrams) { 
                 INFO_NONEWLINE("\tDynamic contribution...");
                 decltype(StaticVertex4) DualBubbleDynamic(StaticVertex4.getGrids());
                 decltype(StaticVertex4)::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
@@ -210,40 +212,40 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
                     };
                 decltype(StaticVertex4) DynamicFullVertex4(StaticVertex4.getGrids());
                 DualBubbleDynamic.fill(dbfill);
-                //DEBUG(DualBubbleDynamic);
                 DynamicFullVertex4 = Diagrams::BS(DualBubbleDynamic, StaticVertex4*(-1.0), true, _eval_BS_SC,(_n_BS_iter>0?_n_BS_iter-1:0),_BSmix);
-                //DEBUG(DualBubbleDynamic);
-                DualBubbleDynamic*=(-1.0)*StaticVertex4*DynamicFullVertex4;
-                //DEBUG(DualBubbleDynamic);
-                addSigma=0.0;
-                for (auto w : _fGrid.getPoints()) { 
-                    for (auto w1 : _fGrid.getPoints()) { 
-                        //addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*(-1.0)*StaticVertex4(w,w1)*DualBubbleDynamic(w,w1)*DynamicFullVertex4(w,w1);
-                        addSigma[size_t(w)] += T*GD_sum[size_t(w1)]*DualBubbleDynamic(w,w1);
-                        //DEBUG(GD_shift[size_t(w1)]);
-                        //DEBUG(DualBubbleDynamic(w,w1));
-                        //DEBUG(T*GD_shift[size_t(w1)]*DualBubbleDynamic(w,w1));
-                        //DEBUG(addSigma[size_t(w)]);
-                        //addSigma[size_t(w)] += T*GD_shift[size_t(w1)]*(-_S.getVertex4(0.0, w,w1))/(1.0 + _S.getVertex4(0.0, w,w1)*DualBubbleDynamic(w,w1));
-                            }
+                DynamicFullVertex4*=(-1.0)*StaticVertex4*DualBubbleDynamic;
+                for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
+                    for (FMatsubaraGrid::point iw2 : _fGrid.getPoints())  {
+                        auto f_val = DynamicFullVertex4(iw1,iw2);
+                        for (auto q_pt : other_pts) { 
+                            full_dyn_vertex->get(std::tuple_cat(std::make_tuple(iw1),std::make_tuple(iw2),q_pt)) = f_val;
+                            };
                         };
-                INFO2("Sigma dynamic contribution diff = " << addSigma.diff(SigmaD*0)/q_weight);
-                SigmaD+=addSigma/RealType(totalqpts);
-                };*/
-
+                    };
+                };
             nq++;
             }; // end of q loop
 
         // Finished obtaining vertex
+        INFO("Updating dual self-energy with the static contribution...");
         if (_EvaluateStaticDiagrams) {
-            INFO("Updating dual self-energy with the static contribution...");
-            INFO("Running FFT");
+            INFO2("Static diagrams ... Running FFT");
             for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
                 auto v4r = run_fft(FullStaticVertex[iw1._index], FFTW_FORWARD)/knorm;
                 auto gdr = run_fft(GD[iw1._index], FFTW_BACKWARD);
                 SigmaD[iw1._index]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
                 };
         };
+        if (_EvaluateDynamicDiagrams) {
+            INFO2("Dynamic diagrams ... Running FFT");
+            for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
+                for (FMatsubaraGrid::point iw2 : _fGrid.getPoints())  {
+                    auto v4r = run_fft((*full_dyn_vertex)[iw1._index][iw2._index], FFTW_FORWARD)/knorm;
+                    auto gdr = run_fft(GD[iw2._index], FFTW_BACKWARD);
+                    SigmaD[iw1._index]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
+                    };
+                };
+            };
         INFO("Total sigma diff = " << SigmaD.diff(SigmaD*0));
 
         auto GD_new = _GDmix/(1.0/GD0 - SigmaD) + GD*(1.0-_GDmix); // Dyson eq;
@@ -287,7 +289,8 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
         GDLoc[iwn] = GD[iwn].sum()/knorm; 
         GLatLoc[iwn] = GLat[iwn].sum()/knorm; 
         };
- 
+
+    full_dyn_vertex.release(); 
     // Finish - prepare all lattice quantities
     Delta_out = Delta + 1.0/gw * GDLoc / GLatLoc;
     // Assume DMFT asymptotics

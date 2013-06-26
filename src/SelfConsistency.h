@@ -74,10 +74,6 @@ template <size_t M>
 struct CubicTraits{ 
     /** Returns an analytic std::function of the dispersion. */
     template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t);
-    /** Fills a container with a given iterator. */
-    template <class IteratorType, typename ...ArgTypes> static void fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
-    /** Fills a given container. */
-    template <class ContainerType, typename ...ArgTypes> static void fillContainer(ContainerType &in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
     /** Finds the equivalent point, which is used is calculations. */
     static std::array<RealType,M> findSymmetricBZPoint(const std::array<RealType,M>& in);
     static BZPoint<M> findSymmetricBZPoint(const BZPoint<M>& in, const KMesh& kGrid);
@@ -89,10 +85,6 @@ struct CubicTraits{
 
 template <>
 struct CubicTraits<0>{ 
-    /** Fills a container with a given iterator. */
-    template <class IteratorType, typename ...ArgTypes> static void fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
-    /** Fills a given container. */
-    template <class DataType, typename ...ArgTypes> static void fillContainer(DataType &in, RealType t, const KMesh& grid, ArgTypes... other_pos); 
     /** Actual dispersion relation. */
     template <typename ArgType1, typename ...ArgTypes> static RealType ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints); 
     template <typename ArgType1> static RealType ek(RealType t, ArgType1 kpoint1); 

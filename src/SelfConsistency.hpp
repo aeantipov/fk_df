@@ -6,7 +6,7 @@
 namespace FK {
 
 template <typename MPoint>
-inline typename SelfConsistency::GFType SelfConsistency::getBubblePI(MPoint in) const
+typename SelfConsistency::GFType SelfConsistency::getBubblePI(MPoint in) const
 {
     GFType out(this->_S.w_grid);
     GFType gw_shift(_S.gw), Sigma_shift(_S.Sigma);
@@ -31,47 +31,6 @@ inline FunctionType CubicTraits<M>::get_dispersion(RealType t)
     return CubicTraits<M-1>::template get_dispersion<FunctionType,ArgTypes...,RealType>(t); 
 }
 
-template <size_t M> 
-template <class IteratorType, typename ...ArgTypes> 
-inline void CubicTraits<M>::fill(IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
-{
-    //assert(grid.getSize() == ksize);
-    size_t ksize = grid.getSize();
-    size_t mult = pow(ksize,M-1); 
-    auto move_it = in;
-    for (size_t kx = 0; kx<ksize; ++kx) { 
-        CubicTraits<M-1>::template fill<IteratorType, ArgTypes..., RealType> (move_it, t, grid, otherpos..., grid[kx]);
-        move_it += mult;
-        }
-}
-
-template <size_t M> 
-template <class ContainerType, typename ...ArgTypes> 
-inline void CubicTraits<M>::fillContainer(ContainerType &in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
-{
-    assert(grid.getSize() == in.getSize());
-    size_t ksize = grid.getSize();
-    for (size_t kx = 0; kx<ksize; ++kx) { 
-        CubicTraits<M-1>::template fillContainer<decltype(in[kx]), ArgTypes..., decltype(grid[kx])>(in[kx], t, grid, otherpos..., grid[kx]);
-        }
-}
-
-
-
-template <class IteratorType, typename ...ArgTypes> 
-inline void CubicTraits<0>::fill (IteratorType in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
-{
-    *in = ek(t,otherpos...);
-}
-
-template <class DataType, typename ...ArgTypes> 
-inline void CubicTraits<0>::fillContainer(DataType &in, RealType t, const KMesh& grid, ArgTypes ... otherpos)
-{
-    assert(grid.getSize() == in.getSize());
-    in = ek(t,otherpos...);
-}
-
-
 template <typename ArgType1, typename ...ArgTypes> 
 inline RealType CubicTraits<0>::ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints) 
 {
@@ -89,7 +48,7 @@ inline RealType CubicTraits<0>::ek(RealType t, ArgType1 kpoint1)
 }
 
 template <size_t M>
-inline std::vector<BZPoint<M>> CubicTraits<M>::getAllBZPoints(const KMesh& kGrid)
+std::vector<BZPoint<M>> CubicTraits<M>::getAllBZPoints(const KMesh& kGrid)
 {
     size_t ksize = kGrid.getSize();
     size_t totalqpts = size_t(pow(ksize,M));
@@ -134,7 +93,7 @@ inline BZPoint<M> CubicTraits<M>::findSymmetricBZPoint(const BZPoint<M>& in, con
 }
 
 template <size_t M>
-inline std::map<BZPoint<M>, std::vector<BZPoint<M>>> CubicTraits<M>::getUniqueBZPoints(const KMesh& kGrid)
+std::map<BZPoint<M>, std::vector<BZPoint<M>>> CubicTraits<M>::getUniqueBZPoints(const KMesh& kGrid)
 {
     auto all_pts = getAllBZPoints(kGrid);
     auto totalqpts = all_pts.size();
@@ -171,7 +130,7 @@ template <typename ...ArgTypes>
 inline RealType CubicDMFTSC<D>::dispersion(ArgTypes... kpoints) const
 {
     static_assert(sizeof...(ArgTypes) == D, "Number of points mismatch!" );
-    return CubicTraits<0>::ek(_t, kpoints...);
+    return _ek._f(kpoints...);
 }
 
 template <size_t D>
@@ -187,7 +146,7 @@ inline RealType CubicDMFTSC<D>::dispersion(const std::tuple<ArgTypes...>& kpoint
 
 template <size_t D>
 template <typename ...ArgTypes>
-inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::glat(ArgTypes... kpoints) const
+typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::glat(ArgTypes... kpoints) const
 {
     static_assert(sizeof...(ArgTypes) == D,"!");
     auto e = dispersion<ArgTypes...>(kpoints...);
@@ -195,23 +154,6 @@ inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::glat(ArgTypes... kpoints)
     return out;
 
 }
-
-template <size_t D>
-template <typename MPoint, typename ...ArgTypes> 
-ComplexType CubicDMFTSC<D>::glat_analytic(MPoint w, ArgTypes... kpoints) const
-{
-    return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-dispersion(kpoints...));
-}
-
-template <size_t D>
-template <typename MPoint, typename ...ArgTypes> 
-ComplexType CubicDMFTSC<D>::glat_analytic(std::tuple<MPoint,ArgTypes...> in) const
-{
-    auto w = std::get<0>(in);
-    auto kpts = __tuple_tail(in);
-    return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-dispersion(kpts));
-}
-
 
 template <size_t D>
 template <typename MPoint, typename KPoint> 
@@ -245,16 +187,13 @@ inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::getBubblePI(MPoint in) co
 }
 
 template <size_t D>
-inline CubicDMFTSC<D>::CubicDMFTSC ( const FKImpuritySolver &S, RealType t, KMesh kGrid):
+CubicDMFTSC<D>::CubicDMFTSC ( const FKImpuritySolver &S, RealType t, KMesh kGrid):
     SelfConsistency(S),
     _t(t),
     _kGrid(kGrid),
     _ek(__repeater<KMesh,D>::get_tuple(_kGrid)),
     _gloc(this->_S.w_grid)
 {
-    //CubicTraits<D>::template fill<index_iterator<ComplexType,EkStorage>>(index_begin<ComplexType, EkStorage>(_ek_vals), _t, _kGrid);
-    //CubicTraits<D>::template fillContainer<Container<ComplexType,D>>(_ek.getData(), _t, _kGrid);
-    //CubicTraits<D>::template fillContainer<EkStorage>(_ek, _t, _kGrid);
     _ek._f = CubicTraits<D>::template get_dispersion<typename EkStorage::FunctionType> (t); 
     _ek.fill(_ek._f);
 }
@@ -287,7 +226,7 @@ typename CubicDMFTSC<D>::GKType CubicDMFTSC<D>::getGLat(const FMatsubaraGrid& fG
 }
 
 template <size_t D>
-inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::operator()()
+typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::operator()()
 {
     INFO("Using DMFT self-consistency on a cubic lattice in " << D << " dimensions on a lattice of " << _kGrid.getSize() << "^" << D << " atoms.");
     GFType out(this->_S.w_grid); 

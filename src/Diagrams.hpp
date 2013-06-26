@@ -8,19 +8,25 @@
 namespace FK {
 
 template <typename GKType, typename ... ArgTypes>
+inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const std::tuple<ArgTypes...>& args)
+{
+    static_assert(GKType::N==sizeof...(ArgTypes), "Argument size mismatch");
+    GKType GF_shifted = GF.shift(args);
+    return getBubble(GF,GF_shifted);
+}
+
+template <typename GKType, typename ... ArgTypes>
 inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, ArgTypes... args)
 {
     return getBubble(GF,std::forward_as_tuple(args...));
 }
 
-template <typename GKType, typename ... ArgTypes>
-inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const std::tuple<ArgTypes...>& args)
+template <typename GKType>
+inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const GKType &GF_shift)
 {
-    static_assert(GKType::N==sizeof...(ArgTypes), "Argument size mismatch");
     const auto _fGrid = std::get<0>(GF.getGrids()); 
     GLocalType out(_fGrid);
-    GKType GF_shifted = GF.shift(args);
-    GF_shifted*=GF;
+    auto GF_shifted=GF*GF_shift;
 
     RealType knorm = 1;
     for (auto val : GF._dims) knorm*=val; 

@@ -18,10 +18,10 @@ struct DFBase
 
     bool _eval_BS_SC = false;
     RealType _BSmix = 0.1;
-    size_t _n_BS_iter = 1000;
+    size_t _n_BS_iter = 10;
 
     bool _EvaluateStaticDiagrams = true;
-    bool _EvaluateDynamicDiagrams = true;
+    bool _EvaluateDynamicDiagrams = false;
 
     bool _update_mixing = true;
 
@@ -35,6 +35,7 @@ struct DFLadderCubic : CubicDMFTSC<D>, DFBase {
     using typename CubicDMFTSC<D>::EkStorage;
     using typename DFBase::GLocalType;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType;
+    typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid,FMatsubaraGrid>::type FullVertexType;
     typedef typename GKType::ArgTupleType wkArgTupleType;
     typedef typename GKType::PointTupleType wkPointTupleType;
     typedef decltype(std::tuple_cat(std::make_tuple(BMatsubaraGrid::point()), std::array<KMesh::point, D>())) WQTupleType; 

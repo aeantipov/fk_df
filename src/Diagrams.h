@@ -26,6 +26,8 @@ struct Diagrams
 
     //Diagrams(const FMatsubaraGrid& fGrid, const KMesh& kGrid);
 
+    template <typename GKType>
+    static GLocalType getBubble(const GKType &GF, const GKType &GF_shift);
     template <typename GKType, typename ... ArgTypes>
     static GLocalType getBubble(const GKType &GF, ArgTypes... args);
     template <typename GKType, typename ... ArgTypes>
