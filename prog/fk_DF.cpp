@@ -386,60 +386,86 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
             }
         size_t n_freq = std::max(int(beta*2), 256);
         auto stat_susc_bz = SC.getStaticLatticeSusceptibility(bzpoints, FMatsubaraGrid(-n_freq,n_freq,beta));
-        std::map<BZPoint<D>, RealType> susc_map;
-        for (size_t nq=0; nq<stat_susc_bz.size(); ++nq) susc_map[bzpoints[nq]] = std::real(stat_susc_bz[nq]);
+        std::map<BZPoint<D>, RealType> susc_map, lattice_bubble_map, dual_bubble_map;
+        INFO_NONEWLINE("\tGetting bubbles [" << stat_susc_bz.size() <<"] : ");
+        for (size_t nq=0; nq<stat_susc_bz.size(); ++nq) { 
+            INFO_NONEWLINE(nq << " "); 
+            susc_map[bzpoints[nq]] = std::real(stat_susc_bz[nq]);
+            lattice_bubble_map[bzpoints[nq]] = std::real(std::real(Diagrams::getBubble(glat, std::tuple_cat(std::make_tuple(0.0), bzpoints[nq])).sum()));
+            dual_bubble_map[bzpoints[nq]] = std::real(Diagrams::getBubble(SC.GD, std::tuple_cat(std::make_tuple(0.0), bzpoints[nq])).sum());
+        };
+        INFO("");
+
         auto all_bz_points = CubicTraits<D>::getAllBZPoints(SC._kGrid);
         size_t nqpts = all_bz_points.size();
-        size_t dimsize = SC._kGrid.getSize();
-        std::ofstream out, out2, out3;
-        out.open("StaticChiDFCC.dat");
-        out2.open("StaticChi0DFCC.dat");
-        out3.open("StaticDualBubbleCC.dat");
+
+        typedef typename ArgBackGenerator<D,KMesh        ,GridObject,ComplexType>::type susc_k_type;
+        typedef typename ArgBackGenerator<D,EnumerateGrid,GridObject,ComplexType>::type susc_r_type;
+
+        auto kmeshes = __repeater<KMesh,D>::get_tuple(SC._kGrid);
+        auto rgrid = EnumerateGrid(0,SC._kGrid.getSize(),false);
+        auto rmeshes = __repeater<EnumerateGrid,D>::get_tuple(rgrid);
+
+        susc_k_type susc_full(kmeshes), susc_lattice_bubbles(kmeshes), dual_bubbles(kmeshes);
+        susc_r_type susc_full_r(rmeshes), susc_lattice_bubbles_r(rmeshes), dual_bubbles_r(rmeshes);
+
         for (size_t nq=0; nq<nqpts; ++nq) {
             BZPoint<D> current_point = all_bz_points[nq];
+            typename susc_k_type::PointTupleType current_point_tuple = current_point;
             BZPoint<D> sym_point = CubicTraits<D>::findSymmetricBZPoint(current_point,SC._kGrid);
-            out << all_bz_points[nq] << susc_map[sym_point] << std::endl;
-            out2 << all_bz_points[nq] << std::real(Diagrams::getBubble(glat, std::tuple_cat(std::make_tuple(0.0), sym_point)).sum()) << std::endl;
-            RealType dual_bubble = std::real(Diagrams::getBubble(SC.GD, std::tuple_cat(std::make_tuple(0.0), sym_point)).sum());
-            out3 << all_bz_points[nq] << dual_bubble << std::endl;
-            if ((nq+1)%dimsize==0) { out << std::endl; out2 << std::endl; out3 << std::endl; }
-        }
+            susc_full.get(current_point_tuple) = susc_map[sym_point];
+            susc_lattice_bubbles.get(current_point_tuple) = lattice_bubble_map[sym_point];
+            dual_bubbles.get(current_point_tuple) = dual_bubble_map[sym_point];
+            };
 
-        /*std::vector<BZPoint<D>> bzpoints = CubicTraits<D>::getAllBZPoints(SC._kGrid);
-        size_t n_freq = std::max(int(beta*2), 32);
-        auto stat_susc_bz = SC.getStaticLatticeSusceptibility(bzpoints, FMatsubaraGrid(-n_freq,n_freq,beta));
-        size_t nqpts = bzpoints.size();
-        size_t dimsize = SC._kGrid.getSize();
-        std::ofstream out;
-        std::ofstream out2;
-        out.open("StaticChiDFCC.dat");
-        out2.open("StaticChi0DFCC.dat");
-        for (size_t nq=0; nq<nqpts; ++nq) {
-            out << bzpoints[nq] << std::real(stat_susc_bz[nq]) << std::endl;
-            if ((nq+1)%dimsize==0) out << std::endl;
-        }
-        */
-        out2.close();
-        out.close();
-    };
+        susc_full.savetxt("StaticChiDFCC.dat");
+        susc_lattice_bubbles.savetxt("StaticLatticeBubbleDFCC.dat");
+        dual_bubbles.savetxt("StaticDualBubbleCC.dat");
+
+        INFO2("Doing FFT of susceptibilities");
+
+        susc_full_r.getData() = run_fft(susc_full.getData(),FFTW_BACKWARD);
+        susc_lattice_bubbles_r.getData() = run_fft(susc_lattice_bubbles.getData(),FFTW_BACKWARD);
+        dual_bubbles_r.getData() = run_fft(dual_bubbles.getData(),FFTW_BACKWARD);
+
+        susc_full_r.savetxt("StaticChiDFCC_r.dat");
+        susc_lattice_bubbles_r.savetxt("StaticLatticeBubbleDFCC_r.dat");
+        dual_bubbles_r.savetxt("StaticDualBubbleCC_r.dat");
+
+        INFO2("Saving susceptibilities in different directions");
+
+        GridObject<RealType,EnumerateGrid> cc_x (rgrid), cc_y(rgrid), cc_xy(rgrid); 
+        for (auto p1:rgrid.getPoints()) {
+            auto zero_pt = rgrid.findClosest(0);
+            std::array<typename EnumerateGrid::point, D> xpt,ypt,xypt; 
+            xpt.fill(zero_pt); ypt.fill(zero_pt); xypt.fill(zero_pt);
+            xpt[D-1]=p1; 
+            xypt[D-1]=p1;
+            ypt[std::max(int(D),2)-2]=p1;
+            xypt[std::max(int(D),2)-2]=p1;
+
+            cc_x.get(p1) = std::real(susc_full_r(typename susc_r_type::PointTupleType(xpt)));
+            cc_y.get(p1) = std::real(susc_full_r(typename susc_r_type::PointTupleType(ypt)));
+            cc_xy.get(p1) = std::real(susc_full_r(typename susc_r_type::PointTupleType(xypt)));
+            }
+
+        cc_x.savetxt("StaticChiDFCC_dir_x.dat");
+        cc_y.savetxt("StaticChiDFCC_dir_y.dat");
+        cc_xy.savetxt("StaticChiDFCC_dir_xy.dat");
+        };
 
 
     if (flags[6]) {
+        INFO2("Saving dual self-energy");
+        SC.SigmaD.savetxt("SigmaDwk.dat");
+        };
+
+    if (flags[7]){
         INFO2("Saving G(w,k)");
         auto glat = SC.getGLat(); 
         GF glat_k(Solver.w_grid);
-        auto all_bz_points = CubicTraits<D>::getAllBZPoints(SC._kGrid);
-        size_t nqpts = all_bz_points.size();
-        for (size_t nq=0; nq<nqpts; ++nq) {
-            BZPoint<D> q = all_bz_points[nq];
-            typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat(std::tuple_cat(std::make_tuple(w),q));};
-            glat_k.fill(f);
-            std::stringstream s1;
-            s1 << "glat_k" << RealType(std::get<0>(q)) << "_" << RealType(std::get<1>(q)) << ".dat";
-            std::string s; s1>>s;
-            glat_k.savetxt(s);
-        }
-    };
+        glat_k.savetxt("glat_k.dat");
+        };
 
 /*
     if (dynamic_flag) {
