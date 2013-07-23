@@ -31,6 +31,7 @@ DFLadderCubic<D>::DFLadderCubic(const FKImpuritySolver &S, const FMatsubaraGrid&
     GLatLoc(_fGrid)
 {
     _initialize();
+    SigmaD = 0.0;
 };
 
 
@@ -51,7 +52,8 @@ void DFLadderCubic<D>::_initialize()
             //return (-e)/std::abs(w*w) -(e*e-_t*_t*2*RealType(D) - 2.0*e*(_S.mu - _S.w_1*_S.U))/w/std::abs(w*w); 
             };
     GD0._f = __fun_traits<typename GKType::FunctionType>::getFromTupleF(gd_f);
-    GD=GD0;
+    GD=1.0/(1.0/GD0 - SigmaD);
+    GD._f = GD0._f;
 };
 
 /*
@@ -101,7 +103,6 @@ template <size_t D>
 typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
 {
     INFO("Using DF Ladder self-consistency in " << D << " dimensions on a cubic lattice of " << _kGrid.getSize() << "^" << D <<" atoms.");
-    SigmaD = 0.0;
     RealType beta = _fGrid._beta;
     RealType T = 1.0/beta;
     GLocalType gw(_fGrid); // non-const method. Better copy.
@@ -116,6 +117,10 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     _initialize();
 
     // Put here operations with GD
+    //DEBUG("GD0 = " << GD0);
+    //DEBUG("GD  = " << GD);
+    //DEBUG("SigmaD = " << SigmaD);
+    SigmaD = 0.0;
 
     // Generate a list of unique q-points
     //size_t ksize = _kGrid.getSize();
@@ -282,7 +287,7 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     };
     INFO("Finished DF iterations");
         
-    SigmaD = 1.0/GD - 1.0/GD0;
+    SigmaD = 1.0/GD0 - 1.0/GD;
     for (auto iw : _fGrid.getPoints()) {
         size_t iwn = size_t(iw);
         GLat[iwn] = 1.0/(Delta(iw) - _ek.getData()) + 1.0/(Delta(iw) - _ek.getData())/gw(iw)*GD[iwn]/gw(iw)/(Delta(iw) - _ek.getData());
@@ -295,6 +300,9 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     Delta_out = Delta + 1.0/gw * GDLoc / GLatLoc;
     // Assume DMFT asymptotics
     Delta_out._f = std::bind([&](ComplexType w)->ComplexType{return _t*_t*2*RealType(D)*((_S.mu-_S.w_1*_S.U)/std::abs(w*w) + 1.0/w);}, std::placeholders::_1);
+    //DEBUG("GD0 = " << GD0);
+    //DEBUG("GD  = " << GD);
+    //DEBUG("SigmaD = " << SigmaD);
     return Delta_out;
 }
 

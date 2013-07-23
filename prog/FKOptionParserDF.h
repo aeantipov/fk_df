@@ -34,6 +34,8 @@ public:
     FK::RealType DFBSMixing = 1.0;
     size_t extraops = 0;
     bool update_mixing = true;
+    bool read_dual_sigma = false;
+    std::string dual_sigma_file = "SigmaDwk.dat";
 	std::string help = "";
 
 	FKOptionParserDF() = default; 
@@ -144,6 +146,15 @@ public:
             DFEvaluateDynamicDiagrams = std::atoi(arg);
             used_args = 1;
 
+        ON_OPTION_WITH_ARG(LONGOPT("sigmad"))
+            read_dual_sigma = true;
+            dual_sigma_file = arg;
+            used_args = 1;
+
+        ON_OPTION_WITH_ARG(LONGOPT("readsigmad"))
+            read_dual_sigma = std::atoi(arg);
+            used_args = 1;
+
         ON_OPTION(SHORTOPT('h') || LONGOPT("help"))
             std::cout << "Usage: fk_DF [options]" << std::endl;
             std::cout << "Options: " << std::endl;
@@ -165,6 +176,8 @@ public:
             std::cout << "--dfbsmix            : Mixing for Bethe-Salpeter iterations (if needed). Default: " << DFBSMixing << std::endl;
             std::cout << "--dfevalstatic       : Evaluate static DF diagram series. Default: " << std::boolalpha << DFEvaluateStaticDiagrams << std::endl;
             std::cout << "--dfevaldynamic      : Evaluate dynamic DF diagram series. Default: " << std::boolalpha << DFEvaluateDynamicDiagrams << std::endl;
+            std::cout << "--sigmad             : Read dual self-energy from file. If not specified - start from zero. Default: " << dual_sigma_file << std::endl;
+            std::cout << "--readsigmad         : Flag to read dual self-energy. Default: " << std::boolalpha << read_dual_sigma << std::endl;
             exit(0);
 
 	END_OPTION_MAP()

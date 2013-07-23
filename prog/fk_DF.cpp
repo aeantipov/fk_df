@@ -48,6 +48,7 @@ using namespace FK;
 RealType beta;
 size_t extraops=0;
 bool INTERRUPT = false;
+std::string dual_sigma_file;
 
 typedef GFWrap GF;
 
@@ -117,6 +118,8 @@ int main(int argc, char *argv[])
     size_t NDFRuns = opt.NDFRuns;
     RealType DFCutoff = opt.DFCutoff;
     bool update_mixing = opt.update_mixing;
+    bool read_dual_sigma = opt.read_dual_sigma;
+    dual_sigma_file = opt.dual_sigma_file;
 
     KMesh kGrid(ksize);
 
@@ -168,6 +171,18 @@ int main(int argc, char *argv[])
                 INFO("Couldn't load weights from file.");
             }
         };
+
+    // read dual self-energy
+    if (read_dual_sigma) {
+        try { 
+            INFO("Loading dual self-energy from "<<dual_sigma_file);
+            SC_DF.SigmaD.loadtxt(dual_sigma_file);
+            } 
+        catch (std::exception &e) { 
+            INFO("Starting from zero dual self-energy");
+            SC_DF.SigmaD = 0.0; 
+            };
+    };
 
     RealType diff=1.0, diff_min = 1.0;
     size_t diff_min_count = 0;
@@ -457,7 +472,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
 
     if (flags[6]) {
         INFO2("Saving dual self-energy");
-        SC.SigmaD.savetxt("SigmaDwk.dat");
+        SC.SigmaD.savetxt(dual_sigma_file);
         };
 
     if (flags[7]){
