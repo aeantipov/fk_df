@@ -151,7 +151,9 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     diffDF_stream.close();
 
     INFO("Starting ladder dual fermion calculations")
-    INFO("Beginning with GD sum = " << std::abs(GD.sum())/RealType(_fGrid.getSize())/knorm);
+    GLocalType GDsum(_fGrid);
+    for (auto iw : _fGrid.getPoints()) { GDsum[iw._index] = std::abs(GD[iw._index].sum())/knorm; }; 
+    INFO("Beginning with GD sum = " << std::abs(GDsum.sum())/RealType(_fGrid.getSize()));
 
     RealType diffGD = 1.0, diffGD_min = 1.0; 
     size_t diffGD_min_count = 0; // A counter to estimate, how many iterations have passed after the minimal achieved diff
@@ -283,7 +285,8 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
         diffGD=1.0;
         }*/
 
-       INFO2("GD sum = " << std::abs(GD.sum())/RealType(_fGrid.getSize())/knorm);
+       for (auto iw : _fGrid.getPoints()) { GDsum[iw._index] = std::abs(GD[iw._index].sum())/knorm; }; 
+       INFO2("GD sum = " << std::abs(GDsum.sum())/RealType(_fGrid.getSize()));
     };
     INFO("Finished DF iterations");
         
@@ -303,6 +306,7 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     //DEBUG("GD0 = " << GD0);
     //DEBUG("GD  = " << GD);
     //DEBUG("SigmaD = " << SigmaD);
+
     return Delta_out;
 }
 
