@@ -11,7 +11,8 @@ enable_testing()
 set (tests 
 FFTTest
 SolverTest
-DMFTCubicTest
+DMFTCubicTest01
+DMFTCubicTest02
 DMFTBetheTest
 DMFTCubicSuscTest
 DMFTCubicSuscTest02

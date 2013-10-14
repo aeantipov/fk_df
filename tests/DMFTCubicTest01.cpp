@@ -50,7 +50,7 @@ int main()
 
     FMatsubaraGrid grid_half(0,n_freq*2,beta);
     GF Delta_half(grid_half); 
-    Delta_half = Delta;
+    Delta_half = Solver.Delta;
     GF gw_half(grid_half); 
     gw_half = Solver.gw;
     GF sigma_half(grid_half); 

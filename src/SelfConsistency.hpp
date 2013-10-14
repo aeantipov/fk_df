@@ -236,7 +236,8 @@ typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::operator()()
     for (auto w : _gloc.getGrid().getPoints()) {
         EkStorage e1 = (1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek)); 
         _gloc.get(w) = e1.sum()/knorm;
-        out.get(w) = -1.0/_gloc(w)+_S.mu-_S.Sigma(w)+ComplexType(w);
+        //out.get(w) = -1.0/_gloc(w)+_S.mu-_S.Sigma(w)+ComplexType(w);
+        out.get(w) = -1.0/_gloc(w)+_S.Delta(w) + 1.0/_S.gw(w); 
     }
     //out._f = std::bind([&](ComplexType w){return _t*_t*2*RealType(D)/w;}, std::placeholders::_1);
     out._f = std::bind([&](ComplexType w)->ComplexType{return _t*_t*2*RealType(D)*((_S.mu-_S.w_1*_S.U)/std::abs(w*w) + 1.0/w);}, std::placeholders::_1);
