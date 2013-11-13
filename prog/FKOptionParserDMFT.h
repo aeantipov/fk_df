@@ -8,43 +8,36 @@
  */
 class FKOptionParserDMFT : public optparse {
 public:
-	FK::RealType beta ;
-	FK::RealType U    ;
-	FK::RealType t    ;
-	FK::RealType mu   ;
-	FK::RealType e_d  ;
-	FK::RealType w_0  ;
-	FK::RealType w_1  ;
-    bool update_weights;
-	FK::RealType mix  ;
-	size_t n_freq;
-	size_t kpts;
-	size_t n_iter;
-    size_t extra_ops;
-	std::string help;
+	FK::RealType beta = 10.  ;
+	FK::RealType T    = 0.1  ;
+	FK::RealType U    = 4.0  ;
+	FK::RealType t    = 1.0  ;
+	FK::RealType mu   = 2.0  ;
+	FK::RealType e_d  = 0.0  ;
+	FK::RealType w_0  = 0.5  ;
+	FK::RealType w_1  = 0.5  ;
+    bool update_weights = true;
+	FK::RealType mix = 1.0;
+    FK::RealType cutoff = 100*std::numeric_limits<FK::RealType>::epsilon();
+	size_t n_freq = 256;
+	size_t kpts = 32;
+	size_t n_iter = 1000;
+    size_t extra_ops = 0;
+	std::string help = "";
 
-	FKOptionParserDMFT() : 
-          beta(10), 
-          U(4.0), 
-          t(1.0), 
-          mu(2.0), 
-          e_d(0.0),
-          w_0(0.5),
-          w_1(0.5),
-          update_weights(true),
-          mix(1.0), 
-          n_freq(1024), 
-          kpts(32),
-          n_iter(1000), 
-          extra_ops(0),
-          help("") 
-          {}
+	FKOptionParserDMFT(){}
 
 	BEGIN_OPTION_MAP_INLINE()
-		ON_OPTION_WITH_ARG(SHORTOPT('b') || LONGOPT("beta"))
+        ON_OPTION_WITH_ARG(SHORTOPT('b') || LONGOPT("beta"))
 			beta = std::atof(arg);
-            //n_freq = (int)std::fabs(beta+0.5);
+            T = 1.0/beta;
 			used_args = 1;	// Notify the parser of a consumption of argument.
+
+		ON_OPTION_WITH_ARG(SHORTOPT('T') || LONGOPT("T"))
+			T = std::atof(arg);
+            beta = 1.0/T;
+			used_args = 1;	// Notify the parser of a consumption of argument.
+
 
         ON_OPTION_WITH_ARG(SHORTOPT('U') || LONGOPT("U"))
 			U = std::atof(arg);
@@ -77,6 +70,10 @@ public:
 
         ON_OPTION_WITH_ARG(LONGOPT("mix"))
 			mix = std::atof(arg);
+			used_args = 1;	// Notify the parser of a consumption of argument.
+
+        ON_OPTION_WITH_ARG(LONGOPT("cutoff"))
+			cutoff = std::atof(arg);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
         ON_OPTION_WITH_ARG(SHORTOPT('n') || LONGOPT("niter"))

@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
         std::cout << "e_d                  : " << opt.e_d << std::endl;
         std::cout << "Number Of Matsubaras : " << opt.n_freq << std::endl;
         std::cout << "Max number of iterations : " << opt.n_iter << std::endl;
+        std::cout << "Convergence cutoff   :: " << opt.cutoff << std::endl;
     } catch (const optparse::unrecognized_option& e) {
         std::cout << "unrecognized option: " << e.what() << std::endl;
         return 1;
@@ -154,7 +155,7 @@ int main(int argc, char *argv[])
     Solver.w_1 = opt.w_1;
 
     RealType diff=1.0;
-    for (int i=0; i<maxit && diff>1e-8 &&!INTERRUPT; ++i) {
+    for (int i=0; i<maxit && diff>opt.cutoff &&!INTERRUPT; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
         update_weights = update_weights && diff/mix>1e-3;
         Solver.run(update_weights);

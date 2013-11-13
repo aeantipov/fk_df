@@ -25,26 +25,16 @@ void FKImpuritySolver::run(bool calc_weight)
     K1._f = [=](ComplexType w)->ComplexType{return 1.0/(w+mu-Delta._f(w)-U);};
    
     if (calc_weight) {
+        RealType alpha = beta*(mu-e_d-U/2);
         std::function<RealType(FMatsubaraGrid::point)> tempF = [this](FMatsubaraGrid::point w){
-            return pow(std::abs(K1(w)/K0(w)),2); // *(1.0+std::pow((U+2*e_d-2*mu),2)/std::pow(imag(ComplexType(w)),2));};
+            return 2.*log(std::abs(K0(w))) - 2.*log(std::abs(K1(w))); 
             };
-        RealType Z0toZ1 = half_grid.prod(tempF) *std::exp(-beta*(mu-e_d-U/2));
-        w_1 = 1.0/(1.0+Z0toZ1);
+        alpha+= half_grid.integrate(tempF)*beta;
+        alpha=exp(alpha);
+        w_1 = alpha / (1.0 + alpha);
         w_0 = 1.0-w_1;
         };
     
-    
-/*    if (calc_weight) {
-        auto Zf1 = [this](FMatsubaraGrid::point w, RealType mu1){return 1.0+(mu1 - Delta(w))/ComplexType(w);};
-        std::function<ComplexType(RealType)> Zfprod = [this,Zf1](RealType mu1){return w_grid.prod(std::bind(Zf1, std::placeholders::_1, mu1));};
-        RealType Z0 = std::abs(Zfprod(mu));
-        RealType Z1 = std::real(Zfprod(mu-U)*std::exp(beta*(mu-e_d-U/2)));
-        RealType Z=Z0+Z1;
-        DEBUG("Z0 = " << Z0 << ", Z1 = " << Z1);
-        w_0 = Z0/Z;
-        w_1 = Z1/Z;
-        };
-  */  
     _v_mult = beta*U*U*w_0*w_1;
     INFO("w_0 = " << w_0 << "; w_1 = " << w_1 );
 
