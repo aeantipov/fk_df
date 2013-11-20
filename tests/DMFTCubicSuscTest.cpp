@@ -127,8 +127,14 @@ int main()
     decltype(chi0_qPI_vals)::PointFunctionType chi0_qPI_vals_f = [&](BMatsubaraGrid::point in)->RealType { 
             auto g_shift = Solver.gw.shift(in);
             auto sigma_shift = Solver.Sigma.shift(in);
-            //if (is_equal(ComplexType(in),0.0)) return (-T)*std::real((glat*glat).sum()/RealType(__power<KPOINTS,D>::value));
-            return -T*std::real(((Solver.gw + g_shift)/(2*iw_gf + ComplexType(in)+ 2*mu - Solver.Sigma - sigma_shift)).sum());
+            auto chi_w = (Solver.gw + g_shift)/(2.*iw_gf + ComplexType(in)+ 2.*mu - Solver.Sigma - sigma_shift); 
+            auto a = std::real(chi_w.sum());
+            if (std::isnan(a)) { // Hit a resonance -2iw = i\Omega
+                auto w = gridF.findClosest(-in._val / 2.);
+                chi_w[w._index] = std::real((glat[w._index]*glat[w._index]*(-1.)).sum())/RealType(__power<KPOINTS,D>::value);
+                a = std::real(chi_w.sum());
+                };
+            return -T*a;
         };
 
     chi0_q0_dmft_vals.fill(chi0_q0_vals_f);

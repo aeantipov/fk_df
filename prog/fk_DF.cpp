@@ -483,6 +483,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         glat_k.savetxt("glat_k.dat");
         };
 
+#ifdef LATTICE_cubic2d
     if (flags[8]){
         INFO2("Gd(r)");
         auto w = Solver.w_grid.findClosest(I*PI/beta);
@@ -491,54 +492,14 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         auto gdr0_data = run_fft(SC.GD0[w._index], FFTW_BACKWARD);
         GridObject <ComplexType,EnumerateGrid> GDr(rgrid),GDr0(rgrid); 
         for (auto x : rgrid.getPoints()) {
-            GDr._data[x._index] = gdr_data[0][x._index];
-            GDr0._data[x._index] = gdr0_data[0][x._index];
+            GDr._data[x._index] = gdr_data._data[0][x._index];
+            GDr0._data[x._index] = gdr0_data._data[0][x._index];
         };
         GDr.savetxt("Gdr.dat");
         GDr0.savetxt("Gdr0.dat");
         };
+#endif // endif :: #ifdef LATTICE_cubic2d
 
-/*
-    if (dynamic_flag) {
-
-        if (dynamic_flag >= 2) {
-            size_t n_b_freq = gridF._w_max/2; // std::max(gridF._w_max/2,int(beta));
-             BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
-
-             auto glat = SC.getGLat();
-             auto gloc = SC.GLatLoc;
-             size_t ksize = SC._kGrid.getSize();
-             
-             GF iw_gf(gridF); 
-             iw_gf.fill([](ComplexType w){return w;});
-             GridObject<ComplexType,BMatsubaraGrid> chi_q0(gridB), chi_qPI(gridB);
-
-
-             KMeshPatch grid0PI(SC._kGrid, {{0, SC._kGrid.getSize()/2}} );
-             std::array<KMeshPatch, D> qgrids = __repeater<KMeshPatch,D>::get_array(grid0PI); 
-             auto data = SC.calculateLatticeData(gridB, qgrids); // Heavy operation
-
-             auto LatticeSusc = std::get<0>(data);
-
-             std::array<KMesh::point,SCType::NDim> q_0, q_PI;
-             q_0.fill(SC._kGrid[0]);
-             q_PI.fill(SC._kGrid[ksize/2]);
-
-             for (auto iW : gridB.getPoints()) {
-                 auto args_0 = std::tuple_cat(std::forward_as_tuple(iW),q_0);
-                 auto args_pi = std::tuple_cat(std::forward_as_tuple(iW),q_PI);
-                 chi_q0[size_t(iW)] = LatticeSusc(args_0);
-                 chi_qPI[size_t(iW)] = LatticeSusc(args_pi);
-                 };
-
-             chi_q0.savetxt("Chiq0.dat");
-             chi_qPI.savetxt("ChiqPI.dat");
-             auto chi_q0_0 = -T*chi_q0.sum();
-             auto chi_qPI_0 = -T*chi_qPI.sum();
-             INFO("Chi0(q=0) sum  = " << chi_q0_0);
-             INFO("Chi0(q=pi) sum = " << chi_qPI_0);
-         };
-        */
 }
-#endif
+#endif // endif :: #ifdef _calc_extra_stats
 
