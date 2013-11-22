@@ -400,7 +400,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         for (auto map_it = bzpoints_map.begin(); map_it!=bzpoints_map.end(); map_it++){
             bzpoints.push_back(map_it->first);
             }
-        size_t n_freq = std::max(int(beta*2), 256);
+        size_t n_freq = Solver.gw.getGrid().getSize(); //std::max(int(beta*2), 256);
         auto stat_susc_bz = SC.getStaticLatticeSusceptibility(bzpoints, FMatsubaraGrid(-n_freq,n_freq,beta));
         std::map<BZPoint<D>, RealType> susc_map, lattice_bubble_map, dual_bubble_map;
         INFO_NONEWLINE("\tGetting bubbles [" << stat_susc_bz.size() <<"] : ");
