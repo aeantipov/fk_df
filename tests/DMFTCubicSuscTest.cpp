@@ -8,7 +8,7 @@
 #include <array>
 
 using namespace FK;
-typedef GFWrap GF;
+typedef GridObject<ComplexType,FMatsubaraGrid> GF;
 
 template <typename F1, typename F2>
 bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
@@ -58,13 +58,13 @@ int main()
         Solver.Delta = Delta; 
         }
 
-    FMatsubaraGrid gridF_half(0,n_freq*2,beta);
-    GF Delta_half(gridF_half); 
-    Delta_half = Solver.Delta;
-    GF gw_half(gridF_half); 
-    gw_half = Solver.gw;
-    GF sigma_half(gridF_half); 
-    sigma_half = Solver.Sigma;
+    FMatsubaraGrid grid_half(0,n_freq*2,beta);
+    GF Delta_half(grid_half); 
+    Delta_half.copyInterpolate(Solver.Delta);
+    GF gw_half(grid_half); 
+    gw_half.copyInterpolate(Solver.gw);
+    GF sigma_half(grid_half); 
+    sigma_half.copyInterpolate(Solver.Sigma);
 
     sigma_half.savetxt("Sigma.dat");
     gw_half.savetxt("Gw.dat");
@@ -92,9 +92,9 @@ int main()
     DEBUG(irrDMFTV4.diff(irrDMFT3));
     auto glat = SC.getGLat(gridF);
 
-    GF glat_cut0(gridF_half);
-    GF glat_cutPI(gridF_half);
-    GF glat_cut4(gridF_half);
+    GF glat_cut0(grid_half);
+    GF glat_cutPI(grid_half);
+    GF glat_cut4(grid_half);
     glat_cut0.fill(typename GF::FunctionType([&](ComplexType w){return glat(w,0.0,0.0);}));
     glat_cutPI.fill(typename GF::FunctionType([&](ComplexType w){return glat(w,PI,PI);}));
     glat_cut4.fill(typename GF::FunctionType([&](ComplexType w){return glat(w,PI/4,PI/4);}));

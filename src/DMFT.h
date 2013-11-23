@@ -86,13 +86,13 @@ public:
 
 /** Extra tools. */
 template <typename SolverType>
-std::vector<RealType> getStaticLatticeDMFTSusceptibility(const SolverType& Solver, const std::vector<GFWrap>& Bubbles_in, const FMatsubaraGrid& gridF);
+std::vector<RealType> getStaticLatticeDMFTSusceptibility(const SolverType& Solver, const std::vector<typename SolverType::GFType>& Bubbles_in, const FMatsubaraGrid& gridF);
 template <typename SolverType>
-RealType getStaticLatticeDMFTSusceptibility(const SolverType& Solver, const GFWrap& Bubble_in, const FMatsubaraGrid& gridF);
+RealType getStaticLatticeDMFTSusceptibility(const SolverType& Solver, const typename SolverType::GFType& Bubble_in, const FMatsubaraGrid& gridF);
 template <typename SolverType>
-std::vector<std::array<RealType,3>> getStaticLatticeDMFTSkeletonSusceptibility(const SolverType& Solver, const std::vector<GFWrap>& Bubbles_in, const FMatsubaraGrid& gridF);
+std::vector<std::array<RealType,3>> getStaticLatticeDMFTSkeletonSusceptibility(const SolverType& Solver, const std::vector<typename SolverType::GFType>& Bubbles_in, const FMatsubaraGrid& gridF);
 template <typename SolverType>
-std::array<RealType,3> getStaticLatticeDMFTSkeletonSusceptibility(const SolverType& Solver, const GFWrap& Bubble_in, const FMatsubaraGrid& gridF);
+std::array<RealType,3> getStaticLatticeDMFTSkeletonSusceptibility(const SolverType& Solver, const typename SolverType::GFType& Bubble_in, const FMatsubaraGrid& gridF);
 
 } // end of namespace FK
 #endif // endif :: ifndef ___FK_DMFT_H___

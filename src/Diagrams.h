@@ -4,7 +4,6 @@
 
 #include <KMesh.hpp>
 #include <GridObject.hpp>
-#include "GFWrap.h"
 
 namespace FK { 
 
@@ -12,7 +11,7 @@ using namespace GFTools;
 
 struct Diagrams
 {
-    typedef GFWrap GLocalType;
+    typedef GridObject<ComplexType, FMatsubaraGrid> GLocalType;
     //template <size_t D> 
     //using GKType = typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type;
     template <size_t D> 

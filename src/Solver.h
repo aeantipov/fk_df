@@ -4,17 +4,17 @@
 #include "MatsubaraGrid.hpp"
 #include "Container.hpp"
 #include "GridObject.hpp"
-#include "GFWrap.h"
 
 namespace FK { 
+
+using namespace GFTools;
 
 struct FKImpuritySolver
 {
 private:
     ComplexType _v_mult;
 public:
-    //typedef GridObject<ComplexType,FMatsubaraGrid> GFType;
-    typedef GFWrap GFType;
+    typedef GridObject<ComplexType,FMatsubaraGrid> GFType;
     const RealType U;
     const RealType mu;
     const RealType e_d;

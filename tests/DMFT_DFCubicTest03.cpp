@@ -9,7 +9,7 @@
 #include <array>
 
 using namespace FK;
-typedef GFWrap GF;
+typedef GridObject<ComplexType,FMatsubaraGrid> GF;
 
 template <typename F1, typename F2>
 bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)

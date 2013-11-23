@@ -1,8 +1,6 @@
 include_directories (.)
 
 set (fk_src 
-#    Logger.h Logger.cpp
-    GFWrap.h GFWrap.cpp
     Solver.h Solver.cpp
     DMFT.h DMFT.hpp DMFT.cpp
     Diagrams.h Diagrams.hpp

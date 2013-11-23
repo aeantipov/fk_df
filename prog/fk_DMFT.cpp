@@ -3,7 +3,6 @@
 #include <MatsubaraGrid.hpp>
 #include <KMesh.hpp>
 #include <GridObject.hpp>
-#include "GFWrap.h"
 #include "Solver.h"
 #include "DMFT.h"
 #include "FFT.hpp"
@@ -45,11 +44,14 @@
 using namespace GFTools;
 using namespace FK;
 
+int __get_n_lines(const std::string& fname);
+int __get_min_number(const std::string& fname, RealType beta);
+
 RealType beta;
 size_t extraops;
 bool INTERRUPT = false;
  
-typedef GFWrap GF;
+typedef GridObject<ComplexType,FMatsubaraGrid> GF;
 
 template <typename F1, typename F2>
 bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
@@ -117,7 +119,13 @@ int main(int argc, char *argv[])
     std::function<ComplexType(ComplexType)> f1, f2;
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
 
-    try { GF Delta2("Delta_full.dat", beta); Delta = Delta2;} 
+    try { 
+        std::string fname = "Delta_full.dat";
+        GF Delta2(std::make_tuple(FMatsubaraGrid(__get_min_number(fname,beta), __get_min_number(fname,beta)+__get_n_lines(fname), beta)));
+        Delta2.loadtxt(fname);
+        Delta = Delta2;
+        } 
+
     catch (std::exception &e) { Delta.fill(f1); };
 
     Delta.savetxt("Delta_0.dat");
@@ -167,15 +175,15 @@ int main(int argc, char *argv[])
         }
    
     FMatsubaraGrid gridF_half(0, std::max(n_freq*3,size_t(100)), beta);
-    GF Delta_half(gridF_half); Delta_half = Delta;
-    GF gw_half(gridF_half); gw_half = Solver.gw;
-    GF sigma_half(gridF_half); sigma_half = Solver.Sigma;
+    GF Delta_half(gridF_half); Delta_half.copyInterpolate(Delta);
+    GF gw_half(gridF_half); gw_half.copyInterpolate(Solver.gw);
+    GF sigma_half(gridF_half); sigma_half.copyInterpolate(Solver.Sigma);
     sigma_half.savetxt("Sigma.dat");
     gw_half.savetxt("Gw.dat");
     Delta_half.savetxt("Delta.dat");
     int __msize = std::max(n_freq*5,size_t(1024));
     FMatsubaraGrid gridF_large(-__msize, __msize, beta);
-    GF Delta_large(gridF_large); Delta_large = Delta;
+    GF Delta_large(gridF_large); Delta_large.copyInterpolate(Delta);
     Delta_large.savetxt("Delta_full.dat");
 
     #ifdef _calc_extra_stats
@@ -384,9 +392,9 @@ void getExtraDMFTData(const sc_type& SC)
         Vertex4.fill(typename GF::PointFunctionType([&](FMatsubaraGrid::point w){return Solver.getBVertex4(iW,w);}));
         auto gw_bubble = Diagrams::getBubble(gw, iW);
         auto Chi0q0 = SC.getBubble0(iW);
-        auto Chiq0 = Diagrams::getSusc<GFWrap>(Chi0q0, Diagrams::BS(Chi0q0 - gw_bubble, Vertex4 , true));
+        auto Chiq0 = Diagrams::getSusc<GF>(Chi0q0, Diagrams::BS(Chi0q0 - gw_bubble, Vertex4 , true));
         auto Chi0qPI = SC.getBubblePI(iW);
-        auto ChiqPI = Diagrams::getSusc<GFWrap>(Chi0qPI, Diagrams::BS(Chi0qPI - gw_bubble, Vertex4, true)); 
+        auto ChiqPI = Diagrams::getSusc<GF>(Chi0qPI, Diagrams::BS(Chi0qPI - gw_bubble, Vertex4, true)); 
         chi_q0_vals[iWn] = std::real(Chiq0.sum());
         chi0_q0_vals[iWn] = std::real(Chi0q0.sum());
         chi0_qPI_vals[iWn] = std::real(Chi0qPI.sum());
@@ -417,3 +425,26 @@ void getExtraDMFTData(const sc_type& SC)
 }
 
 #endif
+
+int __get_n_lines(const std::string& fname)
+{   
+    std::ifstream f(fname.c_str()); 
+    std::string line; 
+    int nlines = 0; 
+    while (std::getline(f, line)) ++nlines; 
+    f.close(); 
+    return nlines;
+} 
+
+int __get_min_number(const std::string& fname, RealType beta)
+{
+    std::ifstream f(fname.c_str());
+    __num_format<FMatsubaraGrid::point> tmp(FMatsubaraGrid::point(0,0));
+    f >> tmp;
+    f.close();
+    ComplexType w_min = tmp._v;
+    int w_min_index = FMatsubaraIndex(w_min,beta);
+    return w_min_index;
+}
+
+

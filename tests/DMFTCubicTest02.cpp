@@ -8,7 +8,7 @@
 #include <array>
 
 using namespace FK;
-typedef GFWrap GF;
+typedef GridObject<ComplexType,FMatsubaraGrid> GF;
 
 template <typename F1, typename F2>
 bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
@@ -51,11 +51,11 @@ int main()
 
     FMatsubaraGrid grid_half(0,n_freq*2,beta);
     GF Delta_half(grid_half); 
-    Delta_half = Solver.Delta;
+    Delta_half.copyInterpolate(Solver.Delta);
     GF gw_half(grid_half); 
-    gw_half = Solver.gw;
+    gw_half.copyInterpolate(Solver.gw);
     GF sigma_half(grid_half); 
-    sigma_half = Solver.Sigma;
+    sigma_half.copyInterpolate(Solver.Sigma);
 
     sigma_half.savetxt("Sigma.dat");
     gw_half.savetxt("Gw.dat");

@@ -164,15 +164,15 @@ inline typename CubicInfDMFTSC::GFType CubicInfDMFTSC::getBubble0(MPoint in) con
 //
 
 template <typename SolverType>
-std::vector<RealType> getStaticLatticeDMFTSusceptibility(const SolverType& Solver, const std::vector<GFWrap>& Bubbles_in, const FMatsubaraGrid& gridF)
+std::vector<RealType> getStaticLatticeDMFTSusceptibility(const SolverType& Solver, const std::vector<typename SolverType::GFType>& Bubbles_in, const FMatsubaraGrid& gridF)
 {
-    GFWrap gw(gridF), Sigma(gridF), K0(gridF), K1(gridF);
+    typename SolverType::GFType gw(gridF), Sigma(gridF), K0(gridF), K1(gridF);
     gw.copyInterpolate(Solver.gw);
     Sigma.copyInterpolate(Solver.Sigma);
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
 
-    GFWrap bubble(gridF);
+    typename SolverType::GFType bubble(gridF);
 
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4_2(std::forward_as_tuple(gridF,gridF)); 
     decltype(Vertex4_2)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getVertex4(0.0, w1,w2);};
@@ -206,18 +206,18 @@ std::vector<RealType> getStaticLatticeDMFTSusceptibility(const SolverType& Solve
 }
 
 template <typename SolverType>
-RealType getStaticLatticeDMFTSusceptibility(const SolverType& Solver, const GFWrap& Bubble_in, const FMatsubaraGrid& gridF)
+RealType getStaticLatticeDMFTSusceptibility(const SolverType& Solver, const typename SolverType::GFType& Bubble_in, const FMatsubaraGrid& gridF)
 {
-    std::vector<GFWrap> bubbles;
+    std::vector<typename SolverType::GFType> bubbles;
     bubbles.push_back(Bubble_in);
     return getStaticLatticeDMFTSusceptibility(Solver,bubbles,gridF)[0];
 }
 
 
 template <typename SolverType>
-std::vector<std::array<RealType,3>> getStaticLatticeDMFTSkeletonSusceptibility(const SolverType& Solver, const std::vector<GFWrap>& Bubbles_in, const FMatsubaraGrid& gridF)
+std::vector<std::array<RealType,3>> getStaticLatticeDMFTSkeletonSusceptibility(const SolverType& Solver, const std::vector<typename SolverType::GFType>& Bubbles_in, const FMatsubaraGrid& gridF)
 {
-    GFWrap gw(gridF), Sigma(gridF), K0(gridF), K1(gridF);
+    typename SolverType::GFType gw(gridF), Sigma(gridF), K0(gridF), K1(gridF);
     gw.copyInterpolate(Solver.gw);
     Sigma.copyInterpolate(Solver.Sigma);
     K0.copyInterpolate(Solver.K0);
@@ -228,7 +228,7 @@ std::vector<std::array<RealType,3>> getStaticLatticeDMFTSkeletonSusceptibility(c
     //auto mu = Solver.mu;
     RealType beta = Solver.beta;
     RealType T=1.0/beta;
-    GFWrap bubble(gridF);
+    typename SolverType::GFType bubble(gridF);
 
     auto Lambda = 1.0 + gw*(2.0*Sigma - U); 
     auto Lambda2 = (1. + gw*Sigma)*(1.+gw*(Sigma-U));
@@ -254,9 +254,9 @@ std::vector<std::array<RealType,3>> getStaticLatticeDMFTSkeletonSusceptibility(c
 }
 
 template <typename SolverType>
-std::array<RealType,3> getStaticLatticeDMFTSkeletonSusceptibility(const SolverType& Solver, const GFWrap& Bubble_in, const FMatsubaraGrid& gridF)
+std::array<RealType,3> getStaticLatticeDMFTSkeletonSusceptibility(const SolverType& Solver, const typename SolverType::GFType& Bubble_in, const FMatsubaraGrid& gridF)
 {
-    std::vector<GFWrap> bubbles;
+    std::vector<typename SolverType::GFType> bubbles;
     bubbles.push_back(Bubble_in);
     return getStaticLatticeDMFTSkeletonSusceptibility(Solver,bubbles,gridF)[0];
 }

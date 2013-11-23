@@ -4,7 +4,6 @@
 #include <KMesh.hpp>
 #include <GridObject.hpp>
 #include <EnumerateGrid.hpp>
-#include "GFWrap.h"
 #include "Solver.h"
 #include "DF.h"
 #include "FFT.hpp"
@@ -43,6 +42,9 @@
 using namespace GFTools;
 using namespace FK;
 
+int __get_n_lines(const std::string& fname);
+int __get_min_number(const std::string& fname, RealType beta);
+
 //extern template GridObject<ComplexType,FMatsubaraGrid>;
 
 RealType beta;
@@ -50,7 +52,7 @@ size_t extraops=0;
 bool INTERRUPT = false;
 std::string dual_sigma_file;
 
-typedef GFWrap GF;
+typedef GridObject<ComplexType,FMatsubaraGrid> GF;
 
 template <typename F1, typename F2>
 bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
@@ -132,7 +134,12 @@ int main(int argc, char *argv[])
     std::function<ComplexType(ComplexType)> f1, f2;
     f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
 
-    try { GF Delta2("Delta_full.dat", beta); Delta = Delta2;} 
+    try { 
+        std::string fname = "Delta_full.dat";
+        GF Delta2(std::make_tuple(FMatsubaraGrid(__get_min_number(fname,beta), __get_min_number(fname,beta)+__get_n_lines(fname), beta)));
+        Delta2.loadtxt(fname);
+        Delta = Delta2;
+        } 
     catch (std::exception &e) { Delta.fill(f1); };
     Delta.savetxt("Delta_0.dat");
     
@@ -243,11 +250,10 @@ int main(int argc, char *argv[])
             diff = 1.0; calc_DMFT = false; }; // now continue with DF 
         }
    
-    GF Delta_half(gridF_half); Delta_half = Delta;
-    GF gw_half(gridF_half); gw_half = Solver.gw;
+    GF Delta_half(gridF_half); Delta_half.copyInterpolate(Delta);
+    GF gw_half(gridF_half); gw_half.copyInterpolate(Solver.gw);
+    GF sigma_half(gridF_half); sigma_half.copyInterpolate(Solver.Sigma);
     gw_half.savetxt("Gw.dat");
-    //Delta_half.savetxt("Delta.dat");
-    GF Delta_large(gridF_large); Delta_large = Delta;
     //Delta_large.savetxt("Delta_full.dat");
     __num_format<RealType>(Solver.w_0).savetxt("w_0.dat");
     __num_format<RealType>(Solver.w_1).savetxt("w_1.dat");
@@ -502,4 +508,26 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
 
 }
 #endif // endif :: #ifdef _calc_extra_stats
+
+int __get_n_lines(const std::string& fname)
+{   
+    std::ifstream f(fname.c_str()); 
+    std::string line; 
+    int nlines = 0; 
+    while (std::getline(f, line)) ++nlines; 
+    f.close(); 
+    return nlines;
+} 
+
+int __get_min_number(const std::string& fname, RealType beta)
+{
+    std::ifstream f(fname.c_str());
+    __num_format<FMatsubaraGrid::point> tmp(FMatsubaraGrid::point(0,0));
+    f >> tmp;
+    f.close();
+    ComplexType w_min = tmp._v;
+    int w_min_index = FMatsubaraIndex(w_min,beta);
+    return w_min_index;
+}
+
 
