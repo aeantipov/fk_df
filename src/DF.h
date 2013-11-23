@@ -2,7 +2,7 @@
 #ifndef __FK_DF_H__
 #define __FK_DF_H__
 
-#include "SelfConsistency.h"
+#include "DMFT.h"
 #include "Diagrams.h"
 
 namespace FK {

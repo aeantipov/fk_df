@@ -5,7 +5,7 @@
 #include "Container.h"
 #include "GridObject.h"
 #include "Solver.h"
-#include "SelfConsistency.h"
+#include "DMFT.h"
 
 #include <iostream>
 #include <ctime>
@@ -92,7 +92,7 @@ int main()
     auto Lambda2 = (1. + gw*Sigma)*(1.+gw*(Sigma-U));
 
     auto glatglat = SC.getGLat(gridF);
-    auto bubble2 = static_cast<SelfConsistency&>(SC).getBubblePI(0);
+    auto bubble2 = static_cast<DMFT&>(SC).getBubblePI(0);
 
     for (size_t p=0; p<npaths; ++p) {
     INFO("Path " << p);

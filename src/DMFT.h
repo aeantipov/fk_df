@@ -1,5 +1,5 @@
-#ifndef ___FK_SELFCONSISTENCY_H___
-#define ___FK_SELFCONSISTENCY_H___
+#ifndef ___FK_DMFT_H___
+#define ___FK_DMFT_H___
 
 #include <KMesh.hpp>
 #include <RealGrid.hpp>
@@ -10,11 +10,11 @@ namespace FK {
 
 using namespace GFTools;
 
-struct SelfConsistency 
+struct DMFT 
 {
     typedef typename FKImpuritySolver::GFType GFType;
     const FKImpuritySolver &_S;
-    SelfConsistency(const FKImpuritySolver &S):_S(S){};
+    DMFT(const FKImpuritySolver &S):_S(S){};
     virtual GFType operator()() = 0;
     template <typename MPoint> GFType getBubblePI(MPoint in) const;
     template <typename MPoint> GFType getBubble0(MPoint in) const;
@@ -22,7 +22,7 @@ struct SelfConsistency
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubble0() const;
 };
 
-struct BetheSC : public SelfConsistency
+struct BetheSC : public DMFT
 {
     typedef typename FKImpuritySolver::GFType GFType;
     const RealType _t;
@@ -30,9 +30,9 @@ struct BetheSC : public SelfConsistency
     GFType operator()();
 };
 
-template <size_t D> struct CubicDMFTSC : public SelfConsistency
+template <size_t D> struct CubicDMFTSC : public DMFT
 {
-    using SelfConsistency::_S;
+    using DMFT::_S;
     typedef typename FKImpuritySolver::GFType GFType;
     //typedef Eigen::Array<ComplexType,__power<ksize,D>::value,1,Eigen::ColMajor> EkStorage;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType>::type EkStorage;
@@ -93,11 +93,11 @@ struct CubicTraits<0>{
 };
 
 
-struct CubicInfDMFTSC : public SelfConsistency
+struct CubicInfDMFTSC : public DMFT
 {
     typedef typename FKImpuritySolver::GFType GFType;
     typedef GridObject<ComplexType, RealGrid> ComplW;
-    using SelfConsistency::_S;
+    using DMFT::_S;
 public:
     const RealType _t;
     const RealGrid _realgrid;
@@ -105,7 +105,7 @@ public:
 
     CubicInfDMFTSC(const FKImpuritySolver &S, RealType t, const RealGrid& realgrid);
     GFType operator()();
-    using SelfConsistency::getBubblePI;
+    using DMFT::getBubblePI;
     template <typename MPoint> GFType getBubble0(MPoint in) const;
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubble0() const;
 };
@@ -121,7 +121,7 @@ template <typename SolverType>
 std::array<RealType,3> getStaticLatticeDMFTSkeletonSusceptibility(const SolverType& Solver, const GFWrap& Bubble_in, const FMatsubaraGrid& gridF);
 
 } // end of namespace FK
-#endif // endif :: ifndef ___FK_SELFCONSISTENCY_H___
+#endif // endif :: ifndef ___FK_DMFT_H___
 
-#include "SelfConsistency.hpp"
+#include "DMFT.hpp"
 

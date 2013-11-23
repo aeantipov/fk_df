@@ -1,14 +1,14 @@
-#include "SelfConsistency.h"
+#include "DMFT.h"
 #include "Diagrams.h"
 #include <Eigen/LU>
 
 namespace FK { 
 
 //
-// SelfConsistency
+// DMFT
 //
 
-GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> SelfConsistency::getBubblePI() const
+GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> DMFT::getBubblePI() const
 {
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> out(std::forward_as_tuple(this->_S.w_grid, this->_S.w_grid));
     RealType T = 1.0/_S.w_grid._beta;
@@ -24,7 +24,7 @@ GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> SelfConsistency::getBubble
 // Bethe SC
 //
 
-BetheSC::BetheSC(const FKImpuritySolver &S, RealType t):SelfConsistency(S),_t(t)
+BetheSC::BetheSC(const FKImpuritySolver &S, RealType t):DMFT(S),_t(t)
 {
 }
 
@@ -52,7 +52,7 @@ typename BetheSC::GFType BetheSC::operator()()
 
 
 CubicInfDMFTSC :: CubicInfDMFTSC(const FKImpuritySolver &S, RealType t, const RealGrid& realgrid):
-    SelfConsistency(S),
+    DMFT(S),
     _t(t),
     _realgrid(realgrid),
     _nominator(ComplW(realgrid))

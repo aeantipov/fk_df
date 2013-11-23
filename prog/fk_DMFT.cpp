@@ -5,7 +5,7 @@
 #include <GridObject.hpp>
 #include "GFWrap.h"
 #include "Solver.h"
-#include "SelfConsistency.h"
+#include "DMFT.h"
 #include "FFT.hpp"
 
 #ifdef LATTICE_bethe

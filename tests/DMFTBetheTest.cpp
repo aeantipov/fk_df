@@ -1,7 +1,7 @@
 #include <numeric>
 
 #include "Solver.h"
-#include "SelfConsistency.h"
+#include "DMFT.h"
 
 #include <iostream>
 #include <ctime>

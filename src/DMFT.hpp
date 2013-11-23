@@ -1,12 +1,12 @@
-#ifndef ___FK_SELFCONSISTENCY_HPP___
-#define ___FK_SELFCONSISTENCY_HPP___
+#ifndef ___FK_DMFT_HPP___
+#define ___FK_DMFT_HPP___
 
 #include "Diagrams.h"
 
 namespace FK {
 
 template <typename MPoint>
-typename SelfConsistency::GFType SelfConsistency::getBubblePI(MPoint in) const
+typename DMFT::GFType DMFT::getBubblePI(MPoint in) const
 {
     GFType out(this->_S.w_grid);
     GFType gw_shift(_S.gw), Sigma_shift(_S.Sigma);
@@ -188,7 +188,7 @@ inline typename CubicDMFTSC<D>::GFType CubicDMFTSC<D>::getBubblePI(MPoint in) co
 
 template <size_t D>
 CubicDMFTSC<D>::CubicDMFTSC ( const FKImpuritySolver &S, RealType t, KMesh kGrid):
-    SelfConsistency(S),
+    DMFT(S),
     _t(t),
     _kGrid(kGrid),
     _ek(__repeater<KMesh,D>::get_tuple(_kGrid)),
@@ -363,4 +363,4 @@ std::array<RealType,3> getStaticLatticeDMFTSkeletonSusceptibility(const SolverTy
 
 
 } // end of namespace FK
-#endif // endif :: #ifndef ___FK_SELFCONSISTENCY_HPP___
+#endif // endif :: #ifndef ___FK_DMFT_HPP___

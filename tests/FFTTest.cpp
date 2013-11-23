@@ -3,7 +3,7 @@
 #include <KMesh.hpp>
 #include <EnumerateGrid.hpp>
 #include <GridObject.hpp>
-#include "SelfConsistency.h"
+#include "DMFT.h"
 #include "FFT.hpp"
 
 #include <iostream>

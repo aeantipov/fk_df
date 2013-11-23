@@ -1,10 +1,10 @@
 include_directories (.)
 
 set (fk_src 
-    Logger.h Logger.cpp
+#    Logger.h Logger.cpp
     GFWrap.h GFWrap.cpp
     Solver.h Solver.cpp
-    SelfConsistency.h SelfConsistency.hpp SelfConsistency.cpp
+    DMFT.h DMFT.hpp DMFT.cpp
     Diagrams.h Diagrams.hpp
     DF.h DF.hpp 
     #DF.cpp
