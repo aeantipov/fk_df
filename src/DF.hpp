@@ -22,7 +22,7 @@ namespace FK {
 
 template <size_t D>
 DFLadderCubic<D>::DFLadderCubic(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t):
-    CubicDMFTSC<D>(S,t,kGrid),
+    CubicDMFTSC<D>(S,kGrid,t),
     _fGrid(fGrid),
     GD0(std::tuple_cat(std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))),
     GD(GD0.getGrids()),

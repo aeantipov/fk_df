@@ -49,7 +49,7 @@ int main()
     KMesh kGrid(KPOINTS);
     KMeshPatch qGrid(kGrid);
     std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }}) ; 
-    CubicDMFTSC<D> SC(Solver, t, KMesh(KPOINTS));
+    CubicDMFTSC<D> SC(Solver, KMesh(KPOINTS), t);
     
     for (int i=0; i<maxit && diff>1e-8; ++i) {
         INFO("Iteration " << i);

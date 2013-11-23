@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     
     KMeshPatch qGrid(kGrid);
 
-    dmft_sc_type SC_DMFT(Solver, t, kGrid);
+    dmft_sc_type SC_DMFT(Solver, kGrid, t);
     df_sc_type SC_DF(Solver, gridF, kGrid, t);
 
     SC_DF._n_GD_iter = opt.DFNumberOfSelfConsistentIterations;

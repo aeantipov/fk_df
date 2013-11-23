@@ -8,7 +8,7 @@ namespace FK {
 // DMFT
 //
 
-GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> DMFT::getBubblePI() const
+GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> DMFTBase::getBubblePI() const
 {
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> out(std::forward_as_tuple(this->_S.w_grid, this->_S.w_grid));
     RealType T = 1.0/_S.w_grid._beta;
@@ -24,7 +24,7 @@ GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> DMFT::getBubblePI() const
 // Bethe SC
 //
 
-BetheSC::BetheSC(const FKImpuritySolver &S, RealType t):DMFT(S),_t(t)
+BetheSC::BetheSC(const FKImpuritySolver &S, RealType t):DMFTBase(S),_t(t)
 {
 }
 
@@ -41,10 +41,10 @@ typename BetheSC::GFType BetheSC::operator()()
 
 
 // Most important line for compilation.
-//template struct CubicDMFTSC<1>;
-//template struct CubicDMFTSC<2>;
-//template struct CubicDMFTSC<3>;
-//template struct CubicDMFTSC<4>;
+//template struct LatticeDMFTSC<1>;
+//template struct LatticeDMFTSC<2>;
+//template struct LatticeDMFTSC<3>;
+//template struct LatticeDMFTSC<4>;
 
 //
 // CubicInfDMFTSC
@@ -52,7 +52,7 @@ typename BetheSC::GFType BetheSC::operator()()
 
 
 CubicInfDMFTSC :: CubicInfDMFTSC(const FKImpuritySolver &S, RealType t, const RealGrid& realgrid):
-    DMFT(S),
+    DMFTBase(S),
     _t(t),
     _realgrid(realgrid),
     _nominator(ComplW(realgrid))

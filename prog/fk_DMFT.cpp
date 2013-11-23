@@ -129,13 +129,13 @@ int main(int argc, char *argv[])
     #elif LATTICE_cubicinfd
     sc_type SC = CubicInfDMFTSC(Solver,t,RealGrid(-6.0*t,6.0*t,1024));
     #elif LATTICE_cubic1d
-    sc_type SC = CubicDMFTSC<1>(Solver, t, kgrid);
+    sc_type SC = CubicDMFTSC<1>(Solver, kgrid, t);
     #elif LATTICE_cubic2d
-    sc_type SC = CubicDMFTSC<2>(Solver, t, kgrid);
+    sc_type SC = CubicDMFTSC<2>(Solver, kgrid, t);
     #elif LATTICE_cubic3d
-    sc_type SC = CubicDMFTSC<3>(Solver, t, kgrid);
+    sc_type SC = CubicDMFTSC<3>(Solver, kgrid, t);
     #elif LATTICE_cubic4d
-    sc_type SC = CubicDMFTSC<4>(Solver, t, kgrid);
+    sc_type SC = CubicDMFTSC<4>(Solver, kgrid, t);
     #endif 
 /*
     switch (sc_switch) {

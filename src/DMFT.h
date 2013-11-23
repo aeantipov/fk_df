@@ -5,16 +5,17 @@
 #include <RealGrid.hpp>
 #include <GridObject.hpp>
 #include "Solver.h"
+#include "LatticeTraits.hpp"
 
 namespace FK {
 
 using namespace GFTools;
 
-struct DMFT 
+struct DMFTBase 
 {
     typedef typename FKImpuritySolver::GFType GFType;
     const FKImpuritySolver &_S;
-    DMFT(const FKImpuritySolver &S):_S(S){};
+    DMFTBase(const FKImpuritySolver &S):_S(S){};
     virtual GFType operator()() = 0;
     template <typename MPoint> GFType getBubblePI(MPoint in) const;
     template <typename MPoint> GFType getBubble0(MPoint in) const;
@@ -22,7 +23,7 @@ struct DMFT
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubble0() const;
 };
 
-struct BetheSC : public DMFT
+struct BetheSC : public DMFTBase
 {
     typedef typename FKImpuritySolver::GFType GFType;
     const RealType _t;
@@ -30,10 +31,11 @@ struct BetheSC : public DMFT
     GFType operator()();
 };
 
-template <size_t D> struct CubicDMFTSC : public DMFT
+template <typename LatticeT, size_t D> struct LatticeDMFTSC : public DMFTBase
 {
-    using DMFT::_S;
+    using DMFTBase::_S;
     typedef typename FKImpuritySolver::GFType GFType;
+    typedef LatticeT lattice_traits;
     //typedef Eigen::Array<ComplexType,__power<ksize,D>::value,1,Eigen::ColMajor> EkStorage;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType>::type EkStorage;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType; // G(w,kx...)
@@ -47,7 +49,7 @@ public:
     mutable EkStorage _ek;
     GFType _gloc;
 
-    CubicDMFTSC(const FKImpuritySolver &S, RealType t, KMesh kGrid);
+    LatticeDMFTSC(const FKImpuritySolver &S, KMesh kGrid, RealType t);
     template <typename ...ArgTypes> RealType dispersion(ArgTypes... kpoints) const;
     template <typename ...ArgTypes> RealType dispersion(const std::tuple<ArgTypes...>& kpoints) const;
     template <typename ...ArgTypes> GFType glat(ArgTypes... kpoints) const;
@@ -61,43 +63,15 @@ public:
     template <typename MPoint, typename KPoint> GFType getBubble(MPoint in, std::array<KPoint,D> q) const;
 };
 
-/** A typedef for a point in the Brillouin zone. */
 template <size_t D>
-using BZPoint = typename std::array<KMesh::point,D>;
-
-/** Stream the BZPoint. */
-template <size_t D>
-std::ostream& operator<<(std::ostream& out, BZPoint<D> in)
-{for (size_t i=0; i<D; ++i) out << RealType(in[i]) << " "; return out; } 
-    
-template <size_t M> 
-struct CubicTraits{ 
-    /** Returns an analytic std::function of the dispersion. */
-    template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t);
-    /** Finds the equivalent point, which is used is calculations. */
-    static std::array<RealType,M> findSymmetricBZPoint(const std::array<RealType,M>& in);
-    static BZPoint<M> findSymmetricBZPoint(const BZPoint<M>& in, const KMesh& kGrid);
-    /** Returns a vector of D-dimensional arrays of points on the KMesh, which covers the Brillouin zone */
-    static std::vector<BZPoint<M>> getAllBZPoints(const KMesh& in);
-    /** Returns a vector of a pair of a D-dimensional arrays of points on the KMesh and the amount of points that can be obtained from a symmetry operation in the lattice. */
-    static std::map<BZPoint<M>, std::vector<BZPoint<M>>> getUniqueBZPoints(const KMesh& kGrid);
-};
-
-template <>
-struct CubicTraits<0>{ 
-    /** Actual dispersion relation. */
-    template <typename ArgType1, typename ...ArgTypes> static RealType ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints); 
-    template <typename ArgType1> static RealType ek(RealType t, ArgType1 kpoint1); 
-    /** Returns an analytic std::function of the dispersion. */
-    template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t) { return [t](ArgTypes ... in){return ek(t,in...);};};
-};
+using CubicDMFTSC = LatticeDMFTSC<CubicTraits<D>,D>;
 
 
-struct CubicInfDMFTSC : public DMFT
+struct CubicInfDMFTSC : public DMFTBase
 {
     typedef typename FKImpuritySolver::GFType GFType;
     typedef GridObject<ComplexType, RealGrid> ComplW;
-    using DMFT::_S;
+    using DMFTBase::_S;
 public:
     const RealType _t;
     const RealGrid _realgrid;
@@ -105,7 +79,7 @@ public:
 
     CubicInfDMFTSC(const FKImpuritySolver &S, RealType t, const RealGrid& realgrid);
     GFType operator()();
-    using DMFT::getBubblePI;
+    using DMFTBase::getBubblePI;
     template <typename MPoint> GFType getBubble0(MPoint in) const;
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> getBubble0() const;
 };

@@ -50,7 +50,7 @@ int main()
     KMesh kGrid(KPOINTS);
     KMeshPatch qGrid(kGrid);
     //std::array<KMeshPatch,2> qGrids( {{ qGrid, qGrid }}) ; 
-    CubicDMFTSC<D> SC_DMFT(Solver, t, KMesh(KPOINTS));
+    CubicDMFTSC<D> SC_DMFT(Solver, KMesh(KPOINTS), t);
     DFLadderCubic<D> SC_DF(Solver, gridF, SC_DMFT._kGrid, t);
     
     bool calc_DMFT = true;
