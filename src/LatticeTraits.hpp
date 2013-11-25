@@ -11,13 +11,31 @@ using BZPoint = typename std::array<KMesh::point,D>;
 template <size_t D>
 std::ostream& operator<<(std::ostream& out, BZPoint<D> in)
 {for (size_t i=0; i<D; ++i) out << RealType(in[i]) << " "; return out; } 
+
+template <class Derived>
+struct LatticeTraitsBase {
+    //static_cast<Derived*>(this)->implementation();
+};
     
 template <size_t D> 
 struct CubicTraits{ 
+    constexpr static size_t _D = D;
+    typedef typename ArgFunGenerator<D,RealType,RealType>::type ArgFunType;
+    typedef typename ArgBackGenerator<D,RealType,std::tuple>::type ArgTupleType;
+    typedef typename ArgFunGenerator<D,RealType,KMesh::point>::type PointFunType;
+
     RealType _t = 1.0;
     CubicTraits(RealType t):_t(t){};
+    template <typename Arg1, typename ...Args> 
+        typename std::enable_if<sizeof...(Args) == D-1 && std::is_convertible<Arg1,RealType>::value, RealType>::type 
+        dispersion(Arg1 in1, Args... in) {
+            return -2.0*_t*cos(RealType(in1)) + CubicTraits<D-1>(_t).dispersion(in...);
+            };
+    template <typename ...Args> 
+        typename std::enable_if<sizeof...(Args) == D, RealType>::type 
+        dispersion(std::tuple<Args...> in){return -2.0*_t*cos(RealType(std::get<0>(in))) + CubicTraits<D-1>(_t).dispersion(__tuple_tail(in));};
     /** Returns an analytic std::function of the dispersion. */
-    template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t);
+    ArgFunType get_dispersion(){ return __fun_traits<ArgFunType>::getFromTupleF ( [this](ArgTupleType in){return dispersion(in);});};
     /** Finds the equivalent point, which is used is calculations. */
     static std::array<RealType,D> findSymmetricBZPoint(const std::array<RealType,D>& in);
     static BZPoint<D> findSymmetricBZPoint(const BZPoint<D>& in, const KMesh& kGrid);
@@ -30,39 +48,29 @@ struct CubicTraits{
 
 template <>
 struct CubicTraits<0>{ 
-    /** Actual dispersion relation. */
-    template <typename ArgType1, typename ...ArgTypes> static RealType ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints); 
-    template <typename ArgType1> static RealType ek(RealType t, ArgType1 kpoint1); 
-    /** Returns an analytic std::function of the dispersion. */
-    template <typename FunctionType, typename ...ArgTypes> static FunctionType get_dispersion(RealType t) { return [t](ArgTypes ... in){return ek(t,in...);};};
+    RealType _t = 1.0;
+    constexpr static size_t _D = 0;
+    CubicTraits(RealType t):_t(t){};
+    RealType dispersion(){return 0.0;};
+    RealType dispersion(std::tuple<>){return 0.0;};
 };
+
+struct TriangularTraits : CubicTraits<2> {
+    RealType _t = 1.0;
+    RealType _tp = 1.0;
+    constexpr static size_t _D = 2;
+
+    RealType dispersion(RealType kx,RealType ky){return -2.*_t*(cos(kx)+cos(ky)) - 2.*_tp*cos(kx-ky);};
+
+    using CubicTraits<2>::getAllBZPoints;
+    using CubicTraits<2>::getUniqueBZPoints;
+    };
+
+
 
 //
 // CubicTraits
 //
-
-template <size_t D> 
-template <typename FunctionType, typename ...ArgTypes> 
-inline FunctionType CubicTraits<D>::get_dispersion(RealType t)
-{
-    return CubicTraits<D-1>::template get_dispersion<FunctionType,ArgTypes...,RealType>(t); 
-}
-
-template <typename ArgType1, typename ...ArgTypes> 
-inline RealType CubicTraits<0>::ek(RealType t, ArgType1 kpoint1, ArgTypes... kpoints) 
-{
-    static_assert(std::is_convertible<ArgType1, RealType>::value,"Wrong kpoint");
-    assert (kpoint1>=0 && kpoint1 < 2*PI);
-    return -2.0*t*cos(kpoint1)+ek(t, kpoints...);
-}
- 
-template <typename ArgType1> 
-inline RealType CubicTraits<0>::ek(RealType t, ArgType1 kpoint1)
-{
-    static_assert(std::is_convertible<ArgType1, RealType>::value,"Wrong kpoint");
-    assert (kpoint1>=0 && kpoint1 < 2*PI);
-    return -2*t*cos(kpoint1);
-}
 
 template <size_t D>
 std::vector<BZPoint<D>> CubicTraits<D>::getAllBZPoints(const KMesh& kGrid)

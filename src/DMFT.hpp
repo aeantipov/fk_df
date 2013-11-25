@@ -24,6 +24,19 @@ typename DMFTBase::GFType DMFTBase::getBubblePI(MPoint in) const
 // LatticeDMFT
 //
 
+template <typename LatticeT, size_t D>
+template <typename ...LatticeParams> 
+LatticeDMFTSC<LatticeT,D>::LatticeDMFTSC(const FKImpuritySolver &S, KMesh kGrid, LatticeParams ... lattice_p):
+    DMFTBase(S),
+    lattice(lattice_traits(lattice_p...)),
+    _kGrid(kGrid),
+    _ek(__repeater<KMesh,D>::get_tuple(_kGrid)),
+    _gloc(this->_S.w_grid)
+{
+    //_ek._f = lattice.template get_dispersion<typename EkStorage::FunctionType> (lattice_p...); 
+    _ek._f = lattice.get_dispersion();//<typename EkStorage::FunctionType> (lattice_p...); 
+    _ek.fill(_ek._f);
+}
 
 template <typename LatticeT, size_t D>
 template <typename ...ArgTypes>
@@ -84,19 +97,6 @@ inline typename LatticeDMFTSC<LatticeT,D>::GFType LatticeDMFTSC<LatticeT,D>::get
     auto q1 = _kGrid.findClosest(PI);
     q.fill(q1);
     return getBubble(in,q);
-}
-
-template <typename LatticeT, size_t D>
-template <typename ...LatticeParams> 
-LatticeDMFTSC<LatticeT,D>::LatticeDMFTSC(const FKImpuritySolver &S, KMesh kGrid, LatticeParams ... lattice_p):
-    DMFTBase(S),
-    lattice(lattice_traits(lattice_p...)),
-    _kGrid(kGrid),
-    _ek(__repeater<KMesh,D>::get_tuple(_kGrid)),
-    _gloc(this->_S.w_grid)
-{
-    _ek._f = lattice_traits::template get_dispersion<typename EkStorage::FunctionType> (lattice_p...); 
-    _ek.fill(_ek._f);
 }
 
 template <typename LatticeT, size_t D>

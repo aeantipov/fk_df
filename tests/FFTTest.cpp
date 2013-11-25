@@ -33,8 +33,8 @@ int main()
 
     EK_complex disp2d_complex(std::forward_as_tuple(k1,k1));
     EK_real disp2d_real(std::forward_as_tuple(k1,k1));
-    disp2d_complex.fill(CubicTraits<2>::template get_dispersion<typename decltype(disp2d_complex)::FunctionType> (1.0));
-    disp2d_real.fill(CubicTraits<2>::template get_dispersion<typename decltype(disp2d_real)::FunctionType> (1.0));
+    disp2d_complex._f = CubicTraits<2>(1.0).get_dispersion(); disp2d_complex.fill(disp2d_complex._f);
+    disp2d_real.fill(CubicTraits<2>(1.0).get_dispersion());
     EK_complex disp2d_complex_backup(disp2d_complex);
     
     DEBUG(disp2d_real);
@@ -68,7 +68,7 @@ int main()
 
 
     GridObject<ComplexType, KMesh> disp1d (std::forward_as_tuple(k1));
-    disp1d.fill(CubicTraits<1>::template get_dispersion<typename decltype(disp1d)::FunctionType> (1.0));
+    disp1d._f = CubicTraits<1>(1.0).get_dispersion(); disp1d.fill(disp1d._f);
     auto disp1d_backup(disp1d);
     disp1d.getData() = run_fft(run_fft(disp1d.getData(), FFTW_BACKWARD), FFTW_FORWARD);
     if (!is_equal(disp1d_backup.diff(disp1d),0)) return EXIT_FAILURE;
@@ -79,13 +79,13 @@ int main()
     INFO("PASSED FFT2d")
 
     GridObject<ComplexType, KMesh, KMesh, KMesh> disp3d (std::forward_as_tuple(k1,k1,k1));
-    disp3d.fill(CubicTraits<3>::template get_dispersion<typename decltype(disp3d)::FunctionType> (1.0));
+    disp3d._f = CubicTraits<3>(1.0).get_dispersion(); disp3d.fill(disp3d._f);
     auto disp3d_backup(disp3d);
     if (!is_equal(disp3d_backup.diff(disp3d),0)) return EXIT_FAILURE;
     INFO("PASSED FFT3d")
 
     GridObject<ComplexType, KMesh, KMesh, KMesh, KMesh> disp4d (std::forward_as_tuple(k1,k1,k1,k1));
-    disp4d.fill(CubicTraits<4>::template get_dispersion<typename decltype(disp4d)::FunctionType> (1.0));
+    disp4d._f = CubicTraits<4>(1.0).get_dispersion(); disp4d.fill(disp4d._f);
     auto disp4d_backup(disp4d);
     if (!is_equal(disp4d_backup.diff(disp4d),0)) return EXIT_FAILURE;
     INFO("PASSED FFT4d")
