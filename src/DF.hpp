@@ -15,7 +15,7 @@ namespace FK {
 
 template <typename LatticeT, size_t D>
 DFLadder<LatticeT,D>::DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t):
-    LatticeDMFTSC<LatticeT,D>(S,kGrid,t),
+    LatticeDMFTSC<LatticeT>(S,kGrid,t),
     _fGrid(fGrid),
     GD0(std::tuple_cat(std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))),
     GD(GD0.getGrids()),
@@ -31,7 +31,7 @@ DFLadder<LatticeT,D>::DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& 
 template <typename LatticeT, size_t D>
 void DFLadder<LatticeT,D>::_initialize()
 {
-    GLat = LatticeDMFTSC<LatticeT,D>::getGLat(_fGrid);
+    GLat = LatticeDMFTSC<LatticeT>::getGLat(_fGrid);
     for (auto iw : _fGrid.getPoints()) {
         size_t iwn = size_t(iw);
         GD0[iwn] = GLat[iwn] - _S.gw(iw);
@@ -63,7 +63,7 @@ inline typename DFLadder<LatticeT,D>::GKType DFLadder<LatticeT,D>::getGLat(const
 template <typename LatticeT, size_t D>
 inline typename DFLadder<LatticeT,D>::GKType DFLadder<LatticeT,D>::getGLatDMFT(const FMatsubaraGrid& gridF) const 
 { 
-    return LatticeDMFTSC<LatticeT,D>::getGLat(gridF); 
+    return LatticeDMFTSC<LatticeT>::getGLat(gridF); 
 };
 
 template <typename LatticeT, size_t D>

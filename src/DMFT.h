@@ -31,19 +31,19 @@ struct BetheSC : public DMFTBase
     GFType operator()();
 };
 
-template <typename LatticeT, size_t D> struct LatticeDMFTSC : public DMFTBase
+template <typename LatticeT> struct LatticeDMFTSC : public DMFTBase
 {
     using DMFTBase::_S;
     typedef typename FKImpuritySolver::GFType GFType;
     typedef LatticeT lattice_traits;
-    //typedef Eigen::Array<ComplexType,__power<ksize,D>::value,1,Eigen::ColMajor> EkStorage;
-    typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType>::type EkStorage;
-    typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType; // G(w,kx...)
+    static const size_t _D = lattice_traits::_D;
+    //typedef Eigen::Array<ComplexType,__power<ksize,_D>::value,1,Eigen::ColMajor> EkStorage;
+    typedef typename ArgBackGenerator<_D,KMesh,GridObject,ComplexType>::type EkStorage;
+    typedef typename ArgBackGenerator<_D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType; // G(w,kx...)
     //EkStorage _ek_vals;
 protected:
-    typedef typename ArgFunGenerator<D,GFType,RealType>::type ArgFunType;
+    typedef typename ArgFunGenerator<_D,GFType,RealType>::type ArgFunType;
 public:
-    static const size_t NDim = D;
     lattice_traits lattice;
     const KMesh _kGrid;
     mutable EkStorage _ek;
@@ -61,11 +61,11 @@ public:
     
     template <typename MPoint> GFType getBubble0(MPoint in) const;
     template <typename MPoint> GFType getBubblePI(MPoint in) const;
-    template <typename MPoint, typename KPoint> GFType getBubble(MPoint in, std::array<KPoint,D> q) const;
+    template <typename MPoint, typename KPoint> GFType getBubble(MPoint in, std::array<KPoint,_D> q) const;
 };
 
 template <size_t D>
-using CubicDMFTSC = LatticeDMFTSC<CubicTraits<D>,D>;
+using CubicDMFTSC = LatticeDMFTSC<CubicTraits<D>>;
 
 
 struct CubicInfDMFTSC : public DMFTBase

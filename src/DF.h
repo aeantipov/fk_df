@@ -29,12 +29,12 @@ struct DFBase
 };
 
 template <typename LatticeT, size_t D>
-struct DFLadder : LatticeDMFTSC<LatticeT,D>, DFBase {
+struct DFLadder : LatticeDMFTSC<LatticeT>, DFBase {
 
-    using LatticeDMFTSC<LatticeT,D>::NDim;
-    using typename LatticeDMFTSC<LatticeT,D>::lattice_traits;
-    using LatticeDMFTSC<LatticeT,D>::lattice;
-    using typename LatticeDMFTSC<LatticeT,D>::EkStorage;
+    using LatticeDMFTSC<LatticeT>::_D;
+    using typename LatticeDMFTSC<LatticeT>::lattice_traits;
+    using LatticeDMFTSC<LatticeT>::lattice;
+    using typename LatticeDMFTSC<LatticeT>::EkStorage;
     using typename DFBase::GLocalType;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid,FMatsubaraGrid>::type FullVertexType;
@@ -42,9 +42,9 @@ struct DFLadder : LatticeDMFTSC<LatticeT,D>, DFBase {
     typedef typename GKType::PointTupleType wkPointTupleType;
     typedef decltype(std::tuple_cat(std::make_tuple(BMatsubaraGrid::point()), std::array<KMesh::point, D>())) WQTupleType; 
     typedef typename ArgBackGenerator<D,KMeshPatch,GridObject,ComplexType,BMatsubaraGrid>::type SuscType;
-    using LatticeDMFTSC<LatticeT,D>::_S;
-    using LatticeDMFTSC<LatticeT,D>::_kGrid;
-    using LatticeDMFTSC<LatticeT,D>::_ek;
+    using LatticeDMFTSC<LatticeT>::_S;
+    using LatticeDMFTSC<LatticeT>::_kGrid;
+    using LatticeDMFTSC<LatticeT>::_ek;
     const FMatsubaraGrid _fGrid;
     GKType GD0;
     GKType GD;

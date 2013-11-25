@@ -24,13 +24,13 @@ typename DMFTBase::GFType DMFTBase::getBubblePI(MPoint in) const
 // LatticeDMFT
 //
 
-template <typename LatticeT, size_t D>
+template <typename LatticeT>
 template <typename ...LatticeParams> 
-LatticeDMFTSC<LatticeT,D>::LatticeDMFTSC(const FKImpuritySolver &S, KMesh kGrid, LatticeParams ... lattice_p):
+LatticeDMFTSC<LatticeT>::LatticeDMFTSC(const FKImpuritySolver &S, KMesh kGrid, LatticeParams ... lattice_p):
     DMFTBase(S),
     lattice(lattice_traits(lattice_p...)),
     _kGrid(kGrid),
-    _ek(__repeater<KMesh,D>::get_tuple(_kGrid)),
+    _ek(__repeater<KMesh,_D>::get_tuple(_kGrid)),
     _gloc(this->_S.w_grid)
 {
     //_ek._f = lattice.template get_dispersion<typename EkStorage::FunctionType> (lattice_p...); 
@@ -38,39 +38,39 @@ LatticeDMFTSC<LatticeT,D>::LatticeDMFTSC(const FKImpuritySolver &S, KMesh kGrid,
     _ek.fill(_ek._f);
 }
 
-template <typename LatticeT, size_t D>
+template <typename LatticeT>
 template <typename ...ArgTypes>
-inline RealType LatticeDMFTSC<LatticeT,D>::dispersion(ArgTypes... kpoints) const
+inline RealType LatticeDMFTSC<LatticeT>::dispersion(ArgTypes... kpoints) const
 {
-    static_assert(sizeof...(ArgTypes) == D, "Number of points mismatch!" );
+    static_assert(sizeof...(ArgTypes) == _D, "Number of points mismatch!" );
     return _ek._f(kpoints...);
 }
 
-template <typename LatticeT, size_t D>
+template <typename LatticeT>
 template <typename ...ArgTypes>
-inline RealType LatticeDMFTSC<LatticeT,D>::dispersion(const std::tuple<ArgTypes...>& kpoints) const
+inline RealType LatticeDMFTSC<LatticeT>::dispersion(const std::tuple<ArgTypes...>& kpoints) const
 {
-    static_assert(sizeof...(ArgTypes) == D, "Number of points mismatch!" );
+    static_assert(sizeof...(ArgTypes) == _D, "Number of points mismatch!" );
     std::function<RealType(ArgTypes...)> f1 = [&](ArgTypes... kpoints)->RealType{return dispersion(kpoints...);};
     auto f2 =__fun_traits<decltype(f1)>::getTupleF(f1); 
     return std::real(f2(kpoints));
 }
 
 
-template <typename LatticeT, size_t D>
+template <typename LatticeT>
 template <typename ...ArgTypes>
-typename LatticeDMFTSC<LatticeT,D>::GFType LatticeDMFTSC<LatticeT,D>::glat(ArgTypes... kpoints) const
+typename LatticeDMFTSC<LatticeT>::GFType LatticeDMFTSC<LatticeT>::glat(ArgTypes... kpoints) const
 {
-    static_assert(sizeof...(ArgTypes) == D,"!");
+    static_assert(sizeof...(ArgTypes) == _D,"!");
     auto e = dispersion<ArgTypes...>(kpoints...);
     GFType out = 1.0/(1.0/_S.gw+_S.Delta-e);
     return out;
 
 }
 
-template <typename LatticeT, size_t D>
+template <typename LatticeT>
 template <typename MPoint, typename KPoint> 
-inline typename LatticeDMFTSC<LatticeT,D>::GFType LatticeDMFTSC<LatticeT,D>::getBubble(MPoint in, std::array<KPoint,D> q) const
+inline typename LatticeDMFTSC<LatticeT>::GFType LatticeDMFTSC<LatticeT>::getBubble(MPoint in, std::array<KPoint,_D> q) const
 {
     auto args = std::tuple_cat(std::forward_as_tuple(in),q);
     auto out = Diagrams::getBubble(this->getGLat(_S.w_grid),args);
@@ -79,37 +79,37 @@ inline typename LatticeDMFTSC<LatticeT,D>::GFType LatticeDMFTSC<LatticeT,D>::get
     return out;
 }
 
-template <typename LatticeT, size_t D>
+template <typename LatticeT>
 template <typename MPoint>
-inline typename LatticeDMFTSC<LatticeT,D>::GFType LatticeDMFTSC<LatticeT,D>::getBubble0(MPoint in) const
+inline typename LatticeDMFTSC<LatticeT>::GFType LatticeDMFTSC<LatticeT>::getBubble0(MPoint in) const
 {
-    std::array<KMesh::point,D> q;
+    std::array<KMesh::point,_D> q;
     auto q1 = _kGrid.findClosest(0.0);
     q.fill(q1);
     return getBubble(in,q);
 }
 
-template <typename LatticeT, size_t D>
+template <typename LatticeT>
 template <typename MPoint>
-inline typename LatticeDMFTSC<LatticeT,D>::GFType LatticeDMFTSC<LatticeT,D>::getBubblePI(MPoint in) const
+inline typename LatticeDMFTSC<LatticeT>::GFType LatticeDMFTSC<LatticeT>::getBubblePI(MPoint in) const
 {
-    std::array<KMesh::point,D> q;
+    std::array<KMesh::point,_D> q;
     auto q1 = _kGrid.findClosest(PI);
     q.fill(q1);
     return getBubble(in,q);
 }
 
-template <typename LatticeT, size_t D>
-typename LatticeDMFTSC<LatticeT,D>::GKType LatticeDMFTSC<LatticeT,D>::getGLat(const FMatsubaraGrid& fGrid) const
+template <typename LatticeT>
+typename LatticeDMFTSC<LatticeT>::GKType LatticeDMFTSC<LatticeT>::getGLat(const FMatsubaraGrid& fGrid) const
 {
-    std::array<KMesh,D> kgrids;
+    std::array<KMesh,_D> kgrids;
     kgrids.fill(_kGrid);
     GKType out(std::tuple_cat(std::forward_as_tuple(fGrid),kgrids));
     //for (auto iw : fGrid.getPoints()) {
     auto f1 = [&](const typename GKType::PointTupleType& in)->ComplexType {
         FMatsubaraGrid::point w = std::get<0>(in);
         auto ktuple = __tuple_tail(in);
-        typename ArgBackGenerator<D,KMesh::point,__caller,RealType>::type t1; //( {{in, &dispersion}});
+        typename ArgBackGenerator<_D,KMesh::point,__caller,RealType>::type t1; //( {{in, &dispersion}});
         return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek(ktuple));
     };
     typename GKType::PointFunctionType f2 = __fun_traits<typename GKType::PointFunctionType>::getFromTupleF(f1);
@@ -126,14 +126,14 @@ typename LatticeDMFTSC<LatticeT,D>::GKType LatticeDMFTSC<LatticeT,D>::getGLat(co
     return out;
 }
 
-template <typename LatticeT, size_t D>
-typename LatticeDMFTSC<LatticeT,D>::GFType LatticeDMFTSC<LatticeT,D>::operator()()
+template <typename LatticeT>
+typename LatticeDMFTSC<LatticeT>::GFType LatticeDMFTSC<LatticeT>::operator()()
 {
-    INFO("Using DMFT self-consistency on a cubic lattice in " << D << " dimensions on a lattice of " << _kGrid.getSize() << "^" << D << " atoms.");
+    INFO("Using DMFT self-consistency on a cubic lattice in " << _D << " dimensions on a lattice of " << _kGrid.getSize() << "^" << _D << " atoms.");
     GFType out(this->_S.w_grid); 
     out=0.0; 
     size_t ksize = _kGrid.getSize();
-    RealType knorm = pow(ksize,D);
+    RealType knorm = pow(ksize,_D);
     for (auto w : _gloc.getGrid().getPoints()) {
         EkStorage e1 = (1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek)); 
         _gloc.get(w) = e1.sum()/knorm;
