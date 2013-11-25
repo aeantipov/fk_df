@@ -87,14 +87,15 @@ inline typename LatticeDMFTSC<LatticeT,D>::GFType LatticeDMFTSC<LatticeT,D>::get
 }
 
 template <typename LatticeT, size_t D>
-LatticeDMFTSC<LatticeT,D>::LatticeDMFTSC ( const FKImpuritySolver &S, KMesh kGrid, RealType t):
+template <typename ...LatticeParams> 
+LatticeDMFTSC<LatticeT,D>::LatticeDMFTSC(const FKImpuritySolver &S, KMesh kGrid, LatticeParams ... lattice_p):
     DMFTBase(S),
-    _t(t),
+    lattice(lattice_traits(lattice_p...)),
     _kGrid(kGrid),
     _ek(__repeater<KMesh,D>::get_tuple(_kGrid)),
     _gloc(this->_S.w_grid)
 {
-    _ek._f = lattice_traits::template get_dispersion<typename EkStorage::FunctionType> (t); 
+    _ek._f = lattice_traits::template get_dispersion<typename EkStorage::FunctionType> (lattice_p...); 
     _ek.fill(_ek._f);
 }
 
@@ -136,11 +137,9 @@ typename LatticeDMFTSC<LatticeT,D>::GFType LatticeDMFTSC<LatticeT,D>::operator()
     for (auto w : _gloc.getGrid().getPoints()) {
         EkStorage e1 = (1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek)); 
         _gloc.get(w) = e1.sum()/knorm;
-        //out.get(w) = -1.0/_gloc(w)+_S.mu-_S.Sigma(w)+ComplexType(w);
         out.get(w) = -1.0/_gloc(w)+_S.Delta(w) + 1.0/_S.gw(w); 
     }
-    //out._f = std::bind([&](ComplexType w){return _t*_t*2*RealType(D)/w;}, std::placeholders::_1);
-    out._f = std::bind([&](ComplexType w)->ComplexType{return _t*_t*2*RealType(D)*((_S.mu-_S.w_1*_S.U)/std::abs(w*w) + 1.0/w);}, std::placeholders::_1);
+    out._f = std::bind([&](ComplexType w)->ComplexType{return lattice.disp_square_sum()*((_S.mu-_S.w_1*_S.U)/std::abs(w*w) + 1.0/w);}, std::placeholders::_1);
     return out;
 }
 

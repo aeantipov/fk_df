@@ -28,11 +28,13 @@ struct DFBase
     virtual GLocalType getGLoc() = 0;
 };
 
-template <size_t D>
-struct DFLadderCubic : CubicDMFTSC<D>, DFBase {
+template <typename LatticeT, size_t D>
+struct DFLadder : LatticeDMFTSC<LatticeT,D>, DFBase {
 
-    using CubicDMFTSC<D>::NDim;
-    using typename CubicDMFTSC<D>::EkStorage;
+    using LatticeDMFTSC<LatticeT,D>::NDim;
+    using typename LatticeDMFTSC<LatticeT,D>::lattice_traits;
+    using LatticeDMFTSC<LatticeT,D>::lattice;
+    using typename LatticeDMFTSC<LatticeT,D>::EkStorage;
     using typename DFBase::GLocalType;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType;
     typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid,FMatsubaraGrid>::type FullVertexType;
@@ -40,10 +42,9 @@ struct DFLadderCubic : CubicDMFTSC<D>, DFBase {
     typedef typename GKType::PointTupleType wkPointTupleType;
     typedef decltype(std::tuple_cat(std::make_tuple(BMatsubaraGrid::point()), std::array<KMesh::point, D>())) WQTupleType; 
     typedef typename ArgBackGenerator<D,KMeshPatch,GridObject,ComplexType,BMatsubaraGrid>::type SuscType;
-    using CubicDMFTSC<D>::_S;
-    using CubicDMFTSC<D>::_t;
-    using CubicDMFTSC<D>::_kGrid;
-    using CubicDMFTSC<D>::_ek;
+    using LatticeDMFTSC<LatticeT,D>::_S;
+    using LatticeDMFTSC<LatticeT,D>::_kGrid;
+    using LatticeDMFTSC<LatticeT,D>::_ek;
     const FMatsubaraGrid _fGrid;
     GKType GD0;
     GKType GD;
@@ -53,8 +54,8 @@ struct DFLadderCubic : CubicDMFTSC<D>, DFBase {
 private:
     void _initialize();
 public:
-    DFLadderCubic(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t);
-    template <typename ...KP> GLocalType getBubble(const typename DFLadderCubic<D>::GKType& GF, BMatsubaraGrid::point W, KP...kpoints) const;
+    DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t);
+    template <typename ...KP> GLocalType getBubble(const typename DFLadder<LatticeT,D>::GKType& GF, BMatsubaraGrid::point W, KP...kpoints) const;
     GLocalType getBubble(const GKType& GF, const WQTupleType& in) const;
     GKType getGLatDMFT(const FMatsubaraGrid& gridF) const ;
     GKType getGLat() const ;
@@ -69,6 +70,9 @@ public:
     GLocalType getGLoc();
     struct exRuntimeError : public std::runtime_error { exRuntimeError(const std::string &s):std::runtime_error(s){};};
 };
+
+template <size_t D>
+using DFLadderCubic = DFLadder<CubicTraits<D>,D>;
 
 } // end of namespace FK
 

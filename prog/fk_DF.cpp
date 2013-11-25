@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
         
         Solver.Delta = Delta_new;
         if (diff<=1e-8 && calc_DMFT) { 
-            GF Delta_large(gridF_large); Delta_large = Solver.Delta;
+            GF Delta_large(gridF_large); Delta_large.copyInterpolate(Solver.Delta);
             Delta_large.savetxt("DeltaDMFT.dat");
             Solver.Sigma.savetxt("SigmaDMFT.dat"); 
             Solver.gw.savetxt("GwDMFT.dat");

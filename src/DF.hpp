@@ -4,13 +4,6 @@
 #include "DF.h"
 #include "FFT.hpp"
 
-// Some hints
-// GLocalType - g(w)
-// GKType - g(w,k...)
-// GLocalType::FunctionType g(w) - analytic
-// GKType::FunctionType g(w,k...) - analytic
-// __repeater<KMesh,D>::get_tuple(_kGrid) - returns a tuple of D kmeshes
-
 namespace FK {
 
 // Some hints
@@ -20,9 +13,9 @@ namespace FK {
 // GKType::FunctionType g(w,k...) - analytic
 // __repeater<KMesh,D>::get_tuple(_kGrid) - returns a tuple of D kmeshes
 
-template <size_t D>
-DFLadderCubic<D>::DFLadderCubic(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t):
-    CubicDMFTSC<D>(S,kGrid,t),
+template <typename LatticeT, size_t D>
+DFLadder<LatticeT,D>::DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t):
+    LatticeDMFTSC<LatticeT,D>(S,kGrid,t),
     _fGrid(fGrid),
     GD0(std::tuple_cat(std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))),
     GD(GD0.getGrids()),
@@ -35,10 +28,10 @@ DFLadderCubic<D>::DFLadderCubic(const FKImpuritySolver &S, const FMatsubaraGrid&
 };
 
 
-template <size_t D>
-void DFLadderCubic<D>::_initialize()
+template <typename LatticeT, size_t D>
+void DFLadder<LatticeT,D>::_initialize()
 {
-    GLat = CubicDMFTSC<D>::getGLat(_fGrid);
+    GLat = LatticeDMFTSC<LatticeT,D>::getGLat(_fGrid);
     for (auto iw : _fGrid.getPoints()) {
         size_t iwn = size_t(iw);
         GD0[iwn] = GLat[iwn] - _S.gw(iw);
@@ -48,7 +41,7 @@ void DFLadderCubic<D>::_initialize()
             ComplexType w = std::get<0>(in);
             auto ktuple = __tuple_tail(in);
             ComplexType e = _ek(ktuple);
-            return (-e)/std::abs(w*w) -(e*e-_t*_t*2*RealType(D) - 2.0*e*(_S.mu - _S.Sigma._f(w)))/w/std::abs(w*w); 
+            return (-e)/std::abs(w*w) -(e*e-lattice.disp_square_sum() - 2.0*e*(_S.mu - _S.Sigma._f(w)))/w/std::abs(w*w); 
             //return (-e)/std::abs(w*w) -(e*e-_t*_t*2*RealType(D) - 2.0*e*(_S.mu - _S.w_1*_S.U))/w/std::abs(w*w); 
             };
     GD0._f = __fun_traits<typename GKType::FunctionType>::getFromTupleF(gd_f);
@@ -56,28 +49,8 @@ void DFLadderCubic<D>::_initialize()
     GD._f = GD0._f;
 };
 
-/*
-template <size_t D>
-template <typename ...KP>
-ComplexType DFLadderCubic<D>::getBubble2(BMatsubaraGrid::point W, KP... q, FMatsubaraGrid::point w1) const
-{
-    static auto pts = std::make_tuple(W,q...);
-    static auto GD_shift = this->GD0.shift(W,q...);
-    auto pts2 = std::make_tuple(W,q...);
-    if (pts2!=pts) {pts=pts2; GD_shift = this->GD0.shift(W,q...); };
-    typename EkStorage::PointFunctionType GD0Function = [&](KP...k)->ComplexType { return GD0(w1,k...); };
-    //typename EkStorage::PointFunctionType ShiftFunction = [&](KP...k)->ComplexType { return GD0(w1,k...); };
-    typename EkStorage::PointFunctionType ShiftFunction = [&](KP...k)->ComplexType { return GD_shift(w1,k...); };
- 
-    EkStorage G1(_ek.getGrids()), G2(_ek.getGrids());
-    G1.fill(GD0Function);
-    G2.fill(ShiftFunction);
-    G1*=G2;
-    return G1.sum()/RealType(__power<ksize,D>::value)/(-this->_fGrid._beta);
-}*/
-
-template <size_t D>
-inline typename DFLadderCubic<D>::GKType DFLadderCubic<D>::getGLat(const FMatsubaraGrid &gridF ) const
+template <typename LatticeT, size_t D>
+inline typename DFLadder<LatticeT,D>::GKType DFLadder<LatticeT,D>::getGLat(const FMatsubaraGrid &gridF ) const
 {
     GKType out(std::tuple_cat(std::forward_as_tuple(gridF), __repeater<KMesh,D>::get_tuple(_kGrid)));
     auto f1 = [&](const typename GKType::PointTupleType &in){return this->GLat(in);};
@@ -87,20 +60,20 @@ inline typename DFLadderCubic<D>::GKType DFLadderCubic<D>::getGLat(const FMatsub
     return out;
 }
 
-template <size_t D>
-inline typename DFLadderCubic<D>::GKType DFLadderCubic<D>::getGLatDMFT(const FMatsubaraGrid& gridF) const 
+template <typename LatticeT, size_t D>
+inline typename DFLadder<LatticeT,D>::GKType DFLadder<LatticeT,D>::getGLatDMFT(const FMatsubaraGrid& gridF) const 
 { 
-    return CubicDMFTSC<D>::getGLat(gridF); 
+    return LatticeDMFTSC<LatticeT,D>::getGLat(gridF); 
 };
 
-template <size_t D>
-inline typename DFLadderCubic<D>::GKType DFLadderCubic<D>::getGLat() const 
+template <typename LatticeT, size_t D>
+inline typename DFLadder<LatticeT,D>::GKType DFLadder<LatticeT,D>::getGLat() const 
 { 
     return GLat; 
 };
 
-template <size_t D>
-typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
+template <typename LatticeT, size_t D>
+typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
 {
     INFO("Using DF Ladder self-consistency in " << D << " dimensions on a cubic lattice of " << _kGrid.getSize() << "^" << D <<" atoms.");
     RealType beta = _fGrid._beta;
@@ -124,8 +97,8 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
 
     // Generate a list of unique q-points
     //size_t ksize = _kGrid.getSize();
-    //const auto all_q_pts = CubicTraits<D>::getAllBZPoints(_kGrid); 
-    const auto unique_q_pts = CubicTraits<D>::getUniqueBZPoints(_kGrid);
+    //const auto all_q_pts = lattice_traits::getAllBZPoints(_kGrid); 
+    const auto unique_q_pts = lattice_traits::getUniqueBZPoints(_kGrid);
     size_t totalqpts = size_t(pow(_kGrid.getSize(),D)); 
     RealType knorm = RealType(totalqpts);
 
@@ -302,7 +275,7 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     // Finish - prepare all lattice quantities
     Delta_out = Delta + 1.0/gw * GDLoc / GLatLoc;
     // Assume DMFT asymptotics
-    Delta_out._f = std::bind([&](ComplexType w)->ComplexType{return _t*_t*2*RealType(D)*((_S.mu-_S.w_1*_S.U)/std::abs(w*w) + 1.0/w);}, std::placeholders::_1);
+    Delta_out._f = std::bind([&](ComplexType w)->ComplexType{return lattice.disp_square_sum()*((_S.mu-_S.w_1*_S.U)/std::abs(w*w) + 1.0/w);}, std::placeholders::_1);
     //DEBUG("GD0 = " << GD0);
     //DEBUG("GD  = " << GD);
     //DEBUG("SigmaD = " << SigmaD);
@@ -310,14 +283,14 @@ typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::operator()()
     return Delta_out;
 }
 
-template <size_t D>
-inline typename DFLadderCubic<D>::GLocalType DFLadderCubic<D>::getGLoc()
+template <typename LatticeT, size_t D>
+inline typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::getGLoc()
 {
     return GLatLoc; 
 }
 
-template <size_t D>
-std::tuple<typename DFLadderCubic<D>::SuscType> DFLadderCubic<D>::calculateLatticeData(const BMatsubaraGrid& gridB)
+template <typename LatticeT, size_t D>
+std::tuple<typename DFLadder<LatticeT,D>::SuscType> DFLadder<LatticeT,D>::calculateLatticeData(const BMatsubaraGrid& gridB)
 {
     KMeshPatch fullgrid(_kGrid);
     std::array<KMeshPatch, D> grids = __repeater<KMeshPatch,D>::get_array(fullgrid); 
@@ -325,8 +298,8 @@ std::tuple<typename DFLadderCubic<D>::SuscType> DFLadderCubic<D>::calculateLatti
     return calculateLatticeData(gridB, grids);
 }
 
-template <size_t D>
-std::tuple<typename DFLadderCubic<D>::SuscType> DFLadderCubic<D>::calculateLatticeData(const BMatsubaraGrid& gridB, const std::array<KMeshPatch, D>& qgrids)
+template <typename LatticeT, size_t D>
+std::tuple<typename DFLadder<LatticeT,D>::SuscType> DFLadder<LatticeT,D>::calculateLatticeData(const BMatsubaraGrid& gridB, const std::array<KMeshPatch, D>& qgrids)
 {
     SuscType LatticeSusc(std::tuple_cat(std::forward_as_tuple(gridB),qgrids));
     //RealType T = 1.0/_fGrid._beta;
@@ -383,9 +356,9 @@ std::tuple<typename DFLadderCubic<D>::SuscType> DFLadderCubic<D>::calculateLatti
 }
 
 
-template <size_t D>
+template <typename LatticeT, size_t D>
 template <typename KPoint>
-std::vector<ComplexType> DFLadderCubic<D>::getStaticLatticeSusceptibility(const std::vector<std::array<KPoint, D>>& qpts, const FMatsubaraGrid& gridF)
+std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(const std::vector<std::array<KPoint, D>>& qpts, const FMatsubaraGrid& gridF)
 {
 
     auto grids = std::tuple_cat(std::make_tuple(gridF),__repeater<KMesh,D>::get_tuple(_kGrid));
@@ -464,9 +437,9 @@ std::vector<ComplexType> DFLadderCubic<D>::getStaticLatticeSusceptibility(const 
 
 
 
-template <size_t D>
+template <typename LatticeT, size_t D>
 template <typename KPoint>
-ComplexType DFLadderCubic<D>::getStaticLatticeSusceptibility(const std::array<KPoint, D>& q, const FMatsubaraGrid& gridF)
+ComplexType DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(const std::array<KPoint, D>& q, const FMatsubaraGrid& gridF)
 {
     std::vector<std::array<KPoint,D>> qpts;
     qpts.push_back(q);
@@ -474,9 +447,9 @@ ComplexType DFLadderCubic<D>::getStaticLatticeSusceptibility(const std::array<KP
 }
 
 
-template <size_t D>
+template <typename LatticeT, size_t D>
 template <typename KPoint>
-ComplexType DFLadderCubic<D>::getStaticLatticeSusceptibility(const std::array<KPoint, D>& q)
+ComplexType DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(const std::array<KPoint, D>& q)
 {
     return getStaticLatticeSusceptibility(q,_fGrid);
 }

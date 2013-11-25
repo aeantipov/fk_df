@@ -44,12 +44,13 @@ protected:
     typedef typename ArgFunGenerator<D,GFType,RealType>::type ArgFunType;
 public:
     static const size_t NDim = D;
-    const RealType _t;
+    lattice_traits lattice;
     const KMesh _kGrid;
     mutable EkStorage _ek;
     GFType _gloc;
 
-    LatticeDMFTSC(const FKImpuritySolver &S, KMesh kGrid, RealType t);
+    template <typename ...LatticeParams> 
+        LatticeDMFTSC(const FKImpuritySolver &S, KMesh kGrid, LatticeParams ... ls);
     template <typename ...ArgTypes> RealType dispersion(ArgTypes... kpoints) const;
     template <typename ...ArgTypes> RealType dispersion(const std::tuple<ArgTypes...>& kpoints) const;
     template <typename ...ArgTypes> GFType glat(ArgTypes... kpoints) const;
