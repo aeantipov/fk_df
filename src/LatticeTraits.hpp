@@ -12,28 +12,24 @@ template <size_t D>
 std::ostream& operator<<(std::ostream& out, BZPoint<D> in)
 {for (size_t i=0; i<D; ++i) out << RealType(in[i]) << " "; return out; } 
 
-template <class Derived>
+template <size_t D, class Derived>
 struct LatticeTraitsBase {
-    //static_cast<Derived*>(this)->implementation();
-};
-    
-template <size_t D> 
-struct CubicTraits{ 
     constexpr static size_t _D = D;
     typedef typename ArgFunGenerator<D,RealType,RealType>::type ArgFunType;
     typedef typename ArgBackGenerator<D,RealType,std::tuple>::type ArgTupleType;
-    typedef typename ArgFunGenerator<D,RealType,KMesh::point>::type PointFunType;
 
-    RealType _t = 1.0;
-    CubicTraits(RealType t):_t(t){};
     template <typename Arg1, typename ...Args> 
         typename std::enable_if<sizeof...(Args) == D-1 && std::is_convertible<Arg1,RealType>::value, RealType>::type 
-        dispersion(Arg1 in1, Args... in) {
-            return -2.0*_t*cos(RealType(in1)) + CubicTraits<D-1>(_t).dispersion(in...);
-            };
+            dispersion(Arg1 in1, Args... in) { return static_cast<Derived*>(this)->dispersion(in1, in...); };
+
     template <typename ...Args> 
         typename std::enable_if<sizeof...(Args) == D, RealType>::type 
-        dispersion(std::tuple<Args...> in){return -2.0*_t*cos(RealType(std::get<0>(in))) + CubicTraits<D-1>(_t).dispersion(__tuple_tail(in));};
+        dispersion(std::tuple<Args...> in){
+             __caller_tuple<RealType,std::tuple<Args...>> caller; 
+             caller._f = [this](Args... in){return dispersion(in...);};
+             caller._params = in;
+             return caller.call();
+        };
     /** Returns an analytic std::function of the dispersion. */
     ArgFunType get_dispersion(){ return __fun_traits<ArgFunType>::getFromTupleF ( [this](ArgTupleType in){return dispersion(in);});};
     /** Finds the equivalent point, which is used is calculations. */
@@ -43,6 +39,19 @@ struct CubicTraits{
     static std::vector<BZPoint<D>> getAllBZPoints(const KMesh& in);
     /** Returns a vector of a pair of a D-dimensional arrays of points on the KMesh and the amount of points that can be obtained from a symmetry operation in the lattice. */
     static std::map<BZPoint<D>, std::vector<BZPoint<D>>> getUniqueBZPoints(const KMesh& kGrid);
+    RealType disp_square_sum(){return static_cast<Derived*>(this)->disp_square_sum();}; 
+
+};
+    
+template <size_t D> 
+struct CubicTraits : LatticeTraitsBase<D,CubicTraits<D>>{ 
+    RealType _t = 1.0;
+    CubicTraits(RealType t):_t(t){};
+    template <typename Arg1, typename ...Args> 
+        typename std::enable_if<sizeof...(Args) == D-1 && std::is_convertible<Arg1,RealType>::value, RealType>::type 
+        dispersion(Arg1 in1, Args... in) {
+            return -2.0*_t*cos(RealType(in1)) + CubicTraits<D-1>(_t).dispersion(in...);
+            };
     RealType disp_square_sum(){return 2.*_t*_t*D;}; 
 };
 
@@ -72,8 +81,8 @@ struct TriangularTraits : CubicTraits<2> {
 // CubicTraits
 //
 
-template <size_t D>
-std::vector<BZPoint<D>> CubicTraits<D>::getAllBZPoints(const KMesh& kGrid)
+template <size_t D, class Derived>
+std::vector<BZPoint<D>> LatticeTraitsBase<D,Derived>::getAllBZPoints(const KMesh& kGrid)
 {
     size_t ksize = kGrid.getSize();
     size_t totalqpts = size_t(pow(ksize,D));
@@ -91,8 +100,8 @@ std::vector<BZPoint<D>> CubicTraits<D>::getAllBZPoints(const KMesh& kGrid)
     return out;
 }
 
-template <size_t D>
-inline std::array<RealType,D> CubicTraits<D>::findSymmetricBZPoint(const std::array<RealType,D>& in)
+template <size_t D, class Derived>
+inline std::array<RealType,D> LatticeTraitsBase<D,Derived>::findSymmetricBZPoint(const std::array<RealType,D>& in)
 {
     std::array<RealType,D> out;
     for (size_t i=0; i<D; ++i) {
@@ -104,8 +113,8 @@ inline std::array<RealType,D> CubicTraits<D>::findSymmetricBZPoint(const std::ar
     return out;
 }
 
-template <size_t D>
-inline BZPoint<D> CubicTraits<D>::findSymmetricBZPoint(const BZPoint<D>& in, const KMesh& kGrid)
+template <size_t D, class Derived>
+inline BZPoint<D> LatticeTraitsBase<D,Derived>::findSymmetricBZPoint(const BZPoint<D>& in, const KMesh& kGrid)
 {
     BZPoint<D> out(in);
     // Flip all pi+x to pi-x
@@ -117,8 +126,8 @@ inline BZPoint<D> CubicTraits<D>::findSymmetricBZPoint(const BZPoint<D>& in, con
     return out;
 }
 
-template <size_t D>
-std::map<BZPoint<D>, std::vector<BZPoint<D>>> CubicTraits<D>::getUniqueBZPoints(const KMesh& kGrid)
+template <size_t D, class Derived>
+std::map<BZPoint<D>, std::vector<BZPoint<D>>> LatticeTraitsBase<D,Derived>::getUniqueBZPoints(const KMesh& kGrid)
 {
     auto all_pts = getAllBZPoints(kGrid);
     auto totalqpts = all_pts.size();
