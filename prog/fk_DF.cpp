@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 #ifdef _calc_extra_stats
 template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& gridF)
 {
-    constexpr size_t D = SCType::NDim;
+    constexpr size_t D = SCType::_D;
     INFO("Calculating additional statistics.");
     const auto &Solver = SC._S;
     RealType beta = Solver.beta;
