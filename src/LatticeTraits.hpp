@@ -33,8 +33,8 @@ struct LatticeTraitsBase {
     /** Returns an analytic std::function of the dispersion. */
     ArgFunType get_dispersion(){ return __fun_traits<ArgFunType>::getFromTupleF ( [this](ArgTupleType in){return dispersion(in);});};
     /** Finds the equivalent point, which is used is calculations. */
-    static std::array<RealType,D> findSymmetricBZPoint(const std::array<RealType,D>& in);
-    static BZPoint<D> findSymmetricBZPoint(const BZPoint<D>& in, const KMesh& kGrid);
+    static BZPoint<D> findSymmetricBZPoint(const BZPoint<D>& in, const KMesh& kGrid)
+        { return Derived::findSymmetricBZPoint(in, kGrid); };
     /** Returns a vector of D-dimensional arrays of points on the KMesh, which covers the Brillouin zone */
     static std::vector<BZPoint<D>> getAllBZPoints(const KMesh& in);
     /** Returns a vector of a pair of a D-dimensional arrays of points on the KMesh and the amount of points that can be obtained from a symmetry operation in the lattice. */
@@ -47,6 +47,7 @@ template <size_t D>
 struct CubicTraits : LatticeTraitsBase<D,CubicTraits<D>>{ 
     RealType _t = 1.0;
     CubicTraits(RealType t):_t(t){};
+    static BZPoint<D> findSymmetricBZPoint(const BZPoint<D>& in, const KMesh& kGrid);
     template <typename Arg1, typename ...Args> 
         typename std::enable_if<sizeof...(Args) == D-1 && std::is_convertible<Arg1,RealType>::value, RealType>::type 
         dispersion(Arg1 in1, Args... in) {
@@ -64,23 +65,48 @@ struct CubicTraits<0>{
     RealType dispersion(std::tuple<>){return 0.0;};
 };
 
-struct TriangularTraits : CubicTraits<2> {
+struct TriangularTraits : LatticeTraitsBase<2,TriangularTraits> {
     RealType _t = 1.0;
     RealType _tp = 1.0;
-    constexpr static size_t _D = 2;
 
     RealType dispersion(RealType kx,RealType ky){return -2.*_t*(cos(kx)+cos(ky)) - 2.*_tp*cos(kx-ky);};
-
-    using CubicTraits<2>::getAllBZPoints;
-    using CubicTraits<2>::getUniqueBZPoints;
+    RealType disp_square_sum(){return 4.*_t*_t + 2.*_tp*_tp;}; 
+    static BZPoint<2> findSymmetricBZPoint(const BZPoint<2>& in, const KMesh& kGrid);
     };
-
 
 
 //
 // CubicTraits
 //
+template <size_t D>
+inline BZPoint<D> CubicTraits<D>::findSymmetricBZPoint(const BZPoint<D>& in, const KMesh& kGrid)
+{
+    BZPoint<D> out(in);
+    // Flip all pi+x to pi-x
+    for (size_t i=0; i<D; ++i) {
+        if (RealType(in[i])>PI) out[i]=kGrid.findClosest(2.0*PI-RealType(in[i]));
+        }
+    // Order x,y,z. Ensures x<=y<=z
+    std::sort(out.begin(), out.end());
+    return out;
+}
+//
+// TriangularTraits
+//
+inline BZPoint<2> TriangularTraits::findSymmetricBZPoint(const BZPoint<2>& in, const KMesh& kGrid)
+{
+    RealType x = in[0]; RealType y = in[1];
+    if (x>PI && y>PI) { x = PI-x; y = PI-y; };
+    BZPoint<2> out(in); 
+    out[0] = kGrid.findClosest(x); out[1] = kGrid.findClosest(y);
+    std::sort(out.begin(), out.end());
+    return out;
+}
 
+
+//
+// LatticeTraitsBase
+//
 template <size_t D, class Derived>
 std::vector<BZPoint<D>> LatticeTraitsBase<D,Derived>::getAllBZPoints(const KMesh& kGrid)
 {
@@ -97,32 +123,6 @@ std::vector<BZPoint<D>> LatticeTraitsBase<D,Derived>::getAllBZPoints(const KMesh
             };
         out[nq]=q;
         }
-    return out;
-}
-
-template <size_t D, class Derived>
-inline std::array<RealType,D> LatticeTraitsBase<D,Derived>::findSymmetricBZPoint(const std::array<RealType,D>& in)
-{
-    std::array<RealType,D> out;
-    for (size_t i=0; i<D; ++i) {
-            in[i] = std::fmod(in[i],2.0*PI);
-            if (RealType(in[i])>PI) out[i]=2.0*PI-in[i];
-            }
-        // Order x,y,z. Ensures x<=y<=z
-        std::sort(out.begin(), out.end());
-    return out;
-}
-
-template <size_t D, class Derived>
-inline BZPoint<D> LatticeTraitsBase<D,Derived>::findSymmetricBZPoint(const BZPoint<D>& in, const KMesh& kGrid)
-{
-    BZPoint<D> out(in);
-    // Flip all pi+x to pi-x
-    for (size_t i=0; i<D; ++i) {
-        if (RealType(in[i])>PI) out[i]=kGrid.findClosest(2.0*PI-RealType(in[i]));
-        }
-    // Order x,y,z. Ensures x<=y<=z
-    std::sort(out.begin(), out.end());
     return out;
 }
 
@@ -153,6 +153,21 @@ std::map<BZPoint<D>, std::vector<BZPoint<D>>> LatticeTraitsBase<D,Derived>::getU
     assert(totalqpts == count);
     return unique_pts;
 } 
+
+/*
+template <size_t D, class Derived>
+inline std::array<RealType,D> LatticeTraitsBase<D,Derived>::findSymmetricBZPoint(const std::array<RealType,D>& in)
+{
+    std::array<RealType,D> out;
+    for (size_t i=0; i<D; ++i) {
+            in[i] = std::fmod(in[i],2.0*PI);
+            if (RealType(in[i])>PI) out[i]=2.0*PI-in[i];
+            }
+        // Order x,y,z. Ensures x<=y<=z
+        std::sort(out.begin(), out.end());
+    return out;
+}
+*/
 
 } // end of namespace FK
 

@@ -66,6 +66,7 @@ public:
 
 template <size_t D>
 using CubicDMFTSC = LatticeDMFTSC<CubicTraits<D>>;
+typedef LatticeDMFTSC<TriangularTraits> TriangularDMFT;
 
 
 struct CubicInfDMFTSC : public DMFTBase
