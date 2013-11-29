@@ -36,7 +36,6 @@ foreach (ex ${execs})
     set(ex_src ${ex}.cpp)
     add_executable(${ex} ${ex_src} ${other_headers})
     target_link_libraries(${ex} fk ${FFTW_LIBRARIES})
-    set_target_properties(${ex} PROPERTIES COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/src" )
     install ( TARGETS ${ex} DESTINATION bin )
 endforeach(ex)
 

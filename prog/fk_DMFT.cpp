@@ -29,6 +29,10 @@
     typedef FK::CubicDMFTSC<4> sc_type;
     static constexpr size_t D=4;
     #define _calc_extra_stats
+#elif LATTICE_triangular
+    typedef FK::TriangularDMFT sc_type;
+    static constexpr size_t D=2;
+    #define _calc_extra_stats
 #endif
 
 #include "FKOptionParserDMFT.h"
@@ -123,7 +127,7 @@ int main(int argc, char *argv[])
         std::string fname = "Delta_full.dat";
         GF Delta2(std::make_tuple(FMatsubaraGrid(__get_min_number(fname,beta), __get_min_number(fname,beta)+__get_n_lines(fname), beta)));
         Delta2.loadtxt(fname);
-        Delta = Delta2;
+        Delta.copyInterpolate(Delta2);
         } 
 
     catch (std::exception &e) { Delta.fill(f1); };
@@ -144,6 +148,8 @@ int main(int argc, char *argv[])
     sc_type SC = CubicDMFTSC<3>(Solver, kgrid, t);
     #elif LATTICE_cubic4d
     sc_type SC = CubicDMFTSC<4>(Solver, kgrid, t);
+    #elif LATTICE_triangular
+    sc_type SC = sc_type(Solver, kgrid, t, t);
     #endif 
 /*
     switch (sc_switch) {

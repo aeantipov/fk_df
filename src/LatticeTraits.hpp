@@ -68,6 +68,7 @@ struct CubicTraits<0>{
 struct TriangularTraits : LatticeTraitsBase<2,TriangularTraits> {
     RealType _t = 1.0;
     RealType _tp = 1.0;
+    TriangularTraits(RealType t, RealType tp):_t(t),_tp(tp){};
 
     RealType dispersion(RealType kx,RealType ky){return -2.*_t*(cos(kx)+cos(ky)) - 2.*_tp*cos(kx-ky);};
     RealType disp_square_sum(){return 4.*_t*_t + 2.*_tp*_tp;}; 

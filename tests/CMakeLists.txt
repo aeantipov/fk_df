@@ -13,6 +13,7 @@ FFTTest
 SolverTest
 DMFTCubicTest01
 DMFTCubicTest02
+DMFTTriangularTest01
 DMFTBetheTest
 DMFTCubicSuscTest
 DMFTCubicSuscTest02

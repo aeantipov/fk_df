@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
         std::string fname = "Delta_full.dat";
         GF Delta2(std::make_tuple(FMatsubaraGrid(__get_min_number(fname,beta), __get_min_number(fname,beta)+__get_n_lines(fname), beta)));
         Delta2.loadtxt(fname);
-        Delta = Delta2;
+        Delta.copyInterpolate(Delta2);
         } 
     catch (std::exception &e) { Delta.fill(f1); };
     Delta.savetxt("Delta_0.dat");
