@@ -114,6 +114,19 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
         Lambda.fill(lambdaf);
         VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return mult*Lambda(w1)*Lambda(w2) - RealType(w1._index == w2._index)*Lambda(w1)*Lambda(w1);};
+    #elif vertex_Hubbard
+        auto U = _S.U;
+        auto eU = exp(beta*U/2.);
+        typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
+        Lambda.fill(lambdaf);
+        VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2)->ComplexType{
+            ComplexType z1 = w1; ComplexType z2 = w2;
+            return -1.*( 
+                   -U - U*U*U/4.*(1./z1/z1 + 1./z2/z2) + 3.*std::pow(U,5)/z1/z1/z2/z2 
+                   + mult/(1. + eU)    * (1. + 2.*RealType(_fGrid.getNumber(w1) == -_fGrid.getNumber(w2))*Lambda(w1)*Lambda(w2))  
+                   - mult/(1. + 1./eU) * (2.*RealType(w1._index == w2._index) + 1.)*Lambda(w1)*Lambda(w2)
+                   );
+        };
     #endif
     StaticVertex4.fill(VertexF2);
     auto StaticV4 = StaticVertex4.getData().getAsMatrix();
@@ -157,6 +170,16 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
             if (_EvaluateStaticDiagrams) {
                 INFO_NONEWLINE("\tStatic contribution...");
                 auto dual_bubble = Diagrams::getBubble(this->GD, GD_shift);
+                #ifdef bs_matrix
+                auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
+                auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix).diagonal();
+                for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
+                    auto f_val = FullStaticV4(iw1._index);//, iw1._index);
+                    for (auto q_pt : other_pts) { 
+                        FullStaticVertex.get(std::tuple_cat(std::make_tuple(iw1),q_pt)) = f_val;
+                        };
+                    };
+                #else
                 auto m1 = mult*dual_bubble*Lambda*Lambda;
                 ComplexType B_=(m1/(1.0+m1)).getData().sum();
                 if (std::imag(B_)>1e-5) throw (exRuntimeError("B is imaginary."));
@@ -180,6 +203,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
                         FullStaticVertex.get(std::tuple_cat(std::make_tuple(iw1),q_pt)) = f_val;
                         };
                     };
+                #endif
                 };
 
             
@@ -362,12 +386,7 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
 
     auto grids = std::tuple_cat(std::make_tuple(gridF),__repeater<KMesh,D>::get_tuple(_kGrid));
 
-    // Prepare static vertex (outdated)
-    //GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> FullStaticV4(std::forward_as_tuple(gridF,gridF)); 
-    //decltype(StaticVertex4)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getVertex4(0.0, w1,w2);};
-    //StaticVertex4.fill(VertexF2);
-    //auto StaticV4 = StaticVertex4.getData().getAsMatrix();
-
+    
     // Prepate interpolated Green's functions
     GKType GD0_interp (grids), GD_interp(grids), GLat_interp(grids);
     if (gridF._w_max != _fGrid._w_max || gridF._w_min != _fGrid._w_min) {
@@ -384,12 +403,31 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
     auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
     GLocalType Lambda(gridF);
     Lambda.copyInterpolate(_S.getLambda());
+    #ifdef bs_matrix
+        GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> StaticVertex4(std::forward_as_tuple(gridF,gridF)); 
+        decltype(StaticVertex4)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getVertex4(0.0, w1,w2);};
+    #endif
     #ifdef vertex_U_inf
         auto U = _S.U;
         typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
         Lambda.fill(lambdaf);
+        VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return mult*Lambda(w1)*Lambda(w2) - RealType(w1._index == w2._index)*Lambda(w1)*Lambda(w1);};
     #elif vertex_Hubbard
-        typename GLocalType::FunctionType lambdaf;
+        // Prepare static vertex (outdated)
+        auto U = _S.U;
+        typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
+        Lambda.fill(lambdaf);
+        auto eU = exp(gridF._beta*U/2.);
+        VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2)->ComplexType{
+            ComplexType z1 = w1; ComplexType z2 = w2;
+            return -1.*(-U - U*U*U/4.*(1./z1/z1 + 1./z2/z2) + 3.*std::pow(U,5)/z1/z1/z2/z2 
+                   + mult/(1. + eU)    * (1. + 2.*RealType(gridF.getNumber(w1) == -gridF.getNumber(w2))*Lambda(w1)*Lambda(w2))  
+                   - mult/(1. + 1./eU) * (2.*RealType(w1._index == w2._index) + 1.)*Lambda(w1)*Lambda(w2));
+        };
+    #endif
+    #ifdef bs_matrix
+        StaticVertex4.fill(VertexF2);
+        auto StaticV4 = StaticVertex4.getData().getAsMatrix();
     #endif
     GKType Lwk = this->getGLatDMFT(gridF)/GD0_interp*(-1.0);
     Lwk._f = __fun_traits<typename GKType::FunctionType>::constant(-1.0);
@@ -414,6 +452,10 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
         auto dual_bubble = Diagrams::getBubble(GD_interp, Wq_args_static);
         auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
 
+        #ifdef bs_matrix
+        auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, false);
+        ComplexType susc1 = (GDL_bubble_vector.transpose()*FullStaticV4*GDL_bubble_vector)(0,0);
+        #else
         //auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
         auto m1 = mult*dual_bubble*Lambda*Lambda;
         ComplexType B=(m1/(1.0+m1)).getData().sum();
@@ -427,10 +469,7 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
                 susc1+=GDL_bubble(w1)*F*(Lambda(w2)-Lambda(w1)*kronecker+B*Lambda(w1)*kronecker-B1(w2))*GDL_bubble(w2);
             }
         }
-
-        //auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true);
-        //auto susc1 = (GDL_bubble_vector.transpose()*FullStaticV4*GDL_bubble_vector);
-        //susc = susc1(0,0);
+        #endif
         
         susc = susc1;
 
