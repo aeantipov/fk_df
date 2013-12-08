@@ -146,6 +146,7 @@ int main(int argc, char *argv[])
         GF Delta2(std::make_tuple(FMatsubaraGrid(__get_min_number(fname,beta), __get_min_number(fname,beta)+__get_n_lines(fname), beta)));
         Delta2.loadtxt(fname);
         Delta.copyInterpolate(Delta2);
+        Delta._f = __fun_traits<decltype(Delta._f)>::constant(0.0);
         } 
     catch (std::exception &e) { Delta.fill(f1); };
     Delta.savetxt("Delta_0.dat");

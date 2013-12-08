@@ -97,7 +97,7 @@ inline BZPoint<D> CubicTraits<D>::findSymmetricBZPoint(const BZPoint<D>& in, con
 inline BZPoint<2> TriangularTraits::findSymmetricBZPoint(const BZPoint<2>& in, const KMesh& kGrid)
 {
     RealType x = in[0]; RealType y = in[1];
-    if (x>PI && y>PI) { x = PI-x; y = PI-y; };
+    if (x>PI && y>PI) { x = 2.0*PI-x; y = 2.0*PI-y; };
     BZPoint<2> out(in); 
     out[0] = kGrid.findClosest(x); out[1] = kGrid.findClosest(y);
     std::sort(out.begin(), out.end());
