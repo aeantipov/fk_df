@@ -14,8 +14,9 @@ namespace FK {
 // __repeater<KMesh,D>::get_tuple(_kGrid) - returns a tuple of D kmeshes
 
 template <typename LatticeT, size_t D>
-DFLadder<LatticeT,D>::DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t):
-    LatticeDMFTSC<LatticeT>(S,kGrid,t),
+template <typename ...LatticeParams> 
+DFLadder<LatticeT,D>::DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, LatticeParams ... lattice_p):
+    LatticeDMFTSC<LatticeT>(S,kGrid,lattice_p...),
     _fGrid(fGrid),
     GD0(std::tuple_cat(std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))),
     GD(GD0.getGrids()),

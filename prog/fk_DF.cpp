@@ -28,6 +28,11 @@
     typedef FK::DFLadderCubic<4> df_sc_type;
     static constexpr size_t D=4;
     #define _calc_extra_stats
+#elif LATTICE_triangular
+    typedef FK::TriangularDMFT dmft_sc_type;
+    typedef FK::DFLadder<FK::TriangularTraits,2> df_sc_type;
+    static constexpr size_t D=2;
+    #define _calc_extra_stats
 #endif
 
 #include "FKOptionParserDF.h"
@@ -37,7 +42,7 @@
 #include <array>
 #include <unordered_map>
 #include <csignal>
-
+#include <bitset>
 
 using namespace GFTools;
 using namespace FK;
@@ -92,6 +97,7 @@ int main(int argc, char *argv[])
         std::cout << "T                    : " << 1.0/opt.beta << std::endl;
         std::cout << "U                    : " << opt.U    << std::endl;
         std::cout << "t                    : " << opt.t    << std::endl;
+        std::cout << "tp                   : " << opt.tp   << std::endl;
         std::cout << "mu                   : " << opt.mu   << std::endl;
         std::cout << "e_d                  : " << opt.e_d << std::endl;
         std::cout << "Number Of Matsubaras : " << opt.n_freq << std::endl;
@@ -111,6 +117,7 @@ int main(int argc, char *argv[])
     RealType e_d = opt.e_d;
     beta = opt.beta;
     RealType t = opt.t; 
+    RealType tp = opt.tp; 
     size_t n_freq = opt.n_freq;
     size_t ksize = opt.kpts;
     //size_t n_dual_freq = opt.n_dual_freq;
@@ -147,8 +154,13 @@ int main(int argc, char *argv[])
     
     KMeshPatch qGrid(kGrid);
 
+    #ifdef LATTICE_triangular
+    dmft_sc_type SC_DMFT(Solver, kGrid, t, tp);
+    df_sc_type SC_DF(Solver, gridF, kGrid, t, tp);
+    #else
     dmft_sc_type SC_DMFT(Solver, kGrid, t);
     df_sc_type SC_DF(Solver, gridF, kGrid, t);
+    #endif 
 
     SC_DF._n_GD_iter = opt.DFNumberOfSelfConsistentIterations;
     SC_DF._GDmix = opt.DFSCMixing;
@@ -433,7 +445,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
 
         for (size_t nq=0; nq<nqpts; ++nq) {
             BZPoint<D> current_point = all_bz_points[nq];
-            typename susc_k_type::PointTupleType current_point_tuple = current_point;
+            typename susc_k_type::PointTupleType current_point_tuple = std::tuple_cat(current_point);
             BZPoint<D> sym_point = CubicTraits<D>::findSymmetricBZPoint(current_point,SC._kGrid);
             susc_full.get(current_point_tuple) = susc_map[sym_point];
             susc_lattice_bubbles.get(current_point_tuple) = lattice_bubble_map[sym_point];
@@ -466,9 +478,9 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
             ypt[std::max(int(D),2)-2]=p1;
             xypt[std::max(int(D),2)-2]=p1;
 
-            cc_x.get(p1) = std::real(susc_full_r(typename susc_r_type::PointTupleType(xpt)));
-            cc_y.get(p1) = std::real(susc_full_r(typename susc_r_type::PointTupleType(ypt)));
-            cc_xy.get(p1) = std::real(susc_full_r(typename susc_r_type::PointTupleType(xypt)));
+            cc_x.get(p1) = std::real(susc_full_r(typename susc_r_type::PointTupleType(std::tuple_cat(xpt))));
+            cc_y.get(p1) = std::real(susc_full_r(typename susc_r_type::PointTupleType(std::tuple_cat(ypt))));
+            cc_xy.get(p1) = std::real(susc_full_r(typename susc_r_type::PointTupleType(std::tuple_cat(xypt))));
             }
 
         cc_x.savetxt("StaticChiDFCC_dir_x.dat");
