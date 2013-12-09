@@ -61,9 +61,10 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     else
         V4Chi = MatrixType<ValueType>::Identity(size,size) + Chi0*IrrVertex4;
     auto D1 = V4Chi.determinant();
-    if (std::abs(D1)<1e-1) INFO3("Determinant : " << D1);
+    if (std::imag(D1)>1e-7) throw 1;
+    if (std::real(D1)<1e-2) INFO3("Determinant : " << D1);
 
-    if (!eval_SC && std::abs(D1)>std::numeric_limits<RealType>::epsilon()) {
+    if (!eval_SC && std::real(D1)>std::numeric_limits<RealType>::epsilon()) {
         try {
             if (forward) {
                 V4Chi = V4Chi.colPivHouseholderQr().solve(IrrVertex4);

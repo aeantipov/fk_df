@@ -115,13 +115,15 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         Lambda.fill(lambdaf);
         VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return mult*Lambda(w1)*Lambda(w2) - RealType(w1._index == w2._index)*Lambda(w1)*Lambda(w1);};
     #elif vertex_Hubbard
+        INFO("Using Hubbard (singlet) vertex");
         auto U = _S.U;
         auto eU = exp(beta*U/2.);
         typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
         Lambda.fill(lambdaf);
         VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2)->ComplexType{
             ComplexType z1 = w1; ComplexType z2 = w2;
-            return -1.*( 
+            return  0.5*mult*Lambda(w1)*Lambda(w2) - RealType(w1._index == w2._index)*Lambda(w1)*Lambda(w1)
+                   -0.5*( 
                    -U - U*U*U/4.*(1./z1/z1 + 1./z2/z2) + 3.*std::pow(U,5)/z1/z1/z2/z2 
                    + mult/(1. + eU)    * (1. + 2.*RealType(_fGrid.getNumber(w1) == -_fGrid.getNumber(w2))*Lambda(w1)*Lambda(w2))  
                    - mult/(1. + 1./eU) * (2.*RealType(w1._index == w2._index) + 1.)*Lambda(w1)*Lambda(w2)
@@ -413,14 +415,14 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
         Lambda.fill(lambdaf);
         VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return mult*Lambda(w1)*Lambda(w2) - RealType(w1._index == w2._index)*Lambda(w1)*Lambda(w1);};
     #elif vertex_Hubbard
-        // Prepare static vertex (outdated)
         auto U = _S.U;
         typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
         Lambda.fill(lambdaf);
         auto eU = exp(gridF._beta*U/2.);
         VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2)->ComplexType{
             ComplexType z1 = w1; ComplexType z2 = w2;
-            return -1.*(-U - U*U*U/4.*(1./z1/z1 + 1./z2/z2) + 3.*std::pow(U,5)/z1/z1/z2/z2 
+            return 0.5*mult*Lambda(w1)*Lambda(w2) - RealType(w1._index == w2._index)*Lambda(w1)*Lambda(w1)
+                   -0.5*(-U - U*U*U/4.*(1./z1/z1 + 1./z2/z2) + 3.*std::pow(U,5)/z1/z1/z2/z2 
                    + mult/(1. + eU)    * (1. + 2.*RealType(gridF.getNumber(w1) == -gridF.getNumber(w2))*Lambda(w1)*Lambda(w2))  
                    - mult/(1. + 1./eU) * (2.*RealType(w1._index == w2._index) + 1.)*Lambda(w1)*Lambda(w2));
         };
