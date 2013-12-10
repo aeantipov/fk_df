@@ -11,6 +11,7 @@ public:
 	FK::RealType beta = 10.0;
 	FK::RealType U    = 4.0 ;
 	FK::RealType t    = 1.0 ;
+	FK::RealType tp   = 0.0 ;
 	FK::RealType mu   = 2.0 ;
 	FK::RealType e_d  = 0.0 ;
 	FK::RealType w_0  = 0.5 ;
@@ -57,6 +58,9 @@ public:
             //n_freq = (int)std::fabs(beta+0.5);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
+        ON_OPTION_WITH_ARG(LONGOPT("tp"))
+			tp = std::atof(arg);
+			used_args = 1;	// Notify the parser of a consumption of argument.
 
         ON_OPTION_WITH_ARG(LONGOPT("mu"))
 			mu = std::atof(arg);

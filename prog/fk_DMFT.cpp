@@ -42,6 +42,7 @@
 #include <array>
 #include <unordered_map>
 #include <csignal>
+#include <bitset>
 
 #include <fftw3.h>
 
@@ -92,11 +93,12 @@ int main(int argc, char *argv[])
         std::cout << "beta                 : " << opt.beta << std::endl;
         std::cout << "U                    : " << opt.U    << std::endl;
         std::cout << "t                    : " << opt.t    << std::endl;
+        std::cout << "tp                   : " << opt.tp   << std::endl;
         std::cout << "mu                   : " << opt.mu   << std::endl;
         std::cout << "e_d                  : " << opt.e_d << std::endl;
         std::cout << "Number Of Matsubaras : " << opt.n_freq << std::endl;
         std::cout << "Max number of iterations : " << opt.n_iter << std::endl;
-        std::cout << "Convergence cutoff   :: " << opt.cutoff << std::endl;
+        std::cout << "Convergence cutoff   : " << opt.cutoff << std::endl;
     } catch (const optparse::unrecognized_option& e) {
         std::cout << "unrecognized option: " << e.what() << std::endl;
         return 1;
@@ -110,6 +112,7 @@ int main(int argc, char *argv[])
     RealType e_d = opt.e_d;
     beta = opt.beta;
     RealType t = opt.t; 
+    RealType tp = opt.tp; 
     size_t n_freq = opt.n_freq;
     size_t maxit = opt.n_iter;
     RealType mix = opt.mix;
@@ -128,6 +131,7 @@ int main(int argc, char *argv[])
         GF Delta2(std::make_tuple(FMatsubaraGrid(__get_min_number(fname,beta), __get_min_number(fname,beta)+__get_n_lines(fname), beta)));
         Delta2.loadtxt(fname);
         Delta.copyInterpolate(Delta2);
+        Delta._f = __fun_traits<decltype(Delta._f)>::constant(0.0);
         } 
 
     catch (std::exception &e) { Delta.fill(f1); };
@@ -149,20 +153,8 @@ int main(int argc, char *argv[])
     #elif LATTICE_cubic4d
     sc_type SC = CubicDMFTSC<4>(Solver, kgrid, t);
     #elif LATTICE_triangular
-    sc_type SC = sc_type(Solver, kgrid, t, t);
+    sc_type SC = sc_type(Solver, kgrid, t, tp);
     #endif 
-/*
-    switch (sc_switch) {
-        case enumSC::Bethe:       SC_ptr.reset(new BetheSC(Solver, t)); break;
-        case enumSC::DMFTCubic1d: SC_ptr.reset(new CubicDMFTSC<1>(Solver, t, kgrid)); D=1; break;
-        case enumSC::DMFTCubic2d: SC_ptr.reset(new CubicDMFTSC<2>(Solver, t, kgrid)); D=2; break;
-        case enumSC::DMFTCubic3d: SC_ptr.reset(new CubicDMFTSC<3>(Solver, t, kgrid)); D=3; break;
-        case enumSC::DMFTCubic4d: SC_ptr.reset(new CubicDMFTSC<4>(Solver, t, kgrid)); D=4; break;
-        case enumSC::DMFTCubicInfd: SC_ptr.reset(new CubicInfDMFTSC(Solver,t,RealGrid(-6.0*t,6.0*t,1024))); break;
-        default:                  ERROR("No self-consistency provided. Exiting..."); exit(1); 
-    };
-*/
-    //auto &SC = *SC_ptr;
 
     bool update_weights = opt.update_weights;
     Solver.w_0 = opt.w_0;

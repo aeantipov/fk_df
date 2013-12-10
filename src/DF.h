@@ -54,7 +54,8 @@ struct DFLadder : LatticeDMFTSC<LatticeT>, DFBase {
 private:
     void _initialize();
 public:
-    DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, RealType t);
+    template <typename ...LatticeParams> 
+        DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, LatticeParams ... lattice_p);
     template <typename ...KP> GLocalType getBubble(const typename DFLadder<LatticeT,D>::GKType& GF, BMatsubaraGrid::point W, KP...kpoints) const;
     GLocalType getBubble(const GKType& GF, const WQTupleType& in) const;
     GKType getGLatDMFT(const FMatsubaraGrid& gridF) const ;
