@@ -49,6 +49,8 @@ inline typename Diagrams::GLocalType Diagrams::getBubble(const GLocalType &GF, A
     return (-T)*out;
 }
 
+struct __logic_err : public std::logic_error { __logic_err (const std::string& what_arg):logic_error(what_arg){}; };
+
 template <typename ValueType>
 inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, const MatrixType<ValueType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
 {
@@ -61,7 +63,7 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     else
         V4Chi = MatrixType<ValueType>::Identity(size,size) + Chi0*IrrVertex4;
     auto D1 = V4Chi.determinant();
-    if (std::imag(D1)>1e-7) throw 1;
+    if (std::imag(D1)>1e-7) { ERROR("Determinant : " << D1); throw (__logic_err("Complex determinant in BS. Exiting.")); };
     if (std::real(D1)<1e-2) INFO3("Determinant : " << D1);
 
     if (!eval_SC && std::real(D1)>std::numeric_limits<RealType>::epsilon()) {

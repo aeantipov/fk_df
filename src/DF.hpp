@@ -89,6 +89,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
     //typedef typename ArgBackGenerator<D,KMeshPatch,GridObject,ComplexType,FMatsubaraGrid>::type SigmaPatchType;
     //auto reduced_grids = std::tuple_cat(FMatsubaraGrid(0,_fGrid._max,bea), __repeater<KMeshPatch,D>::get_tuple(
     _initialize();
+    GKType GD_initial(GD); // copy dressed GD if non-zero Sigma was provided in the beginning
 
     // Put here operations with GD
     //DEBUG("GD0 = " << GD0);
@@ -151,6 +152,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
     GLocalType GDsum(_fGrid);
     for (auto iw : _fGrid.getPoints()) { GDsum[iw._index] = std::abs(GD[iw._index].sum())/knorm; }; 
     INFO("Beginning with GD sum = " << std::abs(GDsum.sum())/RealType(_fGrid.getSize()));
+
 
     RealType diffGD = 1.0, diffGD_min = 1.0; 
     size_t diffGD_min_count = 0; // A counter to estimate, how many iterations have passed after the minimal achieved diff
@@ -262,7 +264,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         if (diffGD_min_count > 12 && std::abs(_GDmix-0.05)>1e-3 && _update_mixing) {
             ERROR("\n\tCaught loop cycle. Reducing DF mixing to " << _GDmix/2 << " .\n");
             _GDmix=std::max(_GDmix/1.5, 0.05);
-            GD_new = GD0;
+            GD_new = GD_initial;
             SigmaD = 0.0;
             diffGD_min = diffGD;
             diffGD_min_count = 0;
@@ -367,6 +369,7 @@ std::tuple<typename DFLadder<LatticeT,D>::SuscType> DFLadder<LatticeT,D>::calcul
             size_t count=0; for (auto qval : q) { INFO_NONEWLINE("q_" << count++ << "="<<RealType(qval) << " "); }; 
             // Bethe-Salpeter vertex
             Chi0 = Diagrams::getBubble(GD, Wq_args);
+
             FullDualDynVertex4 = Diagrams::BS(Chi0, DynVertex4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
             
             // Lattice susceptibility
@@ -456,27 +459,32 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
         auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
 
         #ifdef bs_matrix
-        auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, false);
-        ComplexType susc1 = (GDL_bubble_vector.transpose()*FullStaticV4*GDL_bubble_vector)(0,0);
+        auto size = StaticV4.rows();
+        auto V4Chi = MatrixType<ComplexType>::Identity(size,size) - StaticV4*dual_bubble_matrix;
+        auto D1 = V4Chi.determinant();
+        if (std::imag(D1)<1e-7 && std::real(D1)>0) { 
+            auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, false);
+            susc = (GDL_bubble_vector.transpose()*FullStaticV4*GDL_bubble_vector)(0,0);
+            }
+        else susc = -1.;
         #else
         //auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
         auto m1 = mult*dual_bubble*Lambda*Lambda;
         ComplexType B=(m1/(1.0+m1)).getData().sum();
         GLocalType B1=m1*Lambda/(1.0+m1);
     
-        ComplexType susc1;
         for (auto w1 : gridF.getPoints()) {
             auto F = mult/(1.0+m1(w1))*Lambda(w1)/(1.0-B);
             for (auto w2 : gridF.getPoints()) {
                 RealType kronecker = RealType(w1._index == w2._index);
-                susc1+=GDL_bubble(w1)*F*(Lambda(w2)-Lambda(w1)*kronecker+B*Lambda(w1)*kronecker-B1(w2))*GDL_bubble(w2);
+                susc+=GDL_bubble(w1)*F*(Lambda(w2)-Lambda(w1)*kronecker+B*Lambda(w1)*kronecker-B1(w2))*GDL_bubble(w2);
             }
         }
         #endif
-        
-        susc = susc1;
 
+        #ifndef vertex_Hubbard
         susc+=LatticeBubble.sum();
+        #endif
         INFO("Static susceptibility at q=" << q[0] << " = " << susc);
         out.push_back(susc);
         };
