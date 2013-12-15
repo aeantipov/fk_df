@@ -119,18 +119,13 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
     #elif vertex_Hubbard
         INFO("Using Hubbard (singlet) vertex");
         auto U = _S.U;
-        auto eU = exp(beta*U/2.);
         typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
         Lambda.fill(lambdaf);
         VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2)->ComplexType{
-            ComplexType z1 = w1; ComplexType z2 = w2;
-            return  0.5*mult*Lambda(w1)*Lambda(w2) - RealType(w1._index == w2._index)*Lambda(w1)*Lambda(w1)
-                   -0.5*( 
-                   -U - U*U*U/4.*(1./z1/z1 + 1./z2/z2) + 3.*std::pow(U,5)/z1/z1/z2/z2 
-                   + mult/(1. + eU)    * (1. + 2.*RealType(_fGrid.getNumber(w1) == -_fGrid.getNumber(w2))*Lambda(w1)*Lambda(w2))  
-                   - mult/(1. + 1./eU) * (2.*RealType(w1._index == w2._index) + 1.)*Lambda(w1)*Lambda(w2)
-                   );
+            return  mult*Lambda(w1)*Lambda(w2)*(2. + RealType(w1._index == w2._index));
         };
+    GLocalType triplet_vertex(_fGrid);
+    triplet_vertex = mult*Lambda*Lambda*(-3.);
     #endif
     StaticVertex4.fill(VertexF2);
     auto StaticV4 = StaticVertex4.getData().getAsMatrix();
@@ -177,11 +172,14 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
                 auto dual_bubble = Diagrams::getBubble(this->GD, GD_shift);
                 #ifdef bs_matrix
                 auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
-                auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix).diagonal();
+                auto FullStaticV4_m = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
+                auto FullStaticV4 = FullStaticV4_m.diagonal();
+                auto triplet_bs = Diagrams::BS(dual_bubble, triplet_vertex, true, _eval_BS_SC, _n_BS_iter, _BSmix);
                 for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
                     auto f_val = FullStaticV4(iw1._index);//, iw1._index);
+                    auto t_val = triplet_bs(iw1);//, iw1._index);
                     for (auto q_pt : other_pts) { 
-                        FullStaticVertex.get(std::tuple_cat(std::make_tuple(iw1),q_pt)) = f_val;
+                        FullStaticVertex.get(std::tuple_cat(std::make_tuple(iw1),q_pt)) = 0.5*(f_val+t_val);
                         };
                     };
                 #else
@@ -422,13 +420,8 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
         auto U = _S.U;
         typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
         Lambda.fill(lambdaf);
-        auto eU = exp(gridF._beta*U/2.);
         VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2)->ComplexType{
-            ComplexType z1 = w1; ComplexType z2 = w2;
-            return 0.5*mult*Lambda(w1)*Lambda(w2) - RealType(w1._index == w2._index)*Lambda(w1)*Lambda(w1)
-                   -0.5*(-U - U*U*U/4.*(1./z1/z1 + 1./z2/z2) + 3.*std::pow(U,5)/z1/z1/z2/z2 
-                   + mult/(1. + eU)    * (1. + 2.*RealType(gridF.getNumber(w1) == -gridF.getNumber(w2))*Lambda(w1)*Lambda(w2))  
-                   - mult/(1. + 1./eU) * (2.*RealType(w1._index == w2._index) + 1.)*Lambda(w1)*Lambda(w2));
+            return  mult*Lambda(w1)*Lambda(w2)*(2. + RealType(w1._index == w2._index));
         };
     #endif
     #ifdef bs_matrix
@@ -464,7 +457,7 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
         auto D1 = V4Chi.determinant();
         if (std::imag(D1)<1e-7 && std::real(D1)>0) { 
             auto FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, false);
-            susc = (GDL_bubble_vector.transpose()*FullStaticV4*GDL_bubble_vector)(0,0);
+            susc = (GDL_bubble_vector.transpose()*FullStaticV4*GDL_bubble_vector)(0,0)*0.5;
             }
         else susc = -1.;
         #else

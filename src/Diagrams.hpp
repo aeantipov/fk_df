@@ -62,6 +62,7 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
         V4Chi = MatrixType<ValueType>::Identity(size,size) - IrrVertex4*Chi0;
     else
         V4Chi = MatrixType<ValueType>::Identity(size,size) + Chi0*IrrVertex4;
+    //auto ((IrrVertex4*Chi0).eigenvalues())
     auto D1 = V4Chi.determinant();
     if (std::imag(D1)>1e-7) { ERROR("Determinant : " << D1); throw (__logic_err("Complex determinant in BS. Exiting.")); };
     if (std::real(D1)<1e-2) INFO3("Determinant : " << D1);
@@ -81,10 +82,10 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
             ERROR("Couldn't invert the vertex");
         }
     }; // From here solver by iterations
-    V4Chi=IrrVertex4*Chi0;
     auto V4 = IrrVertex4;
     auto V4_old = IrrVertex4;
-    INFO_NONEWLINE("\tEvaluating BS self-consistently. ");
+    V4Chi=IrrVertex4*Chi0;
+    INFO_NONEWLINE("\tEvaluating BS self-consistently. Making " << n_iter << " iterations.");
     RealType diffBS = 1.0;
     for (size_t n=0; n<n_iter && diffBS > 1e-8; ++n) { 
         INFO_NONEWLINE("\t\t" << n+1 << "/" << n_iter<< ". ")
