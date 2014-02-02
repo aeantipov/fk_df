@@ -19,7 +19,7 @@ DMFTCubicSuscTest
 DMFTCubicSuscTest02
 DMFT_DFCubicTest01
 DMFT_DFCubicTest02
-DMFT_DFCubicTest03
+#DMFT_DFCubicTest03
 DMFT_DFCubicTest04
 DiagramsTest
 DFCubicTest01

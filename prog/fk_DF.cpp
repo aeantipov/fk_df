@@ -498,8 +498,8 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     if (flags[7]){
         INFO2("Saving G(w,k)");
         auto glat = SC.getGLat(); 
-        GF glat_k(Solver.w_grid);
-        glat_k.savetxt("glat_k.dat");
+        //GF glat_k(Solver.w_grid);
+        glat.savetxt("glat_k.dat");
         };
 
 #ifdef LATTICE_cubic2d
