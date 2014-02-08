@@ -11,5 +11,5 @@
     Susceptibilities in different directions: 
     StaticChiDFCC_r.dat; 
 6: Sigma_d(w,k)
-7: Glat(w,k)
+7: Glat(w,k) (6 in DMFT)
 
