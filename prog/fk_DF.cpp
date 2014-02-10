@@ -507,12 +507,12 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         INFO2("Gd(r)");
         auto w = Solver.w_grid.findClosest(I*PI/beta);
         auto rgrid = EnumerateGrid(0,SC._kGrid.getSize(),false);
-        auto gdr_data = run_fft(SC.GD[w._index], FFTW_BACKWARD);
-        auto gdr0_data = run_fft(SC.GD0[w._index], FFTW_BACKWARD);
+        auto gdr_data = run_fft(SC.GD[w.index_], FFTW_BACKWARD);
+        auto gdr0_data = run_fft(SC.GD0[w.index_], FFTW_BACKWARD);
         GridObject <ComplexType,EnumerateGrid> GDr(rgrid),GDr0(rgrid); 
         for (auto x : rgrid.getPoints()) {
-            GDr._data[x._index] = gdr_data._data[0][x._index];
-            GDr0._data[x._index] = gdr0_data._data[0][x._index];
+            GDr._data[x.index_] = gdr_data._data[0][x.index_];
+            GDr0._data[x.index_] = gdr0_data._data[0][x.index_];
         };
         GDr.savetxt("Gdr.dat");
         GDr0.savetxt("Gdr0.dat");
