@@ -35,18 +35,19 @@ int main()
     FKImpuritySolver Solver(U,mu,e_d,Delta);
        //DEBUG("Delta = " << Delta);
     Solver.run();
- //std::function<ComplexType(ComplexType,ComplexType)> f1 = std::bind(g4, std::placeholders::_1, std::placeholders::_2);
-    //std::function<ComplexType(ComplexType,ComplexType)>
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType f2 = std::bind(&FKImpuritySolver::getFVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>, Solver, std::placeholders::_1, std::placeholders::_2);
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType f2 = 
+        [Solver](typename FMatsubaraGrid::point w1, typename FMatsubaraGrid::point w2) { return Solver.getFVertex4<FMatsubaraGrid::point, FMatsubaraGrid::point>(w1,w2); };
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> g44(std::make_tuple(grid,grid));
     g44.fill(f2);
 
     GridObject<ComplexType,FMatsubaraGrid> VertexG(grid);
     auto iW = gridB[80];
     typename GridObject<ComplexType,FMatsubaraGrid>::PointFunctionType fV = 
-        std::bind(&FKImpuritySolver::getBVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(Solver), iW, std::placeholders::_1); 
-    typename GridObject<ComplexType,FMatsubaraGrid>::FunctionType fV_2 = 
-        std::bind(&FKImpuritySolver::getBVertex4<ComplexType, ComplexType>, std::cref(Solver), ComplexType(iW), std::placeholders::_1); 
+        [Solver,iW](typename FMatsubaraGrid::point w1) {
+        return Solver.getBVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>(iW, w1);};
+    typename GridObject<ComplexType,FMatsubaraGrid>::FunctionType fV_2 =
+        [Solver,iW](ComplexType w1) { 
+            return Solver.getBVertex4<ComplexType, ComplexType>(iW, w1); };
     VertexG.fill(fV);
     VertexG._f = fV_2;
 
@@ -55,7 +56,7 @@ int main()
     if (!is_equal(VertexG(FMatsubara(grid.getSize()+1,beta)),-beta*U*U/4.0,1e-1)) return EXIT_FAILURE;;
 
     iW = gridB[0];
-    fV = std::bind(&FKImpuritySolver::getBVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>, std::cref(Solver), iW, std::placeholders::_1); 
+    fV = [Solver,iW](typename FMatsubaraGrid::point w1) { return Solver.getBVertex4<BMatsubaraGrid::point, FMatsubaraGrid::point>(iW, w1);};
     VertexG.fill(fV);
 
     auto &Gw = Solver.gw;

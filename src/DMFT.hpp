@@ -174,7 +174,7 @@ std::vector<RealType> getStaticLatticeDMFTSusceptibility(const SolverType& Solve
     typename SolverType::GFType bubble(gridF);
 
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> Vertex4_2(std::forward_as_tuple(gridF,gridF)); 
-    decltype(Vertex4_2)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getVertex4(0.0, w1,w2);};
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getVertex4(0.0, w1,w2);};
     Vertex4_2.fill(VertexF2);
     auto V4 = Vertex4_2.getData().getAsMatrix();
 

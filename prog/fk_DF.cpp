@@ -401,7 +401,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         size_t distance = 5;
         GF glat_rp(Solver.w_grid);
         for (size_t i=0; i<distance; ++i) {
-            std::array<typename decltype(grid_r)::point, D> r_p; r_p.fill(grid_r[0]); r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
+            std::array<typename EnumerateGrid::point, D> r_p; r_p.fill(grid_r[0]); r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
             typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat_r(std::tuple_cat(std::make_tuple(w),r_p));};
             glat_rp.fill(f);
             std::stringstream fname_stream;

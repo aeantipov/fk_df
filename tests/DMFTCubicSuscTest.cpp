@@ -118,13 +118,13 @@ int main()
     GridObject<RealType,BMatsubaraGrid> chi_q0_vals(gridB), chi_qPI_vals(gridB), chi_q0_dmft_vals(gridB), chi_qPI_dmft_vals(gridB);
     GF iw_gf(gridF); 
     iw_gf.fill(typename GF::FunctionType([](ComplexType w){return w;}));
-    decltype(chi0_q0_dmft_vals)::PointFunctionType chi0_q0_vals_f = [&](BMatsubaraGrid::point in)->RealType { 
+    GridObject<RealType,BMatsubaraGrid>::PointFunctionType chi0_q0_vals_f = [&](BMatsubaraGrid::point in)->RealType { 
             auto g_shift = Solver.gw.shift(in);
             auto sigma_shift = Solver.Sigma.shift(in);
             if (is_equal(ComplexType(in),0.0)) return (-T)*std::real((glat*glat).sum()/RealType(__power<KPOINTS,D>::value));
             return -T*std::real(((Solver.gw - g_shift)/(ComplexType(in)+Solver.Sigma - sigma_shift)).sum());
         };
-    decltype(chi0_qPI_vals)::PointFunctionType chi0_qPI_vals_f = [&](BMatsubaraGrid::point in)->RealType { 
+    GridObject<RealType,BMatsubaraGrid>::PointFunctionType chi0_qPI_vals_f = [&](BMatsubaraGrid::point in)->RealType { 
             auto g_shift = Solver.gw.shift(in);
             auto sigma_shift = Solver.Sigma.shift(in);
             auto chi_w = (Solver.gw + g_shift)/(2.*iw_gf + ComplexType(in)+ 2.*mu - Solver.Sigma - sigma_shift); 

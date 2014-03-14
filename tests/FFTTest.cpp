@@ -51,8 +51,8 @@ int main()
     if (!is_equal(disp2d_complex.diff(disp2d_complex_backup),0)) return EXIT_FAILURE;
     INFO("PASSED FFT1");
 
-    t_matrix_int.fill(typename decltype(t_matrix_int)::FunctionType([&](int a1, int a2){return std::round(std::real(t_matrix_complex(a1,a2)));}));
-    t_matrix_int2.fill(typename decltype(t_matrix_int)::FunctionType([&](int a1, int a2){return std::round(std::real(t_matrix_complex2(a1,a2)));}));
+    t_matrix_int.fill(GridObject<int, EnumerateGrid, EnumerateGrid> ::FunctionType([&](int a1, int a2){return std::round(std::real(t_matrix_complex(a1,a2)));}));
+    t_matrix_int2.fill(GridObject<int, EnumerateGrid, EnumerateGrid>::FunctionType([&](int a1, int a2){return std::round(std::real(t_matrix_complex2(a1,a2)));}));
     DEBUG(t_matrix_int);
     if ((t_matrix_int - t_matrix_int2).sum()!=0) return EXIT_FAILURE;
     INFO ("PASSED FFT2");

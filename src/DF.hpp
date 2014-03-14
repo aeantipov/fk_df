@@ -108,8 +108,9 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
     auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
     GLocalType Lambda(_fGrid);
     Lambda.copyInterpolate(_S.getLambda());
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> StaticVertex4(std::forward_as_tuple(_fGrid,_fGrid)); 
-    decltype(StaticVertex4)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getVertex4(0.0, w1,w2);};
+    typedef GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> VertexType;
+    VertexType StaticVertex4(std::forward_as_tuple(_fGrid,_fGrid)); 
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getVertex4(0.0, w1,w2);};
     StaticVertex4.fill(VertexF2);
     auto StaticV4 = StaticVertex4.getData().getAsMatrix();
 
@@ -120,7 +121,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
     std::unique_ptr<FullVertexType> full_dyn_vertex; 
     if (_EvaluateDynamicDiagrams) { 
         INFO2("Allocating memory for dynamic vertex");
-        full_dyn_vertex.reset(new FullVertexType(std::tuple_cat(std::make_tuple(_fGrid),std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))));
+        full_dyn_vertex.reset(new FullVertexType(std::tuple_cat(std::make_tuple(_fGrid,_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))));
     }
     // Miscelanneous - stream for checking convergence
     std::ofstream diffDF_stream("diffDF.dat",std::ios::out);
@@ -193,7 +194,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
             if (_EvaluateDynamicDiagrams) { 
                 INFO_NONEWLINE("\tDynamic contribution...");
                 decltype(StaticVertex4) DualBubbleDynamic(StaticVertex4.getGrids());
-                decltype(StaticVertex4)::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
+                VertexType::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
                     return -T*(GD[size_t(w1)]*GD_shift[size_t(w2)]).sum()/RealType(totalqpts);
                     };
                 decltype(StaticVertex4) DynamicFullVertex4(StaticVertex4.getGrids());
@@ -204,7 +205,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
                     for (FMatsubaraGrid::point iw2 : _fGrid.getPoints())  {
                         auto f_val = DynamicFullVertex4(iw1,iw2);
                         for (auto q_pt : other_pts) { 
-                            full_dyn_vertex->get(std::tuple_cat(std::make_tuple(iw1),std::make_tuple(iw2),q_pt)) = f_val;
+                            full_dyn_vertex->get(std::tuple_cat(std::make_tuple(iw1,iw2),q_pt)) = f_val;
                             };
                         };
                     };
