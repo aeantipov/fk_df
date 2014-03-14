@@ -128,7 +128,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
 
     INFO("Starting ladder dual fermion calculations")
     GLocalType GDsum(_fGrid);
-    for (auto iw : _fGrid.getPoints()) { GDsum[iw._index] = std::abs(GD[iw._index].sum())/knorm; }; 
+    for (auto iw : _fGrid.getPoints()) { GDsum[iw.index_] = std::abs(GD[iw.index_].sum())/knorm; }; 
     INFO("Beginning with GD sum = " << std::abs(GDsum.sum())/RealType(_fGrid.getSize()));
 
     RealType diffGD = 1.0, diffGD_min = 1.0; 
@@ -157,7 +157,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
                 auto FullStaticV4_m = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
                 auto FullStaticV4 = FullStaticV4_m.diagonal();
                 for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
-                    auto f_val = FullStaticV4(iw1._index);//, iw1._index);
+                    auto f_val = FullStaticV4(iw1.index_);//, iw1.index_);
                     for (auto q_pt : other_pts) { 
                         FullStaticVertex.get(std::tuple_cat(std::make_tuple(iw1),q_pt)) = f_val;
                         };
@@ -217,18 +217,18 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         if (_EvaluateStaticDiagrams) {
             INFO2("Static diagrams ... Running FFT");
             for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
-                auto v4r = run_fft(FullStaticVertex[iw1._index], FFTW_FORWARD)/knorm;
-                auto gdr = run_fft(GD[iw1._index], FFTW_BACKWARD);
-                SigmaD[iw1._index]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
+                auto v4r = run_fft(FullStaticVertex[iw1.index_], FFTW_FORWARD)/knorm;
+                auto gdr = run_fft(GD[iw1.index_], FFTW_BACKWARD);
+                SigmaD[iw1.index_]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
                 };
         };
         if (_EvaluateDynamicDiagrams) {
             INFO2("Dynamic diagrams ... Running FFT");
             for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
                 for (FMatsubaraGrid::point iw2 : _fGrid.getPoints())  {
-                    auto v4r = run_fft((*full_dyn_vertex)[iw1._index][iw2._index], FFTW_FORWARD)/knorm;
-                    auto gdr = run_fft(GD[iw2._index], FFTW_BACKWARD);
-                    SigmaD[iw1._index]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
+                    auto v4r = run_fft((*full_dyn_vertex)[iw1.index_][iw2.index_], FFTW_FORWARD)/knorm;
+                    auto gdr = run_fft(GD[iw2.index_], FFTW_BACKWARD);
+                    SigmaD[iw1.index_]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
                     };
                 };
             };
@@ -255,7 +255,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         GD._f = GD0._f; // assume DMFT asymptotics are good 
         SigmaD = 0.0;
 
-       for (auto iw : _fGrid.getPoints()) { GDsum[iw._index] = std::abs(GD[iw._index].sum())/knorm; }; 
+       for (auto iw : _fGrid.getPoints()) { GDsum[iw.index_] = std::abs(GD[iw.index_].sum())/knorm; }; 
        INFO2("GD sum = " << std::abs(GDsum.sum())/RealType(_fGrid.getSize()));
     };
     INFO("Finished DF iterations");
@@ -432,7 +432,7 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
         for (auto w1 : gridF.getPoints()) {
             auto F = mult/(1.0+m1(w1))*Lambda(w1)/(1.0-B);
             for (auto w2 : gridF.getPoints()) {
-                RealType kronecker = RealType(w1._index == w2._index);
+                RealType kronecker = RealType(w1.index_ == w2.index_);
                 susc+=GDL_bubble(w1)*F*(Lambda(w2)-Lambda(w1)*kronecker+B*Lambda(w1)*kronecker-B1(w2))*GDL_bubble(w2);
             }
         }
