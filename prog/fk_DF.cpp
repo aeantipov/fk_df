@@ -158,9 +158,11 @@ int main(int argc, char *argv[])
     #ifdef LATTICE_triangular
     dmft_sc_type SC_DMFT(Solver, kGrid, t, tp);
     df_sc_type SC_DF(Solver, gridF, kGrid, t, tp);
+    std::cout << "==> Triangular lattice" << std::endl;
     #else
     dmft_sc_type SC_DMFT(Solver, kGrid, t);
     df_sc_type SC_DF(Solver, gridF, kGrid, t);
+    std::cout << "==> Hypercubic lattice" << std::endl;
     #endif 
 
     SC_DF._n_GD_iter = opt.DFNumberOfSelfConsistentIterations;

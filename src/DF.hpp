@@ -76,7 +76,7 @@ inline typename DFLadder<LatticeT,D>::GKType DFLadder<LatticeT,D>::getGLat() con
 template <typename LatticeT, size_t D>
 typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
 {
-    INFO("Using DF Ladder self-consistency in " << D << " dimensions on a cubic lattice of " << _kGrid.getSize() << "^" << D <<" atoms.");
+    INFO("Using DF Ladder self-consistency in " << D << " dimensions on a lattice of " << _kGrid.getSize() << "^" << D <<" atoms.");
     RealType beta = _fGrid._beta;
     RealType T = 1.0/beta;
     GLocalType gw(_fGrid); // non-const method. Better copy.
