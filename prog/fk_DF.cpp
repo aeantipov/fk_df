@@ -498,30 +498,61 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         };
 
     if (flags[7]){
+        INFO2("G(k)");
+        auto glat = SC.getGLat(); 
+        auto glatdmft = SC.getGLatDMFT(SC._fGrid);
+
+        auto w = Solver.w_grid.findClosest(I*PI/beta);
+        const auto &kgrid = SC._kGrid;
+        auto rgrid = EnumerateGrid(0,SC._kGrid.getSize(),false);
+
+        typedef typename ArgBackGenerator<D,KMesh        ,GridObject,ComplexType>::type gd_k_type;
+        typedef typename ArgBackGenerator<D,EnumerateGrid,GridObject,ComplexType>::type gd_r_type;
+
+        auto kmeshes = __repeater<KMesh,D>::get_tuple(kgrid);
+        auto rmeshes = __repeater<EnumerateGrid,D>::get_tuple(rgrid);
+
+        gd_k_type glat_k(kmeshes), gd_k(kmeshes), gd0_k(kmeshes), glat_dmft_k(kmeshes), sigmad_k(kmeshes);
+        gd_r_type glat_r(rmeshes), gd_r(rmeshes), gd0_r(rmeshes), glat_dmft_r(rmeshes), sigmad_r(rmeshes);
+
+        glat_k.getData() = glat[w.index_];
+        gd_k.getData() = SC.GD[w.index_];
+        gd0_k.getData() = SC.GD0[w.index_];
+        glat_dmft_k.getData() = glatdmft[w.index_];
+        sigmad_k.getData() = SC.SigmaD[w.index_];
+
+        glat_k.savetxt("glat_k_w0.dat");
+        gd_k.savetxt("gd_k_w0.dat");
+        gd0_k.savetxt("gd0_k_w0.dat");
+        glat_dmft_k.savetxt("glat_dmft_k_w0.dat");
+        sigmad_k.savetxt("sigmad_k_w0.dat");
+
+        glat_r.getData() = run_fft(glat_k.getData(), FFTW_BACKWARD);
+        gd_r.getData() = run_fft(gd_k.getData(), FFTW_BACKWARD);
+        gd0_r.getData() = run_fft(gd0_k.getData(), FFTW_BACKWARD);
+        glat_dmft_r.getData() = run_fft(glat_dmft_k.getData(), FFTW_BACKWARD);
+        sigmad_r.getData() = run_fft(sigmad_k.getData(), FFTW_BACKWARD);
+
+        glat_r.savetxt("glat_r_w0.dat");
+        gd_r.savetxt("gd_r_w0.dat");
+        gd0_r.savetxt("gd0_r_w0.dat");
+        glat_dmft_r.savetxt("glat_dmft_r_w0.dat");
+        sigmad_r.savetxt("sigmad_r_w0.dat");
+        };
+
+    if (flags[8]){
         INFO2("Saving G(w,k)");
         auto glat = SC.getGLat(); 
-        //GF glat_k(Solver.w_grid);
         glat.savetxt("glat_k.dat");
+        SC.GD0.savetxt("gd0_k.dat");
+        SC.GD.savetxt("gd_k.dat");
+        SC.getGLatDMFT(SC._fGrid).savetxt("glat_dmft_k.dat");
         };
 
-#ifdef LATTICE_cubic2d
-    if (flags[8]){
-        INFO2("Gd(r)");
-        auto w = Solver.w_grid.findClosest(I*PI/beta);
-        auto rgrid = EnumerateGrid(0,SC._kGrid.getSize(),false);
-        auto gdr_data = run_fft(SC.GD[w.index_], FFTW_BACKWARD);
-        auto gdr0_data = run_fft(SC.GD0[w.index_], FFTW_BACKWARD);
-        GridObject <ComplexType,EnumerateGrid> GDr(rgrid),GDr0(rgrid); 
-        for (auto x : rgrid.getPoints()) {
-            GDr._data[x.index_] = gdr_data._data[0][x.index_];
-            GDr0._data[x.index_] = gdr0_data._data[0][x.index_];
-        };
-        GDr.savetxt("Gdr.dat");
-        GDr0.savetxt("Gdr0.dat");
-        };
-#endif // endif :: #ifdef LATTICE_cubic2d
 
-}
+
+
+ }
 #endif // endif :: #ifdef _calc_extra_stats
 
 int __get_n_lines(const std::string& fname)

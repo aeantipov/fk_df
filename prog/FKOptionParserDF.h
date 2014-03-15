@@ -47,6 +47,11 @@ public:
             //n_freq = (int)std::fabs(beta+0.5);
 			used_args = 1;	// Notify the parser of a consumption of argument.
 
+		ON_OPTION_WITH_ARG(SHORTOPT('T') || LONGOPT("T"))
+			beta = 1.0/std::atof(arg);
+            //n_freq = (int)std::fabs(beta+0.5);
+			used_args = 1;	// Notify the parser of a consumption of argument.
+
         ON_OPTION_WITH_ARG(SHORTOPT('U') || LONGOPT("U"))
 			U = std::atof(arg);
             mu = U/2;
