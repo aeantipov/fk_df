@@ -370,10 +370,12 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         q.fill(PI);
         auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
         auto dual_bubble_pi = Diagrams::getBubble(SC.GD, Wq_args_static);
+        auto dual_bubble0_pi = Diagrams::getBubble(SC.GD0, Wq_args_static);
         auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble_pi;
         auto Bw = Bw1/(1.0+Bw1);
         ComplexType B = Bw.sum();
-        dual_bubble_pi.savetxt("DualBubbleCC_pi.dat");
+        dual_bubble_pi.savetxt("dual_bubble_pi_w.dat");
+        dual_bubble0_pi.savetxt("dual_bubble0_pi_w.dat");
         Bw1.savetxt("BwNominator_pi.dat");
         Bw.savetxt("Bw_pi.dat");
         INFO("B(pi) = " << B);
