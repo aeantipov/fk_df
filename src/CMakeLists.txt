@@ -16,7 +16,7 @@ set_target_properties(fk${FKPOSTFIX} PROPERTIES LINKER_LANGUAGE CXX)
 #    ${HDF5_LIBRARIES}
 #)
 
-install(TARGETS fk
+install(TARGETS fk${FKPOSTFIX}
     LIBRARY DESTINATION lib
     )
 
