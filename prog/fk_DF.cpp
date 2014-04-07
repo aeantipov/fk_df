@@ -331,7 +331,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         GridObject<ComplexType, FMatsubaraGrid> Lambda(local_grid);
         Lambda.copyInterpolate(Solver.getLambda());
         auto glat = SC.getGLat(); 
-        GridObject<RealType,KMesh> out_b(SC._kGrid), out_chi(SC._kGrid), out_dual_bubble(SC._kGrid), out_lattice_bubble(SC._kGrid);
+        GridObject<RealType,KMesh> out_b(SC._kGrid), out_chi(SC._kGrid), out_dual_bubble(SC._kGrid), out_lattice_bubble(SC._kGrid), out_dual_bubble0(SC._kGrid);
         std::array<KMesh::point, D> q;
         q.fill(SC._kGrid.findClosest(PI));
         for (auto q_pt : SC._kGrid.getPoints()) {
@@ -343,6 +343,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
             out_chi[size_t(q_pt)]= std::real(susc_val);
             
             auto dual_bubble = Diagrams::getBubble(SC.GD, Wq_args_static);
+            auto dual_bubble0 = Diagrams::getBubble(SC.GD0, Wq_args_static);
             auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble;
             auto Bw = Bw1/(1.0+Bw1);
             ComplexType B = Bw.sum();
@@ -350,6 +351,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
             
             RealType dual_bubble_val = std::real(dual_bubble.sum());
             out_dual_bubble[size_t(q_pt)]= dual_bubble_val;
+            out_dual_bubble0[size_t(q_pt)]= std::real(dual_bubble0.sum());
 
             RealType lattice_bubble_val =  std::real(Diagrams::getBubble(glat, Wq_args_static).sum());
             out_lattice_bubble[size_t(q_pt)] = lattice_bubble_val;
@@ -357,6 +359,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         out_chi.savetxt("Susc_dir.dat");
         out_b.savetxt("B_dir.dat");
         out_dual_bubble.savetxt("dual_bubble_dir.dat");
+        out_dual_bubble0.savetxt("dual_bubble0_dir.dat");
         out_lattice_bubble.savetxt("lattice_bubble_dir.dat");
         }
         
