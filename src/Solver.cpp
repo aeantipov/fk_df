@@ -19,10 +19,10 @@ void FKImpuritySolver::run(bool calc_weight)
     GFType iw(w_grid);
     std::function<ComplexType(ComplexType)> iw_f = [](ComplexType w){return w;};
     iw.fill(iw_f);
-    K0 = 1.0/(iw+mu-Delta);
-    K1 = 1.0/(iw+mu-Delta-U);
-    K0._f = [=](ComplexType w)->ComplexType{return 1.0/(w+mu-Delta._f(w));};
-    K1._f = [=](ComplexType w)->ComplexType{return 1.0/(w+mu-Delta._f(w)-U);};
+    K0 = 1.0/(iw+mu);
+    K1 = 1.0/(iw+mu-U);
+    K0._f = [=](ComplexType w)->ComplexType{return 1.0/(w+mu);};
+    K1._f = [=](ComplexType w)->ComplexType{return 1.0/(w+mu-U);};
    
     if (calc_weight) {
         RealType alpha = beta*(mu-e_d-U/2);

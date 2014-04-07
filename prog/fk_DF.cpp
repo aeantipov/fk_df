@@ -158,9 +158,11 @@ int main(int argc, char *argv[])
     #ifdef LATTICE_triangular
     dmft_sc_type SC_DMFT(Solver, kGrid, t, tp);
     df_sc_type SC_DF(Solver, gridF, kGrid, t, tp);
+    std::cout << "==> Triangular lattice" << std::endl;
     #else
     dmft_sc_type SC_DMFT(Solver, kGrid, t);
     df_sc_type SC_DF(Solver, gridF, kGrid, t);
+    std::cout << "==> Hypercubic lattice" << std::endl;
     #endif 
 
     SC_DF._n_GD_iter = opt.DFNumberOfSelfConsistentIterations;
@@ -329,7 +331,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         GridObject<ComplexType, FMatsubaraGrid> Lambda(local_grid);
         Lambda.copyInterpolate(Solver.getLambda());
         auto glat = SC.getGLat(); 
-        GridObject<RealType,KMesh> out_b(SC._kGrid), out_chi(SC._kGrid), out_dual_bubble(SC._kGrid), out_lattice_bubble(SC._kGrid);
+        GridObject<RealType,KMesh> out_b(SC._kGrid), out_chi(SC._kGrid), out_dual_bubble(SC._kGrid), out_lattice_bubble(SC._kGrid), out_dual_bubble0(SC._kGrid);
         std::array<KMesh::point, D> q;
         q.fill(SC._kGrid.findClosest(PI));
         for (auto q_pt : SC._kGrid.getPoints()) {
@@ -341,6 +343,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
             out_chi[size_t(q_pt)]= std::real(susc_val);
             
             auto dual_bubble = Diagrams::getBubble(SC.GD, Wq_args_static);
+            auto dual_bubble0 = Diagrams::getBubble(SC.GD0, Wq_args_static);
             auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble;
             auto Bw = Bw1/(1.0+Bw1);
             ComplexType B = Bw.sum();
@@ -348,6 +351,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
             
             RealType dual_bubble_val = std::real(dual_bubble.sum());
             out_dual_bubble[size_t(q_pt)]= dual_bubble_val;
+            out_dual_bubble0[size_t(q_pt)]= std::real(dual_bubble0.sum());
 
             RealType lattice_bubble_val =  std::real(Diagrams::getBubble(glat, Wq_args_static).sum());
             out_lattice_bubble[size_t(q_pt)] = lattice_bubble_val;
@@ -355,6 +359,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         out_chi.savetxt("Susc_dir.dat");
         out_b.savetxt("B_dir.dat");
         out_dual_bubble.savetxt("dual_bubble_dir.dat");
+        out_dual_bubble0.savetxt("dual_bubble0_dir.dat");
         out_lattice_bubble.savetxt("lattice_bubble_dir.dat");
         }
         
@@ -365,10 +370,12 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         q.fill(PI);
         auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
         auto dual_bubble_pi = Diagrams::getBubble(SC.GD, Wq_args_static);
+        auto dual_bubble0_pi = Diagrams::getBubble(SC.GD0, Wq_args_static);
         auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble_pi;
         auto Bw = Bw1/(1.0+Bw1);
         ComplexType B = Bw.sum();
-        dual_bubble_pi.savetxt("DualBubbleCC_pi.dat");
+        dual_bubble_pi.savetxt("dual_bubble_pi_w.dat");
+        dual_bubble0_pi.savetxt("dual_bubble0_pi_w.dat");
         Bw1.savetxt("BwNominator_pi.dat");
         Bw.savetxt("Bw_pi.dat");
         INFO("B(pi) = " << B);
@@ -399,7 +406,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         size_t distance = 5;
         GF glat_rp(Solver.w_grid);
         for (size_t i=0; i<distance; ++i) {
-            std::array<typename decltype(grid_r)::point, D> r_p; r_p.fill(grid_r[0]); r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
+            std::array<typename EnumerateGrid::point, D> r_p; r_p.fill(grid_r[0]); r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
             typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat_r(std::tuple_cat(std::make_tuple(w),r_p));};
             glat_rp.fill(f);
             std::stringstream fname_stream;
@@ -496,30 +503,61 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         };
 
     if (flags[7]){
+        INFO2("G(k)");
+        auto glat = SC.getGLat(); 
+        auto glatdmft = SC.getGLatDMFT(SC._fGrid);
+
+        auto w = Solver.w_grid.findClosest(I*PI/beta);
+        const auto &kgrid = SC._kGrid;
+        auto rgrid = EnumerateGrid(0,SC._kGrid.getSize(),false);
+
+        typedef typename ArgBackGenerator<D,KMesh        ,GridObject,ComplexType>::type gd_k_type;
+        typedef typename ArgBackGenerator<D,EnumerateGrid,GridObject,ComplexType>::type gd_r_type;
+
+        auto kmeshes = __repeater<KMesh,D>::get_tuple(kgrid);
+        auto rmeshes = __repeater<EnumerateGrid,D>::get_tuple(rgrid);
+
+        gd_k_type glat_k(kmeshes), gd_k(kmeshes), gd0_k(kmeshes), glat_dmft_k(kmeshes), sigmad_k(kmeshes);
+        gd_r_type glat_r(rmeshes), gd_r(rmeshes), gd0_r(rmeshes), glat_dmft_r(rmeshes), sigmad_r(rmeshes);
+
+        glat_k.getData() = glat[w.index_];
+        gd_k.getData() = SC.GD[w.index_];
+        gd0_k.getData() = SC.GD0[w.index_];
+        glat_dmft_k.getData() = glatdmft[w.index_];
+        sigmad_k.getData() = SC.SigmaD[w.index_];
+
+        glat_k.savetxt("glat_k_w0.dat");
+        gd_k.savetxt("gd_k_w0.dat");
+        gd0_k.savetxt("gd0_k_w0.dat");
+        glat_dmft_k.savetxt("glat_dmft_k_w0.dat");
+        sigmad_k.savetxt("sigmad_k_w0.dat");
+
+        glat_r.getData() = run_fft(glat_k.getData(), FFTW_BACKWARD);
+        gd_r.getData() = run_fft(gd_k.getData(), FFTW_BACKWARD);
+        gd0_r.getData() = run_fft(gd0_k.getData(), FFTW_BACKWARD);
+        glat_dmft_r.getData() = run_fft(glat_dmft_k.getData(), FFTW_BACKWARD);
+        sigmad_r.getData() = run_fft(sigmad_k.getData(), FFTW_BACKWARD);
+
+        glat_r.savetxt("glat_r_w0.dat");
+        gd_r.savetxt("gd_r_w0.dat");
+        gd0_r.savetxt("gd0_r_w0.dat");
+        glat_dmft_r.savetxt("glat_dmft_r_w0.dat");
+        sigmad_r.savetxt("sigmad_r_w0.dat");
+        };
+
+    if (flags[8]){
         INFO2("Saving G(w,k)");
         auto glat = SC.getGLat(); 
-        GF glat_k(Solver.w_grid);
-        glat_k.savetxt("glat_k.dat");
+        glat.savetxt("glat_k.dat");
+        SC.GD0.savetxt("gd0_k.dat");
+        SC.GD.savetxt("gd_k.dat");
+        SC.getGLatDMFT(SC._fGrid).savetxt("glat_dmft_k.dat");
         };
 
-#ifdef LATTICE_cubic2d
-    if (flags[8]){
-        INFO2("Gd(r)");
-        auto w = Solver.w_grid.findClosest(I*PI/beta);
-        auto rgrid = EnumerateGrid(0,SC._kGrid.getSize(),false);
-        auto gdr_data = run_fft(SC.GD[w._index], FFTW_BACKWARD);
-        auto gdr0_data = run_fft(SC.GD0[w._index], FFTW_BACKWARD);
-        GridObject <ComplexType,EnumerateGrid> GDr(rgrid),GDr0(rgrid); 
-        for (auto x : rgrid.getPoints()) {
-            GDr._data[x._index] = gdr_data._data[0][x._index];
-            GDr0._data[x._index] = gdr0_data._data[0][x._index];
-        };
-        GDr.savetxt("Gdr.dat");
-        GDr0.savetxt("Gdr0.dat");
-        };
-#endif // endif :: #ifdef LATTICE_cubic2d
 
-}
+
+
+ }
 #endif // endif :: #ifdef _calc_extra_stats
 
 int __get_n_lines(const std::string& fname)

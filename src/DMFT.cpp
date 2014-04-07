@@ -13,7 +13,7 @@ GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> DMFTBase::getBubblePI() co
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> out(std::forward_as_tuple(this->_S.w_grid, this->_S.w_grid));
     RealType T = 1.0/_S.w_grid._beta;
     GFType iwn(this->_S.w_grid); iwn.fill(typename GFType::FunctionType([](ComplexType w){return w;}));
-    decltype(out)::PointFunctionType f = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) { 
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> ::PointFunctionType f = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2) { 
         return -T*(_S.gw(w1)+_S.gw(w2))/(ComplexType(w1)+ComplexType(w2)+2.0*_S.mu-_S.Sigma(w1)-_S.Sigma(w2));
     };
     out.fill(f);
@@ -85,7 +85,7 @@ GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> CubicInfDMFTSC::getBubble0
 {
     GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> out(std::forward_as_tuple(_S.w_grid,_S.w_grid));
     auto T = 1.0/_S.w_grid._beta;
-    decltype(out)::PointFunctionType f = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2)->ComplexType {
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType f = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2)->ComplexType {
         if (w1 == w2) return 2.0*T/_t/_t*(1.0-(ComplexType(w1)+_S.mu-_S.Sigma(w1))*_S.gw(w1));
         else return -T*(_S.gw(w1) - _S.gw(w2))/( ComplexType(w2) - ComplexType(w1) + _S.Sigma(w1) - _S.Sigma(w2));
     };

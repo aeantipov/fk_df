@@ -313,7 +313,7 @@ void getExtraDMFTData(const sc_type& SC)
         size_t distance = 4;
         GF glat_rp(Solver.w_grid);
         for (size_t i=0; i<distance; ++i) {
-            std::array<typename decltype(grid_r)::point, D> r_p; r_p.fill(grid_r[0]); r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
+            std::array<typename RealGrid::point, D> r_p; r_p.fill(grid_r[0]); r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
             typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat_r(std::tuple_cat(std::make_tuple(w),r_p));};
             glat_rp.fill(f);
             std::stringstream fname_stream;
@@ -359,19 +359,8 @@ void getExtraDMFTData(const sc_type& SC)
     if (flags[6]) {
         INFO2("Saving G(w,k)");
         auto glat = SC.getGLat(Solver.w_grid); 
-        GF glat_k(Solver.w_grid);
-        auto all_bz_points = CubicTraits<D>::getAllBZPoints(SC._kGrid);
-        size_t nqpts = all_bz_points.size();
-        for (size_t nq=0; nq<nqpts; ++nq) {
-            BZPoint<D> q = all_bz_points[nq];
-            typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat(std::tuple_cat(std::make_tuple(w),q));};
-            glat_k.fill(f);
-            std::stringstream s1;
-            s1 << "glat_k" << RealType(std::get<0>(q)) << "_" << RealType(std::get<1>(q)) << ".dat";
-            std::string s; s1>>s;
-            glat_k.savetxt(s);
-        }
-    };
+        glat.savetxt("glat_k.dat");
+        };
 
 
 

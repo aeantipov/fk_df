@@ -100,13 +100,13 @@ int main()
     GF iw_gf(gridF); 
     iw_gf.fill(typename GF::FunctionType([](ComplexType w){return w;}));
     
-    decltype(chiDMFT0_q0_2)::PointFunctionType chiDMFT0_q0_f = [&](BMatsubaraGrid::point in)->RealType { 
+    GridObject<RealType,BMatsubaraGrid> ::PointFunctionType chiDMFT0_q0_f = [&](BMatsubaraGrid::point in)->RealType { 
             auto g_shift = Solver.gw.shift(in);
             auto sigma_shift = Solver.Sigma.shift(in);
             if (is_equal(ComplexType(in),0.0)) return (-T)*std::real((glat*glat).sum()/RealType(__power<KPOINTS,D>::value));
             return -T*std::real(((Solver.gw - g_shift)/(ComplexType(in)+Solver.Sigma - sigma_shift)).sum());
         };
-    decltype(chiDMFT0_qPI)::PointFunctionType chiDMFT0_qPI_f = [&](BMatsubaraGrid::point in)->RealType { 
+    GridObject<RealType,BMatsubaraGrid>::PointFunctionType chiDMFT0_qPI_f = [&](BMatsubaraGrid::point in)->RealType { 
             auto g_shift = Solver.gw.shift(in);
             auto sigma_shift = Solver.Sigma.shift(in);
             //if (is_equal(ComplexType(in),0.0)) return (-T)*std::real((glat*glat).sum()/RealType(__power<KPOINTS,D>::value));

@@ -76,7 +76,7 @@ inline typename DFLadder<LatticeT,D>::GKType DFLadder<LatticeT,D>::getGLat() con
 template <typename LatticeT, size_t D>
 typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
 {
-    INFO("Using DF Ladder self-consistency in " << D << " dimensions on a cubic lattice of " << _kGrid.getSize() << "^" << D <<" atoms.");
+    INFO("Using DF Ladder self-consistency in " << D << " dimensions on a lattice of " << _kGrid.getSize() << "^" << D <<" atoms.");
     RealType beta = _fGrid._beta;
     RealType T = 1.0/beta;
     GLocalType gw(_fGrid); // non-const method. Better copy.
@@ -106,17 +106,16 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
 
     // Prepare static vertex
     auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
+    auto U = _S.U;
     GLocalType Lambda(_fGrid);
-    Lambda.copyInterpolate(_S.getLambda());
-    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> StaticVertex4(std::forward_as_tuple(_fGrid,_fGrid)); 
-    decltype(StaticVertex4)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getVertex4(0.0, w1,w2);};
+    //Lambda.copyInterpolate(_S.getLambda());
+    typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
+    Lambda.fill(lambdaf);
 
-    #ifdef vertex_U_inf
-        auto U = _S.U;
-        typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
-        Lambda.fill(lambdaf);
-        VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return mult*Lambda(w1)*Lambda(w2) - RealType(w1._index == w2._index)*Lambda(w1)*Lambda(w1);};
-    #endif
+    typedef GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> VertexType;
+    VertexType StaticVertex4(std::forward_as_tuple(_fGrid,_fGrid)); 
+    GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType VertexF2 = 
+        [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return mult*Lambda(w1)*Lambda(w2) - RealType(w1.index_ == w2.index_)*Lambda(w1)*Lambda(w1);};
     StaticVertex4.fill(VertexF2);
     auto StaticV4 = StaticVertex4.getData().getAsMatrix();
 
@@ -127,7 +126,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
     std::unique_ptr<FullVertexType> full_dyn_vertex; 
     if (_EvaluateDynamicDiagrams) { 
         INFO2("Allocating memory for dynamic vertex");
-        full_dyn_vertex.reset(new FullVertexType(std::tuple_cat(std::make_tuple(_fGrid),std::make_tuple(_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))));
+        full_dyn_vertex.reset(new FullVertexType(std::tuple_cat(std::make_tuple(_fGrid,_fGrid),__repeater<KMesh,D>::get_tuple(_kGrid))));
     }
     // Miscelanneous - stream for checking convergence
     std::ofstream diffDF_stream("diffDF.dat",std::ios::out);
@@ -135,7 +134,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
 
     INFO("Starting ladder dual fermion calculations")
     GLocalType GDsum(_fGrid);
-    for (auto iw : _fGrid.getPoints()) { GDsum[iw._index] = std::abs(GD[iw._index].sum())/knorm; }; 
+    for (auto iw : _fGrid.getPoints()) { GDsum[iw.index_] = std::abs(GD[iw.index_].sum())/knorm; }; 
     INFO("Beginning with GD sum = " << std::abs(GDsum.sum())/RealType(_fGrid.getSize()));
 
 
@@ -165,9 +164,9 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
                 auto FullStaticV4_m = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
                 auto FullStaticV4 = FullStaticV4_m.diagonal();
                 for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
-                    auto f_val = FullStaticV4(iw1._index);//, iw1._index);
+                    auto f_val = FullStaticV4(iw1.index_);//, iw1.index_);
                     for (auto q_pt : other_pts) { 
-                        FullStaticVertex.get(std::tuple_cat(std::make_tuple(iw1),q_pt)) = (f_val);
+                        FullStaticVertex.get(std::tuple_cat(std::make_tuple(iw1),q_pt)) = f_val;
                         };
                     };
                 #else
@@ -201,7 +200,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
             if (_EvaluateDynamicDiagrams) { 
                 INFO_NONEWLINE("\tDynamic contribution...");
                 decltype(StaticVertex4) DualBubbleDynamic(StaticVertex4.getGrids());
-                decltype(StaticVertex4)::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
+                VertexType::PointFunctionType dbfill = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){
                     return -T*(GD[size_t(w1)]*GD_shift[size_t(w2)]).sum()/RealType(totalqpts);
                     };
                 decltype(StaticVertex4) DynamicFullVertex4(StaticVertex4.getGrids());
@@ -212,7 +211,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
                     for (FMatsubaraGrid::point iw2 : _fGrid.getPoints())  {
                         auto f_val = DynamicFullVertex4(iw1,iw2);
                         for (auto q_pt : other_pts) { 
-                            full_dyn_vertex->get(std::tuple_cat(std::make_tuple(iw1),std::make_tuple(iw2),q_pt)) = f_val;
+                            full_dyn_vertex->get(std::tuple_cat(std::make_tuple(iw1,iw2),q_pt)) = f_val;
                             };
                         };
                     };
@@ -225,18 +224,18 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         if (_EvaluateStaticDiagrams) {
             INFO2("Static diagrams ... Running FFT");
             for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
-                auto v4r = run_fft(FullStaticVertex[iw1._index], FFTW_FORWARD)/knorm;
-                auto gdr = run_fft(GD[iw1._index], FFTW_BACKWARD);
-                SigmaD[iw1._index]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
+                auto v4r = run_fft(FullStaticVertex[iw1.index_], FFTW_FORWARD)/knorm;
+                auto gdr = run_fft(GD[iw1.index_], FFTW_BACKWARD);
+                SigmaD[iw1.index_]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
                 };
         };
         if (_EvaluateDynamicDiagrams) {
             INFO2("Dynamic diagrams ... Running FFT");
             for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
                 for (FMatsubaraGrid::point iw2 : _fGrid.getPoints())  {
-                    auto v4r = run_fft((*full_dyn_vertex)[iw1._index][iw2._index], FFTW_FORWARD)/knorm;
-                    auto gdr = run_fft(GD[iw2._index], FFTW_BACKWARD);
-                    SigmaD[iw1._index]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
+                    auto v4r = run_fft((*full_dyn_vertex)[iw1.index_][iw2.index_], FFTW_FORWARD)/knorm;
+                    auto gdr = run_fft(GD[iw2.index_], FFTW_BACKWARD);
+                    SigmaD[iw1.index_]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
                     };
                 };
             };
@@ -263,16 +262,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         GD._f = GD0._f; // assume DMFT asymptotics are good 
         SigmaD = 0.0;
 
-        /*if (diffGD<= _SC_cutoff && _GDmix < 1.0) {
-        ERROR("\n\tRestoring back DF mix");
-        _SC_cutoff = diffGD;
-        _GDmix=std::min(1.0,_GDmix*1.1);
-        diffGD_min_count = 0;
-        diffGD_min = diffGD*1.5;
-        diffGD=1.0;
-        }*/
-
-       for (auto iw : _fGrid.getPoints()) { GDsum[iw._index] = std::abs(GD[iw._index].sum())/knorm; }; 
+       for (auto iw : _fGrid.getPoints()) { GDsum[iw.index_] = std::abs(GD[iw.index_].sum())/knorm; }; 
        INFO2("GD sum = " << std::abs(GDsum.sum())/RealType(_fGrid.getSize()));
     };
     INFO("Finished DF iterations");
@@ -393,20 +383,21 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
         };
         
     auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
+    auto U = _S.U;
     GLocalType Lambda(gridF);
-    Lambda.copyInterpolate(_S.getLambda());
-    #ifdef vertex_U_inf
-        auto U = _S.U;
-        typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
-        Lambda.fill(lambdaf);
-    #endif
+    typename GLocalType::FunctionType lambdaf = [mult,U](ComplexType w){return 1. - U*U/4./w/w;};
+    Lambda.fill(lambdaf);
     #ifdef bs_matrix
         GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> StaticVertex4(std::forward_as_tuple(gridF,gridF)); 
-        decltype(StaticVertex4)::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return _S.getVertex4(0.0, w1,w2);};
-        VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return mult*Lambda(w1)*Lambda(w2) - RealType(w1._index == w2._index)*Lambda(w1)*Lambda(w1);};
+        GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType VertexF2
+        VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return mult*Lambda(w1)*Lambda(w2) - RealType(w1.index_ == w2.index_)*Lambda(w1)*Lambda(w1);};
+    #endif
+    // put here custom vertex functions
+    #ifdef bs_matrix
         StaticVertex4.fill(VertexF2);
         auto StaticV4 = StaticVertex4.getData().getAsMatrix();
     #endif
+    
     GKType Lwk = this->getGLatDMFT(gridF)/GD0_interp*(-1.0);
     Lwk._f = __fun_traits<typename GKType::FunctionType>::constant(-1.0);
     auto GDL = GD_interp*Lwk;
@@ -440,7 +431,6 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
             }
         else susc = -1.;
         #else
-        //auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
         auto m1 = mult*dual_bubble*Lambda*Lambda;
         ComplexType B=(m1/(1.0+m1)).getData().sum();
         GLocalType B1=m1*Lambda/(1.0+m1);
@@ -448,7 +438,7 @@ std::vector<ComplexType> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(co
         for (auto w1 : gridF.getPoints()) {
             auto F = mult/(1.0+m1(w1))*Lambda(w1)/(1.0-B);
             for (auto w2 : gridF.getPoints()) {
-                RealType kronecker = RealType(w1._index == w2._index);
+                RealType kronecker = RealType(w1.index_ == w2.index_);
                 susc+=GDL_bubble(w1)*F*(Lambda(w2)-Lambda(w1)*kronecker+B*Lambda(w1)*kronecker-B1(w2))*GDL_bubble(w2);
             }
         }
