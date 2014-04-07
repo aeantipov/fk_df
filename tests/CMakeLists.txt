@@ -1,7 +1,7 @@
 include_directories (. ../jsoncpp/include ../src)
 
 link_libraries(
-fk
+fk${FKPOSTFIX}
 ${FFTW_LIBRARIES}
 )
 

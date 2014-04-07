@@ -7,8 +7,8 @@ set (fk_src
     DF.h DF.hpp 
     #DF.cpp
     )
-add_library(fk SHARED ${fk_src})
-set_target_properties(fk PROPERTIES LINKER_LANGUAGE CXX)
+add_library(fk${FKPOSTFIX} SHARED ${fk_src})
+set_target_properties(fk${FKPOSTFIX} PROPERTIES LINKER_LANGUAGE CXX)
 
 #target_link_libraries(fk
 #    ${Boost_LIBRARIES}
@@ -16,9 +16,9 @@ set_target_properties(fk PROPERTIES LINKER_LANGUAGE CXX)
 #    ${HDF5_LIBRARIES}
 #)
 
-install(TARGETS fk
+install(TARGETS fk${FKPOSTFIX}
     LIBRARY DESTINATION lib
     )
 
-install(DIRECTORY . DESTINATION include/fk
-          FILES_MATCHING PATTERN "*.h *.hpp")
+#install(DIRECTORY . DESTINATION include/fk${FKPOSTFIX}
+#          FILES_MATCHING PATTERN "*.h *.hpp")
