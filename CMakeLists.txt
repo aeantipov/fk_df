@@ -11,6 +11,29 @@ ELSE()
    SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 ENDIF()
 
+# Get the current working branch
+execute_process(
+  COMMAND git rev-parse --abbrev-ref HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_BRANCH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Get the latest abbreviated commit hash of the working branch
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS "git branch: ${GIT_BRANCH}")
+message(STATUS "git commit hash: ${GIT_COMMIT_HASH}")
+
+if (NOT ${GIT_BRANCH} STREQUAL "master")# or ${GIT_BRANCH} strequal "Master")
+    set (FKPOSTFIX "_${GIT_BRANCH}") 
+    message(STATUS "Adding postfix ${FKPOSTFIX}")
+endif()
+
 # begin :: C++11 check
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11")
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
