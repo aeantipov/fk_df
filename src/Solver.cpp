@@ -6,7 +6,7 @@ FKImpuritySolver::FKImpuritySolver(RealType U, RealType mu, RealType e_d, GFType
     _v_mult(0.0),
     U(U), mu(mu), e_d(e_d),
     w_grid(Delta.getGrid()), 
-    half_grid(0,std::max(w_grid._w_max*2,int(beta)*10),w_grid._beta),
+    half_grid(0,std::max(w_grid._w_max*2,int(w_grid._beta)*10),w_grid._beta),
     beta(w_grid._beta), 
     Delta(Delta), 
     gw(GFType(w_grid)), K0(GFType(w_grid)), K1(GFType(w_grid)), Lambda(GFType(w_grid)), Sigma(GFType(w_grid))
