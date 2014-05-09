@@ -1,8 +1,8 @@
 #ifndef ___FK_DMFT_H___
 #define ___FK_DMFT_H___
 
-#include <KMesh.hpp>
-#include <RealGrid.hpp>
+#include <kmesh.hpp>
+#include <real_grid.hpp>
 #include <GridObject.hpp>
 #include "Solver.h"
 #include "LatticeTraits.hpp"
