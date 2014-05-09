@@ -7,17 +7,17 @@
 
 namespace FK {
 
-using namespace GFTools;
+using namespace gftools;
 
 struct DFBase
 {
     typedef typename FKImpuritySolver::GFType GLocalType;
-    RealType _GDmix = 1.0;
-    RealType _SC_cutoff = 1e-7;
+    real_type _GDmix = 1.0;
+    real_type _SC_cutoff = 1e-7;
     size_t _n_GD_iter = 200;
 
     bool _eval_BS_SC = false;
-    RealType _BSmix = 0.1;
+    real_type _BSmix = 0.1;
     size_t _n_BS_iter = 10;
 
     bool _EvaluateStaticDiagrams = true;
@@ -36,16 +36,16 @@ struct DFLadder : LatticeDMFTSC<LatticeT>, DFBase {
     using LatticeDMFTSC<LatticeT>::lattice;
     using typename LatticeDMFTSC<LatticeT>::EkStorage;
     using typename DFBase::GLocalType;
-    typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type GKType;
-    typedef typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid,FMatsubaraGrid>::type FullVertexType;
-    typedef typename GKType::ArgTupleType wkArgTupleType;
-    typedef typename GKType::PointTupleType wkPointTupleType;
-    typedef decltype(std::tuple_cat(std::make_tuple(BMatsubaraGrid::point()), std::array<KMesh::point, D>())) WQTupleType; 
-    typedef typename ArgBackGenerator<D,KMeshPatch,GridObject,ComplexType,BMatsubaraGrid>::type SuscType;
+    typedef typename tools::ArgBackGenerator<D,kmesh,grid_object,complex_type,fmatsubara_grid>::type GKType;
+    typedef typename tools::ArgBackGenerator<D,kmesh,grid_object,complex_type,fmatsubara_grid,fmatsubara_grid>::type FullVertexType;
+    typedef typename GKType::arg_tuple wkarg_tuple;
+    typedef typename GKType::point_tuple wkpoint_tuple;
+    typedef typename Diagrams::WQTupleType<D> WQTupleType;
+    typedef typename tools::ArgBackGenerator<D,kmesh_patch,grid_object,complex_type,bmatsubara_grid>::type SuscType;
     using LatticeDMFTSC<LatticeT>::_S;
     using LatticeDMFTSC<LatticeT>::_kGrid;
     using LatticeDMFTSC<LatticeT>::_ek;
-    const FMatsubaraGrid _fGrid;
+    const fmatsubara_grid _fGrid;
     GKType GD0;
     GKType GD;
     GKType SigmaD;
@@ -55,19 +55,19 @@ private:
     void _initialize();
 public:
     template <typename ...LatticeParams> 
-        DFLadder(const FKImpuritySolver &S, const FMatsubaraGrid& fGrid, KMesh kGrid, LatticeParams ... lattice_p);
-    template <typename ...KP> GLocalType getBubble(const typename DFLadder<LatticeT,D>::GKType& GF, BMatsubaraGrid::point W, KP...kpoints) const;
+        DFLadder(const FKImpuritySolver &S, const fmatsubara_grid& fGrid, kmesh kGrid, LatticeParams ... lattice_p);
+    template <typename ...KP> GLocalType getBubble(const typename DFLadder<LatticeT,D>::GKType& GF, bmatsubara_grid::point W, KP...kpoints) const;
     GLocalType getBubble(const GKType& GF, const WQTupleType& in) const;
-    GKType getGLatDMFT(const FMatsubaraGrid& gridF) const ;
+    GKType getGLatDMFT(const fmatsubara_grid& gridF) const ;
     GKType getGLat() const ;
-    GKType getGLat(const FMatsubaraGrid &gridF ) const;
-    //template <typename ...KP> ComplexType getBubble2(BMatsubaraGrid::point W, KP...kpoints, FMatsubaraGrid::point w1) const;
+    GKType getGLat(const fmatsubara_grid &gridF ) const;
+    //template <typename ...KP> complex_type getBubble2(bmatsubara_grid::point W, KP...kpoints, fmatsubara_grid::point w1) const;
     GLocalType operator()();
-    std::tuple<SuscType> calculateLatticeData(const BMatsubaraGrid& gridB);
-    std::tuple<SuscType> calculateLatticeData(const BMatsubaraGrid& gridB, const std::array<KMeshPatch, D>& kpoints);
-    template <typename KPoint> std::vector<ComplexType> getStaticLatticeSusceptibility(const std::vector<std::array<KPoint, D>>& q, const FMatsubaraGrid& fGrid);
-    template <typename KPoint> ComplexType getStaticLatticeSusceptibility(const std::array<KPoint, D>& q, const FMatsubaraGrid& fGrid);
-    template <typename KPoint> ComplexType getStaticLatticeSusceptibility(const std::array<KPoint, D>& q);
+    std::tuple<SuscType> calculateLatticeData(const bmatsubara_grid& gridB);
+    std::tuple<SuscType> calculateLatticeData(const bmatsubara_grid& gridB, const std::array<kmesh_patch, D>& kpoints);
+    template <typename KPoint> std::vector<complex_type> getStaticLatticeSusceptibility(const std::vector<std::array<KPoint, D>>& q, const fmatsubara_grid& fGrid);
+    template <typename KPoint> complex_type getStaticLatticeSusceptibility(const std::array<KPoint, D>& q, const fmatsubara_grid& fGrid);
+    template <typename KPoint> complex_type getStaticLatticeSusceptibility(const std::array<KPoint, D>& q);
     GLocalType getGLoc();
     struct exRuntimeError : public std::runtime_error { exRuntimeError(const std::string &s):std::runtime_error(s){};};
 };

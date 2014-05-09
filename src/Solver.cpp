@@ -21,8 +21,8 @@ void FKImpuritySolver::run(bool calc_weight)
     iw.fill(iwtail);
     K0 = 1.0/(iw+mu-Delta);
     K1 = 1.0/(iw+mu-Delta-U);
-    K0.tail() = [=](complex_type w)->complex_type{return 1.0/(w+mu-Delta.tail_eval(w));};
-    K1.tail() = [=](complex_type w)->complex_type{return 1.0/(w+mu-Delta.tail_eval(w)-U);};
+    K0.tail_ = [=](complex_type w)->complex_type{return 1.0/(w+mu-Delta.tail_eval(w));};
+    K1.tail_ = [=](complex_type w)->complex_type{return 1.0/(w+mu-Delta.tail_eval(w)-U);};
    
     if (calc_weight) {
         real_type alpha = beta*(mu-e_d-U/2);
@@ -42,10 +42,10 @@ void FKImpuritySolver::run(bool calc_weight)
     Lambda = K0*K1/gw/gw;
     Sigma = U*U*w_1*w_0/(1.0/K0-w_0*U) + w_1*U; 
 
-    Sigma.tail() = std::bind([=](complex_type w){return w_1*U + w_0*w_1*U*U/w + w_0*w_1*U*U*(mu-w_0*U)/std::abs(w*w);}, std::placeholders::_1);
-    //gw.tail() = std::bind([=](complex_type w){return (mu-w_1*U-real(Delta.tail()(w)))/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
-    gw.tail() = std::bind([=](complex_type w){return (mu-w_1*U)/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
-    Lambda.tail() = std::bind([=](complex_type w){return 1.0 - U*(w_1*w_1 - w_0*w_0)/w;}, std::placeholders::_1);
+    Sigma.tail_ = std::bind([=](complex_type w){return w_1*U + w_0*w_1*U*U/w + w_0*w_1*U*U*(mu-w_0*U)/std::abs(w*w);}, std::placeholders::_1);
+    //gw.tail_ = std::bind([=](complex_type w){return (mu-w_1*U-real(Delta.tail_(w)))/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
+    gw.tail_ = std::bind([=](complex_type w){return (mu-w_1*U)/std::abs(w*w)+1.0/w;}, std::placeholders::_1);
+    Lambda.tail_ = std::bind([=](complex_type w){return 1.0 - U*(w_1*w_1 - w_0*w_0)/w;}, std::placeholders::_1);
     //DEBUG("Sigma = " << Sigma);
 }
 
@@ -58,7 +58,7 @@ grid_object<complex_type,fmatsubara_grid,fmatsubara_grid> FKImpuritySolver::getB
         return -T*(gw(w1)*gw(w2));
     };
     out.fill(f);
-    out.tail() = [&](complex_type w1, complex_type w2){return -T*gw.tail_eval(w1)*gw.tail_eval(w2);};
+    out.tail_ = [&](complex_type w1, complex_type w2){return -T*gw.tail_eval(w1)*gw.tail_eval(w2);};
     return out;
 }
 
