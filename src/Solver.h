@@ -44,7 +44,7 @@ public:
               typename std::enable_if<std::is_convertible<Arg1, complex_type>::value, int>::type=0,
               typename std::enable_if<std::is_convertible<Arg2, complex_type>::value, int>::type=0>
         inline complex_type getBVertex4(Arg1 O1, Arg2 w1) const {
-        auto w2 = w_grid.shift(w1,O1);
+        auto w2 = w_grid.shift(w1,complex_type(O1));
         return -this->getFVertex4(w1,w2);
         };
      template <typename Arg1, typename Arg2, typename Arg3, 
