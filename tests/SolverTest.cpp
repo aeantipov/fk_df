@@ -43,12 +43,11 @@ int main()
     grid_object<complex_type,fmatsubara_grid> VertexG(grid);
     auto iW = gridB[80];
     typename grid_object<complex_type,fmatsubara_grid>::point_function_type fV = 
-        [Solver,iW](typename fmatsubara_grid::point w1) {
-        return Solver.getBVertex4<bmatsubara_grid::point, fmatsubara_grid::point>(iW, w1);};
+        [Solver,iW](typename fmatsubara_grid::point w1) { return Solver.getBVertex4<bmatsubara_grid::point, fmatsubara_grid::point>(iW, w1);};
+    VertexG.fill(fV);
     typename grid_object<complex_type,fmatsubara_grid>::function_type fV_2 =
         [Solver,iW](complex_type w1) { 
             return Solver.getBVertex4<complex_type, complex_type>(iW, w1); };
-    VertexG.fill(fV);
     VertexG.tail_ = fV_2;
 
     if (!is_equal(VertexG(FMatsubara(grid.size()-1,beta)),-beta*U*U/4.0,1e-1)) return EXIT_FAILURE;;
