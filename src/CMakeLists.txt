@@ -7,8 +7,8 @@ set (fk_src
     DF.h DF.hpp 
     #DF.cpp
     )
-add_library(fk${FKPOSTFIX} SHARED ${fk_src})
-set_target_properties(fk${FKPOSTFIX} PROPERTIES LINKER_LANGUAGE CXX)
+add_library(fk${FKPOSTFIX} STATIC ${fk_src})
+#set_target_properties(fk${FKPOSTFIX} PROPERTIES LINKER_LANGUAGE CXX)
 
 #target_link_libraries(fk
 #    ${Boost_LIBRARIES}
@@ -17,6 +17,7 @@ set_target_properties(fk${FKPOSTFIX} PROPERTIES LINKER_LANGUAGE CXX)
 #)
 
 install(TARGETS fk${FKPOSTFIX}
+    ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     )
 

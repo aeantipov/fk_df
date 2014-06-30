@@ -241,7 +241,8 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
             };
         INFO("Total sigma diff = " << SigmaD.diff(SigmaD*0));
 
-        auto GD_new = _GDmix/(1.0/GD0 - SigmaD) + GD*(1.0-_GDmix); // Dyson eq;
+        //auto GD_new = _GDmix/(1.0/GD0 - SigmaD) + GD*(1.0-_GDmix); // Dyson eq;
+        auto GD_new = _GDmix*(GD0 + GD0*SigmaD*GD0) + GD*(1.0-_GDmix); // Dyson eq;
         diffGD = GD_new.diff(GD);
         if (diffGD<diffGD_min-_SC_cutoff/10.) { diffGD_min = diffGD; diffGD_min_count = 0; }
         else diffGD_min_count++;
