@@ -46,7 +46,8 @@ void DFLadder<LatticeT,D>::_initialize()
             //return (-e)/std::abs(w*w) -(e*e-_t*_t*2*RealType(D) - 2.0*e*(_S.mu - _S.w_1*_S.U))/w/std::abs(w*w); 
             };
     GD0._f = __fun_traits<typename GKType::FunctionType>::getFromTupleF(gd_f);
-    GD=1.0/(1.0/GD0 - SigmaD);
+    //GD=1.0/(1.0/GD0 - SigmaD);
+    GD=GD0 + GD0*SigmaD*GD0; //1.0/(1.0/GD0 - SigmaD);
     GD._f = GD0._f;
 };
 
