@@ -227,7 +227,8 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
             INFO2("Static diagrams ... Running FFT");
             for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
                 auto v4r = run_fft(FullStaticVertex[iw1.index_], FFTW_FORWARD)/knorm;
-                auto gdr = run_fft(GD[iw1.index_], FFTW_BACKWARD);
+                //auto gdr = run_fft(GD[iw1.index_], FFTW_BACKWARD);
+                auto gdr = run_fft(GD0[iw1.index_], FFTW_BACKWARD);
                 SigmaD[iw1.index_]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
                 };
         };
@@ -236,7 +237,8 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
             for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
                 for (FMatsubaraGrid::point iw2 : _fGrid.getPoints())  {
                     auto v4r = run_fft((*full_dyn_vertex)[iw1.index_][iw2.index_], FFTW_FORWARD)/knorm;
-                    auto gdr = run_fft(GD[iw2.index_], FFTW_BACKWARD);
+                    //auto gdr = run_fft(GD[iw2.index_], FFTW_BACKWARD);
+                    auto gdr = run_fft(GD0[iw2.index_], FFTW_BACKWARD);
                     SigmaD[iw1.index_]+= (1.0*T)*run_fft(v4r*gdr, FFTW_FORWARD); 
                     };
                 };
