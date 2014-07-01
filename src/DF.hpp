@@ -273,6 +273,8 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
     INFO("Finished DF iterations");
         
     //SigmaD = 1.0/GD0 - 1.0/GD;
+    EkStorage V2(_ek); V2.getData() = FullStaticVertex[_fGrid.findClosest(I*PI/beta).index_];
+    V2.savetxt("vertex_k.dat");
     SigmaD = SigmaDCopy; 
     for (auto iw : _fGrid.getPoints()) {
         size_t iwn = size_t(iw);
