@@ -97,6 +97,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
     //DEBUG("GD  = " << GD);
     //DEBUG("SigmaD = " << SigmaD);
     SigmaD = 0.0;
+    GKType SigmaDCopy(SigmaD);
 
     // Generate a list of unique q-points
     //size_t ksize = _kGrid.getSize();
@@ -243,6 +244,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         INFO("Total sigma diff = " << SigmaD.diff(SigmaD*0));
 
         //auto GD_new = _GDmix/(1.0/GD0 - SigmaD) + GD*(1.0-_GDmix); // Dyson eq;
+        INFO("Doing simplified Dyson");
         auto GD_new = _GDmix*(GD0 + GD0*SigmaD*GD0) + GD*(1.0-_GDmix); // Dyson eq;
         diffGD = GD_new.diff(GD);
         if (diffGD<diffGD_min-_SC_cutoff/10.) { diffGD_min = diffGD; diffGD_min_count = 0; }
@@ -262,6 +264,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         diffDF_stream.close();
         GD=GD_new;
         GD._f = GD0._f; // assume DMFT asymptotics are good 
+        SigmaDCopy = SigmaD;
         SigmaD = 0.0;
 
        for (auto iw : _fGrid.getPoints()) { GDsum[iw.index_] = std::abs(GD[iw.index_].sum())/knorm; }; 
@@ -269,7 +272,8 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
     };
     INFO("Finished DF iterations");
         
-    SigmaD = 1.0/GD0 - 1.0/GD;
+    //SigmaD = 1.0/GD0 - 1.0/GD;
+    SigmaD = SigmaDCopy; 
     for (auto iw : _fGrid.getPoints()) {
         size_t iwn = size_t(iw);
         GLat[iwn] = 1.0/(Delta(iw) - _ek.getData()) + 1.0/(Delta(iw) - _ek.getData())/gw(iw)*GD[iwn]/gw(iw)/(Delta(iw) - _ek.getData());
