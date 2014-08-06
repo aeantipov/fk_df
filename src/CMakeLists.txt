@@ -17,6 +17,7 @@ set_target_properties(fk${FKPOSTFIX} PROPERTIES LINKER_LANGUAGE CXX)
 #)
 
 install(TARGETS fk${FKPOSTFIX}
+    ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     )
 
