@@ -555,7 +555,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         };
 
     if (flags[9]){
-        INFO2("Saving bare 4p vertex");
+        INFO2("Saving bare 4-point vertex (gamma4)");
         typedef GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> VertexType;
         VertexType StaticVertex4(std::forward_as_tuple(SC._fGrid,SC._fGrid)); 
         GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getVertex4(0.0, w1,w2);};
