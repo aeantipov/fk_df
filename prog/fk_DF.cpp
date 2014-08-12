@@ -554,6 +554,14 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         SC.getGLatDMFT(SC._fGrid).savetxt("glat_dmft_k.dat");
         };
 
+    if (flags[9]){
+        INFO2("Saving bare 4-point vertex (gamma4)");
+        typedef GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> VertexType;
+        VertexType StaticVertex4(std::forward_as_tuple(SC._fGrid,SC._fGrid)); 
+        GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getVertex4(0.0, w1,w2);};
+        StaticVertex4.fill(VertexF2);
+        StaticVertex4.savetxt("gamma4.dat");
+        }
 
 
 
