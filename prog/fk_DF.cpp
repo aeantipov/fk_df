@@ -296,7 +296,7 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
     RealType T=1.0/beta;
     SC.GLatLoc.savetxt("gloc.dat");
 
-    std::bitset<10> flags(extraops);
+    std::bitset<16> flags(extraops);
 
     if (flags[0]) {
         std::array<RealType, D> q;
@@ -562,6 +562,37 @@ template <class SCType> void getExtraData(SCType& SC, const FMatsubaraGrid& grid
         StaticVertex4.fill(VertexF2);
         StaticVertex4.savetxt("gamma4.dat");
         }
+
+    if (flags[10]){
+        INFO2("Saving bare 4-point vertex (gamma4) * dual_bubble matrix");
+        typedef GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid> VertexType;
+        VertexType StaticVertex4(std::forward_as_tuple(SC._fGrid,SC._fGrid)); 
+        GridObject<ComplexType,FMatsubaraGrid,FMatsubaraGrid>::PointFunctionType VertexF2 = [&](FMatsubaraGrid::point w1, FMatsubaraGrid::point w2){return Solver.getVertex4(0.0, w1,w2);};
+        StaticVertex4.fill(VertexF2);
+        auto V4 = StaticVertex4.getData().getAsMatrix();
+        std::array<RealType, D> q;
+        q.fill(PI);
+        auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
+        auto dual_bubble = Diagrams::getBubble(SC.GD, Wq_args_static);
+        auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
+
+        V4 *= dual_bubble_matrix;
+        StaticVertex4.getData() = V4;
+        StaticVertex4.savetxt("gamma_x_bubble_pi.dat");
+
+        Eigen::ComplexEigenSolver<MatrixType<ComplexType>> solver(V4, true);
+        auto evals = solver.eigenvalues();
+        auto evecs = solver.eigenvectors();
+        
+        ComplexType max_eval = evals(V4.cols()-1);
+        std::cout << "Maximum eval of gamma*dual_bubble(pi) = " << max_eval << std::endl;
+        GridObject<ComplexType,FMatsubaraGrid> d1(StaticVertex4.getGrid());
+        d1.getData() = evecs.col(V4.cols()-1);
+        d1.savetxt("gamma_x_bubble_max_evec.dat");
+        __num_format<ComplexType>(max_eval).savetxt("gamma_x_bubble_max_eval.dat");
+        
+        }
+
 
 
 

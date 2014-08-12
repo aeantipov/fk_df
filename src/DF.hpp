@@ -225,6 +225,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         INFO("Updating dual self-energy with the static contribution...");
         if (_EvaluateStaticDiagrams) {
             INFO2("Static diagrams ... Running FFT");
+            //Container<ComplexType, 1> v4r(std::array<size_t,1>({{_fGrid.getSize()}})),gdr(std::array<size_t,1>({{_fGrid.getSize()}}));
             for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {
                 auto v4r = run_fft(FullStaticVertex[iw1.index_], FFTW_FORWARD)/knorm;
                 //auto gdr = run_fft(GD[iw1.index_], FFTW_BACKWARD);
