@@ -178,7 +178,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
                     //size_t n_iter = 10;
                     auto dual_bubble_matrix = dual_bubble.getData().getAsDiagonalMatrix();
                     ERROR("DF iteration" << nd_iter << ". Evaluating BS equation using iterations.");
-                    decltype(StaticV4) FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, true, _n_BS_iter, _BSmix).diagonal();
+                    decltype(StaticV4) FullStaticV4 = Diagrams::BS(dual_bubble_matrix, StaticV4, true, true, _n_BS_iter, _BSmix, _bs_evaluate_only_order_n).diagonal();
                     std::copy(FullStaticV4.data(), FullStaticV4.data()+FullStaticV4.size(), FullVertex11.getData()._data.data());
                     }
                 for (FMatsubaraGrid::point iw1 : _fGrid.getPoints())  {

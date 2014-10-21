@@ -169,6 +169,7 @@ int main(int argc, char *argv[])
     SC_DF._GDmix = opt.DFSCMixing;
     SC_DF._SC_cutoff = opt.DFSCCutoff;
     SC_DF._eval_BS_SC = opt.DFEvaluateBSSelfConsistent;
+    SC_DF._bs_evaluate_only_order_n = opt.DFEvaluateBSOnlyN;
     SC_DF._n_BS_iter = opt.DFNumberOfBSIterations;
     SC_DF._BSmix = opt.DFBSMixing;
     SC_DF._EvaluateStaticDiagrams = opt.DFEvaluateStaticDiagrams;

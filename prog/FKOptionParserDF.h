@@ -30,6 +30,7 @@ public:
     FK::RealType DFSCCutoff = 1e-7;
 	size_t DFNumberOfBSIterations = 1;
     bool DFEvaluateBSSelfConsistent = false;
+    bool DFEvaluateBSOnlyN = false;
     bool DFEvaluateStaticDiagrams = true;
     bool DFEvaluateDynamicDiagrams = false;
     FK::RealType DFBSMixing = 1.0;
@@ -146,6 +147,10 @@ public:
 
         ON_OPTION_WITH_ARG(LONGOPT("dfevalbssc"))
             DFEvaluateBSSelfConsistent = std::atoi(arg);
+            used_args = 1;
+
+        ON_OPTION_WITH_ARG(LONGOPT("dfbsonlyn"))
+            DFEvaluateBSOnlyN = std::atoi(arg);
             used_args = 1;
 
         ON_OPTION_WITH_ARG(LONGOPT("dfevalstatic"))

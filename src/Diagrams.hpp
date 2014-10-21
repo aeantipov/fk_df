@@ -51,7 +51,7 @@ inline typename Diagrams::GLocalType Diagrams::getBubble(const GLocalType &GF, A
 
 struct __logic_err : public std::logic_error { __logic_err (const std::string& what_arg):logic_error(what_arg){}; };
 template <typename ValueType>
-inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, const MatrixType<ValueType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
+inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, const MatrixType<ValueType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix, bool evaluate_only_order_n)
 {
     INFO_NONEWLINE("\tRunning" << ((!forward)?" inverse ":" ") << "matrix BS equation...");
     size_t size = IrrVertex4.rows(); 
@@ -86,12 +86,12 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     V4Chi=IrrVertex4*Chi0;
     INFO_NONEWLINE("\tEvaluating BS self-consistently. Making " << n_iter << " iterations.");
     RealType diffBS = 1.0;
-    for (size_t n=0; n<n_iter && diffBS > 1e-8; ++n) { 
+    for (size_t n=0; n<n_iter && diffBS > 1e-8 * double(!evaluate_only_order_n); ++n) { 
         INFO_NONEWLINE("\t\t" << n+1 << "/" << n_iter<< ". ")
         if (forward)
-            V4 = (IrrVertex4 + V4Chi*V4_old)*mix + (1.0-mix)*V4_old;
+            V4 = (double(n==n_iter - 1 || !evaluate_only_order_n) * IrrVertex4 + V4Chi*V4_old)*mix + (1.0-mix)*V4_old;
         else 
-            V4 = (IrrVertex4 - V4_old*V4Chi)*mix + (1.0-mix)*V4_old;
+            V4 = (double(n==n_iter - 1 || !evaluate_only_order_n) * IrrVertex4 - V4_old*V4Chi)*mix + (1.0-mix)*V4_old;
         diffBS = (V4-V4_old).norm();
         INFO("vertex diff = " << diffBS);
         V4_old = V4;

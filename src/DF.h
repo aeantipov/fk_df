@@ -19,6 +19,7 @@ struct DFBase
     bool _eval_BS_SC = false;
     RealType _BSmix = 0.1;
     size_t _n_BS_iter = 10;
+    bool _bs_evaluate_only_order_n = false;
 
     bool _EvaluateStaticDiagrams = true;
     bool _EvaluateDynamicDiagrams = false;
