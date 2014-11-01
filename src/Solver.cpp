@@ -15,7 +15,7 @@ FKImpuritySolver::FKImpuritySolver(real_type U, real_type mu, real_type e_d, GFT
 
 void FKImpuritySolver::run(bool calc_weight)
 {
-    INFO("Running FK Solver, beta = " << beta << ", U = " << U << ", mu = " << mu << ", e_d = " << e_d << ". Using " << std::max(w_grid.w_max_,int(beta)*10) << " freqs.");
+    INFO("Running FK Solver, beta = " << beta << ", U = " << U << ", mu = " << mu << ", e_d = " << e_d << ". Using " << half_grid.size() << " freqs.");
     GFType iw(w_grid);
     std::function<complex_type(complex_type)> iwtail = [](complex_type w){return w;};
     iw.fill(iwtail);
@@ -23,11 +23,11 @@ void FKImpuritySolver::run(bool calc_weight)
     K1 = 1.0/(iw+mu-Delta-U);
     K0.tail_ = [=](complex_type w)->complex_type{return 1.0/(w+mu-Delta.tail_eval(w));};
     K1.tail_ = [=](complex_type w)->complex_type{return 1.0/(w+mu-Delta.tail_eval(w)-U);};
-   
+
     if (calc_weight) {
         real_type alpha = beta*(mu-e_d-U/2);
         std::function<real_type(fmatsubara_grid::point)> tempF = [this](fmatsubara_grid::point w){
-            return 2.*log(std::abs(K0(w))) - 2.*log(std::abs(K1(w))); 
+            return 2.*log(std::abs(static_cast<const GFType&>(K0)(w.value()))) - 2.*log(std::abs(static_cast<const GFType&>(K1)(w.value()))); 
             };
         alpha+= half_grid.integrate(tempF)*beta;
         alpha=exp(alpha);

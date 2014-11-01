@@ -84,7 +84,7 @@ int main()
     auto irrDMFT2 = (Sigma - Sigma_shift)/(gw-gw_shift)*(-1.0)/T;
     auto irrDMFT3 = (-1.0)/T*Solver.w_0*Solver.w_1*std::pow(Solver.U,2)/( (1.+gw*Sigma)*(1.+gw*(Sigma-U))*(1.+gw_shift*(Sigma_shift))*(1.+gw_shift*(Sigma_shift - U))+ Solver.w_0*Solver.w_1*U*U*gw*gw_shift);
 
-    if (!is_equal(irrDMFTV4.diff(irrDMFT3),0,1e-4)) { ERROR("DMFT vertex is incorrect. "); return EXIT_FAILURE; };
+    if (!is_equal(irrDMFTV4.diff(irrDMFT3, true),0,1e-4)) { ERROR("DMFT vertex is incorrect. "); return EXIT_FAILURE; };
 
     //DEBUG(irrDMFTV4);
     //DEBUG(irrDMFT3);
