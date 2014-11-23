@@ -296,6 +296,11 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
 
     std::bitset<10> flags(extraops);
 
+    typename SCType::GKType dual_bubbles = Diagrams::getStaticBubbles(SC.GD); 
+    typename SCType::GKType dual_bubbles0 = Diagrams::getStaticBubbles(SC.GD0); 
+    typename SCType::GKType lattice_bubbles = Diagrams::getStaticBubbles(SC.getGLat()); 
+    typedef typename SCType::GLocalType GLocalType;
+
     if (flags[0]) {
         std::array<real_type, D> q;
         q.fill(PI);
@@ -332,6 +337,11 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
         grid_object<real_type,kmesh> out_b(SC._kGrid), out_chi(SC._kGrid), out_dual_bubble(SC._kGrid), out_lattice_bubble(SC._kGrid), out_dual_bubble0(SC._kGrid);
         std::array<typename kmesh::point, D> q = tuple_tools::repeater<typename kmesh::point, D>::get_array(SC._kGrid.find_nearest(PI));
         q.fill(SC._kGrid.find_nearest(PI));
+
+        GLocalType dual_bubble(dual_bubbles.grid());
+        GLocalType dual_bubble0(dual_bubbles.grid());
+        GLocalType lattice_bubble(dual_bubbles.grid());
+
         for (auto q_pt : SC._kGrid.points()) {
             INFO2("q = " << real_type(q_pt));
             std::get<D-1>(q) = q_pt;
@@ -340,8 +350,8 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
             complex_type susc_val = SC.getStaticLatticeSusceptibility(q,Solver.w_grid);
             out_chi[size_t(q_pt)]= std::real(susc_val);
             
-            auto dual_bubble = Diagrams::getBubble(SC.GD, Wq_args_static);
-            auto dual_bubble0 = Diagrams::getBubble(SC.GD0, Wq_args_static);
+            dual_bubble.fill([&](typename fmatsubara_grid::point w){return dual_bubbles(std::tuple_cat(std::make_tuple(w), q)); });
+            dual_bubble0.fill([&](typename fmatsubara_grid::point w){return dual_bubbles0(std::tuple_cat(std::make_tuple(w), q)); });
             auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble;
             auto Bw = Bw1/(1.0+Bw1);
             complex_type B = Bw.sum();
@@ -351,7 +361,8 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
             out_dual_bubble[size_t(q_pt)]= dual_bubble_val;
             out_dual_bubble0[size_t(q_pt)]= std::real(dual_bubble0.sum());
 
-            real_type lattice_bubble_val =  std::real(Diagrams::getBubble(glat, Wq_args_static).sum());
+            lattice_bubble.fill([&](typename fmatsubara_grid::point w){return lattice_bubbles(std::tuple_cat(std::make_tuple(w), q)); });
+            real_type lattice_bubble_val =  std::real(lattice_bubble.sum());
             out_lattice_bubble[size_t(q_pt)] = lattice_bubble_val;
             };
         out_chi.savetxt("Susc_dir.dat");
@@ -367,8 +378,10 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
         std::array<real_type, D> q;
         q.fill(PI);
         auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
-        auto dual_bubble_pi = Diagrams::getBubble(SC.GD, Wq_args_static);
-        auto dual_bubble0_pi = Diagrams::getBubble(SC.GD0, Wq_args_static);
+        GLocalType dual_bubble_pi (SC.GD.grid());
+        dual_bubble_pi.fill([&](typename fmatsubara_grid::point w){return dual_bubbles(std::tuple_cat(std::make_tuple(w), q)); });
+        GLocalType dual_bubble0_pi (SC.GD0.grid());
+        dual_bubble0_pi.fill([&](typename fmatsubara_grid::point w){return dual_bubbles0(std::tuple_cat(std::make_tuple(w), q)); });
         auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble_pi;
         auto Bw = Bw1/(1.0+Bw1);
         complex_type B = Bw.sum();
@@ -429,11 +442,17 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
         auto stat_susc_bz = SC.getStaticLatticeSusceptibility(bzpoints, fmatsubara_grid(-n_freq,n_freq,beta));
         std::map<BZPoint<D>, real_type> susc_map, lattice_bubble_map, dual_bubble_map;
         INFO_NONEWLINE("\tGetting bubbles [" << stat_susc_bz.size() <<"] : ");
+
+        GLocalType dual_bubble(dual_bubbles.grid());
+        GLocalType lattice_bubble(lattice_bubbles.grid());
+
         for (size_t nq=0; nq<stat_susc_bz.size(); ++nq) { 
             INFO_NONEWLINE(nq << " "); 
+            dual_bubble.fill([&](typename fmatsubara_grid::point w){return dual_bubbles(std::tuple_cat(std::make_tuple(w), bzpoints[nq])); });
+            lattice_bubble.fill([&](typename fmatsubara_grid::point w){return lattice_bubbles(std::tuple_cat(std::make_tuple(w), bzpoints[nq])); });
             susc_map[bzpoints[nq]] = std::real(stat_susc_bz[nq]);
-            lattice_bubble_map[bzpoints[nq]] = std::real(std::real(Diagrams::getBubble(glat, std::tuple_cat(std::make_tuple(0.0), bzpoints[nq])).sum()));
-            dual_bubble_map[bzpoints[nq]] = std::real(Diagrams::getBubble(SC.GD, std::tuple_cat(std::make_tuple(0.0), bzpoints[nq])).sum());
+            lattice_bubble_map[bzpoints[nq]] = std::real(lattice_bubble.sum());
+            dual_bubble_map[bzpoints[nq]] = std::real(dual_bubble.sum()); 
         };
         INFO("");
 
@@ -447,8 +466,8 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
         auto rgrid = enum_grid(0,SC._kGrid.size(),false);
         auto rmeshes = tuple_tools::repeater<enum_grid,D>::get_tuple(rgrid);
 
-        susc_k_type susc_full(kmeshes), susc_lattice_bubbles(kmeshes), dual_bubbles(kmeshes);
-        susc_r_type susc_full_r(rmeshes), susc_lattice_bubbles_r(rmeshes), dual_bubbles_r(rmeshes);
+        susc_k_type susc_full(kmeshes), susc_lattice_bubbles(kmeshes), gd_bubbles(kmeshes);
+        susc_r_type susc_full_r(rmeshes), susc_lattice_bubbles_r(rmeshes), gd_bubbles_r(rmeshes);
 
         for (size_t nq=0; nq<nqpts; ++nq) {
             BZPoint<D> current_point = all_bz_points[nq];
@@ -456,22 +475,22 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
             BZPoint<D> sym_point = CubicTraits<D>::findSymmetricBZPoint(current_point,SC._kGrid);
             susc_full.get(current_point_tuple) = susc_map[sym_point];
             susc_lattice_bubbles.get(current_point_tuple) = lattice_bubble_map[sym_point];
-            dual_bubbles.get(current_point_tuple) = dual_bubble_map[sym_point];
+            gd_bubbles.get(current_point_tuple) = dual_bubble_map[sym_point];
             };
 
         susc_full.savetxt("StaticChiDFCC.dat");
         susc_lattice_bubbles.savetxt("StaticLatticeBubbleDFCC.dat");
-        dual_bubbles.savetxt("StaticDualBubbleCC.dat");
+        gd_bubbles.savetxt("StaticDualBubbleCC.dat");
 
         INFO2("Doing FFT of susceptibilities");
 
         susc_full_r.data() = run_fft(susc_full.data(),FFTW_BACKWARD);
         susc_lattice_bubbles_r.data() = run_fft(susc_lattice_bubbles.data(),FFTW_BACKWARD);
-        dual_bubbles_r.data() = run_fft(dual_bubbles.data(),FFTW_BACKWARD);
+        gd_bubbles_r.data() = run_fft(gd_bubbles.data(),FFTW_BACKWARD);
 
         susc_full_r.savetxt("StaticChiDFCC_r.dat");
         susc_lattice_bubbles_r.savetxt("StaticLatticeBubbleDFCC_r.dat");
-        dual_bubbles_r.savetxt("StaticDualBubbleCC_r.dat");
+        gd_bubbles_r.savetxt("StaticDualBubbleCC_r.dat");
 
         INFO2("Saving susceptibilities in different directions");
 
@@ -554,9 +573,6 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
         SC.GD.savetxt("gd_k.dat");
         SC.getGLatDMFT(SC._fGrid).savetxt("glat_dmft_k.dat");
         };
-
-
-
 
  }
 #endif // endif :: #ifdef _calc_extra_stats

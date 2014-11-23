@@ -139,7 +139,8 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
 
         size_t nq = 1;
 
-        GKType bubbles = Diagrams::getStaticBubbles(this->GD); 
+        GKType dual_bubbles = Diagrams::getStaticBubbles(this->GD); 
+        GLocalType dual_bubble (_fGrid); 
         // iterate over all unique kpoints (patch of BZ)
         for (auto pts_it = unique_q_pts.begin(); pts_it != unique_q_pts.end(); pts_it++) { 
             std::array<kmesh::point, D> q = pts_it->first; // point
@@ -149,11 +150,7 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
             for (size_t i=0; i<D; ++i) INFO_NONEWLINE(real_type(q[i]) << " "); INFO_NONEWLINE("]. Weight : " << q_weight << ". ");
 
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
-            auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
-            GLocalType db2 (_fGrid); 
-            db2.fill([&](typename fmatsubara_grid::point w){return bubbles(std::tuple_cat(std::make_tuple(w), q)); });
-            std::cout << db2 << std::endl << dual_bubble << std::endl;
-            exit(0);
+            dual_bubble.fill([&](typename fmatsubara_grid::point w){return dual_bubbles(std::tuple_cat(std::make_tuple(w), q)); });
             INFO("");
 
             if (_EvaluateStaticDiagrams) {
@@ -408,6 +405,11 @@ std::vector<complex_type> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(c
     std::vector<complex_type> out;
     out.reserve(nqpts);
 
+    GKType dual_bubbles = Diagrams::getStaticBubbles(GD_interp); 
+    GKType gdl_bubbles = Diagrams::getStaticBubbles(GDL); 
+
+    GLocalType dual_bubble(gridF), GDL_bubble(gridF);
+
     for (auto q : qpts) {
 
         complex_type susc=0.0;
@@ -415,9 +417,9 @@ std::vector<complex_type> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(c
         auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
         auto LatticeBubble = Diagrams::getBubble(GLat_interp, Wq_args_static);
 
-        auto GDL_bubble = Diagrams::getBubble(GDL, Wq_args_static);
+        GDL_bubble.fill([&](typename fmatsubara_grid::point w){return gdl_bubbles(std::tuple_cat(std::make_tuple(w), q)); });
 
-        auto dual_bubble = Diagrams::getBubble(GD_interp, Wq_args_static);
+        dual_bubble.fill([&](typename fmatsubara_grid::point w){return dual_bubbles(std::tuple_cat(std::make_tuple(w), q)); });
 
         #ifdef bs_matrix
         auto GDL_bubble_vector = GDL_bubble.data().as_vector();

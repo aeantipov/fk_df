@@ -16,7 +16,7 @@ inline GKType Diagrams::getStaticBubbles(const GKType &GF)
     int knorm = GF[0].size();
     for (fmatsubara_grid::point iw1 : fgrid.points())  {
         auto g1 = run_fft(GF[iw1], FFTW_FORWARD);
-        out[iw1] = run_fft(g1*g1.conj(), FFTW_BACKWARD)/knorm;
+        out[iw1] = run_fft(g1*g1, FFTW_BACKWARD)/knorm;
         };
     return out / (-fgrid.beta());
 } 
