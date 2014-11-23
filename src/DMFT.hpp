@@ -106,7 +106,7 @@ typename LatticeDMFTSC<LatticeT>::GKType LatticeDMFTSC<LatticeT>::getGLat(const 
     	[&](typename GKType::point_tuple in)->complex_type {
         fmatsubara_grid::point w = std::get<0>(in);
         auto ktuple = tuple_tools::tuple_tail(in);
-        return 1.0/(1.0/_S.gw(w)+_S.Delta(w)-_ek(ktuple));
+        return 1.0/(1.0/_S.gw(w.value())+_S.Delta(w.value())-_ek(ktuple));
     };
     typename GKType::point_function_type f2 = tools::extract_tuple_f(f1);
     out.fill(f2);

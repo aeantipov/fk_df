@@ -378,7 +378,7 @@ std::vector<complex_type> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(c
         GD_interp = GD;
         GLat_interp=GLat;
         };
-        
+
     auto mult = _S.beta*_S.U*_S.U*_S.w_0*_S.w_1;
     GLocalType Lambda(gridF);
     Lambda.copy_interpolate(_S.getLambda());
@@ -410,12 +410,12 @@ std::vector<complex_type> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(c
         auto LatticeBubble = Diagrams::getBubble(GLat_interp, Wq_args_static);
 
         auto GDL_bubble = Diagrams::getBubble(GDL, Wq_args_static);
-        auto GDL_bubble_vector = GDL_bubble.data().as_vector();
 
         auto dual_bubble = Diagrams::getBubble(GD_interp, Wq_args_static);
-        auto dual_bubble_matrix = dual_bubble.data().as_diagonal_matrix();
 
         #ifdef bs_matrix
+        auto GDL_bubble_vector = GDL_bubble.data().as_vector();
+        auto dual_bubble_matrix = dual_bubble.data().as_diagonal_matrix();
         auto size = StaticV4.rows();
         auto V4Chi = MatrixType<complex_type>::Identity(size,size) - StaticV4*dual_bubble_matrix;
         auto D1 = V4Chi.determinant();
@@ -428,7 +428,7 @@ std::vector<complex_type> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(c
         auto m1 = mult*dual_bubble*Lambda*Lambda;
         complex_type B=(m1/(1.0+m1)).data().sum();
         GLocalType B1=m1*Lambda/(1.0+m1);
-    
+
         for (auto w1 : gridF.points()) {
             auto F = mult/(1.0+m1(w1))*Lambda(w1)/(1.0-B);
             for (auto w2 : gridF.points()) {

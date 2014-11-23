@@ -30,7 +30,6 @@ int main()
     real_type mix = 0.5;
 
     size_t n_freq = 64;
-
     static const size_t KPOINTS=16;
     static const size_t D=2;
 
@@ -93,10 +92,14 @@ int main()
     auto t1_dmft_skel = getStaticLatticeDMFTSkeletonSusceptibility(Solver,BubbleqPI,gridF)[0];
     auto t2_dmft_skel = getStaticLatticeDMFTSkeletonSusceptibility(Solver,BubbleqPI,gridF2)[0];
     auto t3_dmft_skel = getStaticLatticeDMFTSkeletonSusceptibility(Solver,BubbleqPI,gridF3)[0];
+    
+    INFO(t1 << " == " << t1_dmft);
     if (!is_equal(t1,t1_dmft) || !is_equal(t1,t1_dmft_skel)) return EXIT_FAILURE; 
     INFO("PASSED");
+    INFO(t2 << " == " << t2_dmft);
     if (!is_equal(t2,t2_dmft) || !is_equal(t2,t2_dmft_skel)) return EXIT_FAILURE; 
     INFO("PASSED");
+    INFO(t3 << " == " << t3_dmft);
     if (!is_equal(t3,t3_dmft) || !is_equal(t3,t3_dmft_skel)) return EXIT_FAILURE; 
     INFO("PASSED");
     return EXIT_SUCCESS;
