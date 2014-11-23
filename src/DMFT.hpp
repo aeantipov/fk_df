@@ -10,7 +10,7 @@ typename DMFTBase::GFType DMFTBase::getBubblePI(MPoint in) const
 {
     GFType out(this->_S.w_grid);
     GFType gw_shift(_S.gw), Sigma_shift(_S.Sigma);
-    real_type T = 1.0/_S.w_grid._beta;
+    real_type T = 1.0/_S.w_grid.beta();
     if (std::abs(complex_type(in))<PI*T) {
          gw_shift = _S.gw.shift(in);
          Sigma_shift = _S.Sigma.shift(in);
@@ -149,7 +149,7 @@ typename LatticeDMFTSC<LatticeT>::GFType LatticeDMFTSC<LatticeT>::operator()()
 template <typename MPoint>
 inline typename CubicInfDMFTSC::GFType CubicInfDMFTSC::getBubble0(MPoint in) const
 {
-    auto T = 1.0/_S.w_grid._beta;
+    auto T = 1.0/_S.w_grid.beta();
     GFType iwn(_S.w_grid);
     iwn.fill(typename GFType::function_type([](complex_type w){return w;}));
     return 2.0*T/_t/_t*(1.0-(iwn+_S.mu-_S.Sigma)*_S.gw);

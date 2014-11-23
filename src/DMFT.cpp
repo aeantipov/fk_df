@@ -11,7 +11,7 @@ namespace FK {
 grid_object<complex_type,fmatsubara_grid,fmatsubara_grid> DMFTBase::getBubblePI() const
 {
     grid_object<complex_type,fmatsubara_grid,fmatsubara_grid> out(std::forward_as_tuple(this->_S.w_grid, this->_S.w_grid));
-    real_type T = 1.0/_S.w_grid._beta;
+    real_type T = 1.0/_S.w_grid.beta();
     GFType iwn(this->_S.w_grid); iwn.fill(typename GFType::function_type([](complex_type w){return w;}));
     grid_object<complex_type,fmatsubara_grid,fmatsubara_grid> ::point_function_type f = [&](fmatsubara_grid::point w1, fmatsubara_grid::point w2) { 
         return -T*(_S.gw(w1)+_S.gw(w2))/(complex_type(w1)+complex_type(w2)+2.0*_S.mu-_S.Sigma(w1)-_S.Sigma(w2));
@@ -84,7 +84,7 @@ typename CubicInfDMFTSC::GFType CubicInfDMFTSC::operator()()
 grid_object<complex_type,fmatsubara_grid,fmatsubara_grid> CubicInfDMFTSC::getBubble0() const
 {
     grid_object<complex_type,fmatsubara_grid,fmatsubara_grid> out(std::forward_as_tuple(_S.w_grid,_S.w_grid));
-    auto T = 1.0/_S.w_grid._beta;
+    auto T = 1.0/_S.w_grid.beta();
     grid_object<complex_type,fmatsubara_grid,fmatsubara_grid>::point_function_type f = [&](fmatsubara_grid::point w1, fmatsubara_grid::point w2)->complex_type {
         if (w1 == w2) return 2.0*T/_t/_t*(1.0-(complex_type(w1)+_S.mu-_S.Sigma(w1))*_S.gw(w1));
         else return -T*(_S.gw(w1) - _S.gw(w2))/( complex_type(w2) - complex_type(w1) + _S.Sigma(w1) - _S.Sigma(w2));

@@ -4,8 +4,22 @@
 #include "Diagrams.h"
 #include <Eigen/LU>
 #include <Eigen/Dense>
+#include "FFT.hpp"
 
 namespace FK {
+
+template <typename GKType>
+inline GKType Diagrams::getStaticBubbles(const GKType &GF)
+{
+    GKType out(GF.grids());
+    const auto& fgrid = std::get<0>(GF.grids());
+    int knorm = GF[0].size();
+    for (fmatsubara_grid::point iw1 : fgrid.points())  {
+        auto g1 = run_fft(GF[iw1], FFTW_FORWARD);
+        out[iw1] = run_fft(g1*g1.conj(), FFTW_BACKWARD)/knorm;
+        };
+    return out / (-fgrid.beta());
+} 
 
 template <typename GKType, typename ... ArgTypes>
 inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const std::tuple<ArgTypes...>& args)
@@ -37,7 +51,7 @@ inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const
         out[iwn] = GF_shifted[iwn].sum()/real_type(knorm); 
     }
 
-    real_type T = 1.0/(_fGrid._beta);
+    real_type T = 1.0/(_fGrid.beta());
     return (-T)*out;
 }
 
@@ -45,7 +59,7 @@ template <typename ArgType>
 inline typename Diagrams::GLocalType Diagrams::getBubble(const GLocalType &GF, ArgType arg)
 {
     GLocalType out = GF.shift(arg)*GF;
-    real_type T = 1.0/(std::get<0>(GF.grids())._beta);
+    real_type T = 1.0/(std::get<0>(GF.grids()).beta());
     return (-T)*out;
 }
 

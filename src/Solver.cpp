@@ -6,8 +6,8 @@ FKImpuritySolver::FKImpuritySolver(real_type U, real_type mu, real_type e_d, GFT
     _v_mult(0.0),
     U(U), mu(mu), e_d(e_d),
     w_grid(Delta.grid()),
-    half_grid(0,std::max(w_grid.w_max_*2,int(w_grid._beta)*10),w_grid._beta),
-    beta(w_grid._beta), 
+    half_grid(0,std::max(w_grid.w_max_*2,int(w_grid.beta())*10),w_grid.beta()),
+    beta(w_grid.beta()), 
     Delta(Delta), 
     gw(GFType(w_grid)), K0(GFType(w_grid)), K1(GFType(w_grid)), Lambda(GFType(w_grid)), Sigma(GFType(w_grid))
 {
@@ -52,7 +52,7 @@ void FKImpuritySolver::run(bool calc_weight)
 grid_object<complex_type,fmatsubara_grid,fmatsubara_grid> FKImpuritySolver::getBubble() const
 {
     grid_object<complex_type,fmatsubara_grid,fmatsubara_grid> out(std::forward_as_tuple(w_grid, w_grid));
-    real_type T = 1.0/w_grid._beta;
+    real_type T = 1.0/w_grid.beta();
     typedef decltype(out) tmp1;
     tmp1::point_function_type f = [&](fmatsubara_grid::point w1, fmatsubara_grid::point w2) {
         return -T*(gw(w1)*gw(w2));

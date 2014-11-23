@@ -77,7 +77,7 @@ template <typename LatticeT, size_t D>
 typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
 {
     INFO("Using DF Ladder self-consistency in " << D << " dimensions on a lattice of " << _kGrid.size() << "^" << D <<" atoms.");
-    real_type beta = _fGrid._beta;
+    real_type beta = _fGrid.beta();
     real_type T = 1.0/beta;
     GLocalType gw(_fGrid); // non-const method. Better copy.
     gw = _S.gw;
@@ -138,6 +138,8 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
         INFO("DF iteration " << nd_iter << ". Evaluating BS equation.");
 
         size_t nq = 1;
+
+        GKType bubbles = Diagrams::getStaticBubbles(this->GD); 
         // iterate over all unique kpoints (patch of BZ)
         for (auto pts_it = unique_q_pts.begin(); pts_it != unique_q_pts.end(); pts_it++) { 
             std::array<kmesh::point, D> q = pts_it->first; // point
@@ -147,12 +149,15 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
             for (size_t i=0; i<D; ++i) INFO_NONEWLINE(real_type(q[i]) << " "); INFO_NONEWLINE("]. Weight : " << q_weight << ". ");
 
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
-            auto GD_shift = GD.shift(Wq_args_static);
+            auto dual_bubble = Diagrams::getBubble(this->GD, Wq_args_static);
+            GLocalType db2 (_fGrid); 
+            db2.fill([&](typename fmatsubara_grid::point w){return bubbles(std::tuple_cat(std::make_tuple(w), q)); });
+            std::cout << db2 << std::endl << dual_bubble << std::endl;
+            exit(0);
             INFO("");
 
             if (_EvaluateStaticDiagrams) {
                 INFO_NONEWLINE("\tStatic contribution...");
-                auto dual_bubble = Diagrams::getBubble(this->GD, GD_shift);
                 #ifdef bs_matrix
                 auto dual_bubble_matrix = dual_bubble.data().as_diagonal_matrix();
                 auto FullStaticV4_m = Diagrams::BS(dual_bubble_matrix, StaticV4, true, _eval_BS_SC, _n_BS_iter, _BSmix);
@@ -195,7 +200,9 @@ typename DFLadder<LatticeT,D>::GLocalType DFLadder<LatticeT,D>::operator()()
                 INFO_NONEWLINE("\tDynamic contribution...");
                 decltype(StaticVertex4) DualBubbleDynamic(StaticVertex4.grids());
                 VertexType::point_function_type dbfill = [&](fmatsubara_grid::point w1, fmatsubara_grid::point w2){
-                    return -T*(GD[size_t(w1)]*GD_shift[size_t(w2)]).sum()/real_type(totalqpts);
+                    throw(std::logic_error("no dynamic diagrams"));
+                    return 1.0;
+                    //return -T*(GD[size_t(w1)]*GD_shift[size_t(w2)]).sum()/real_type(totalqpts);
                     };
                 decltype(StaticVertex4) DynamicFullVertex4(StaticVertex4.grids());
                 DualBubbleDynamic.fill(dbfill);
@@ -300,7 +307,7 @@ template <typename LatticeT, size_t D>
 std::tuple<typename DFLadder<LatticeT,D>::SuscType> DFLadder<LatticeT,D>::calculateLatticeData(const bmatsubara_grid& gridB, const std::array<kmesh_patch, D>& qgrids)
 {
     SuscType LatticeSusc(std::tuple_cat(std::forward_as_tuple(gridB),qgrids));
-    //real_type T = 1.0/_fGrid._beta;
+    //real_type T = 1.0/_fGrid.beta();
     GKType Lwk = this->getGLatDMFT(_fGrid)/GD0*(-1.0);
     Lwk.tail_ = tools::fun_traits<typename GKType::function_type>::constant(-1.0);
     auto GDL = GD*Lwk;
@@ -406,7 +413,6 @@ std::vector<complex_type> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(c
         complex_type susc=0.0;
         INFO_NONEWLINE("Evaluation of static susceptibility for q=["); for (int i=0; i<D; ++i) INFO_NONEWLINE(real_type(q[i])<<" "); INFO("]");
         auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
-        auto GD_shift = GD_interp.shift(Wq_args_static);
         auto LatticeBubble = Diagrams::getBubble(GLat_interp, Wq_args_static);
 
         auto GDL_bubble = Diagrams::getBubble(GDL, Wq_args_static);
