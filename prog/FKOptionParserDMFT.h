@@ -8,18 +8,18 @@
  */
 class FKOptionParserDMFT : public optparse {
 public:
-	FK::RealType beta = 10.  ;
-	FK::RealType T    = 0.1  ;
-	FK::RealType U    = 4.0  ;
-	FK::RealType t    = 1.0  ;
-	FK::RealType tp   = 0.0  ;
-	FK::RealType mu   = 2.0  ;
-	FK::RealType e_d  = 0.0  ;
-	FK::RealType w_0  = 0.5  ;
-	FK::RealType w_1  = 0.5  ;
+	FK::real_type beta = 10.  ;
+	FK::real_type T    = 0.1  ;
+	FK::real_type U    = 4.0  ;
+	FK::real_type t    = 1.0  ;
+	FK::real_type tp   = 0.0  ;
+	FK::real_type mu   = 2.0  ;
+	FK::real_type e_d  = 0.0  ;
+	FK::real_type w_0  = 0.5  ;
+	FK::real_type w_1  = 0.5  ;
     bool update_weights = true;
-	FK::RealType mix = 1.0;
-    FK::RealType cutoff = 100*std::numeric_limits<FK::RealType>::epsilon();
+	FK::real_type mix = 1.0;
+    FK::real_type cutoff = 100*std::numeric_limits<FK::real_type>::epsilon();
 	size_t n_freq = 256;
 	size_t kpts = 32;
 	size_t n_iter = 1000;
