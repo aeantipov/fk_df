@@ -407,19 +407,20 @@ std::vector<complex_type> DFLadder<LatticeT,D>::getStaticLatticeSusceptibility(c
 
     GKType dual_bubbles = Diagrams::getStaticBubbles(GD_interp); 
     GKType gdl_bubbles = Diagrams::getStaticBubbles(GDL); 
+    GKType lattice_bubbles = Diagrams::getStaticBubbles(GLat_interp); 
 
-    GLocalType dual_bubble(gridF), GDL_bubble(gridF);
+    GLocalType dual_bubble(gridF), GDL_bubble(gridF), LatticeBubble(gridF);
 
     for (auto q : qpts) {
 
         complex_type susc=0.0;
         INFO_NONEWLINE("Evaluation of static susceptibility for q=["); for (int i=0; i<D; ++i) INFO_NONEWLINE(real_type(q[i])<<" "); INFO("]");
         auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
-        auto LatticeBubble = Diagrams::getBubble(GLat_interp, Wq_args_static);
 
         GDL_bubble.fill([&](typename fmatsubara_grid::point w){return gdl_bubbles(std::tuple_cat(std::make_tuple(w), q)); });
-
         dual_bubble.fill([&](typename fmatsubara_grid::point w){return dual_bubbles(std::tuple_cat(std::make_tuple(w), q)); });
+        LatticeBubble.fill([&](typename fmatsubara_grid::point w){return lattice_bubbles(std::tuple_cat(std::make_tuple(w), q)); });
+        
 
         #ifdef bs_matrix
         auto GDL_bubble_vector = GDL_bubble.data().as_vector();
