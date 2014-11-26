@@ -1,8 +1,6 @@
 #include <numeric>
+#include <gftools/enum_grid.hpp>
 
-#include <MatsubaraGrid.hpp>
-#include <KMesh.hpp>
-#include <GridObject.hpp>
 #include "Solver.h"
 #include "DMFT.h"
 #include "FFT.hpp"
@@ -46,20 +44,20 @@
 
 #include <fftw3.h>
 
-using namespace GFTools;
+using namespace gftools;
 using namespace FK;
 
 int __get_n_lines(const std::string& fname);
-int __get_min_number(const std::string& fname, RealType beta);
+int __get_min_number(const std::string& fname, real_type beta);
 
-RealType beta;
+real_type beta;
 size_t extraops;
 bool INTERRUPT = false;
  
-typedef GridObject<ComplexType,FMatsubaraGrid> GF;
+typedef grid_object<complex_type,fmatsubara_grid> GF;
 
 template <typename F1, typename F2>
-bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
+bool is_equal ( F1 x, F2 y, real_type tolerance = 1e-7)
 {
     return (std::abs(x-y)<tolerance);
 }
@@ -107,31 +105,31 @@ int main(int argc, char *argv[])
         return 1;
     }
     
-    RealType U = opt.U;
-    RealType mu = opt.mu;
-    RealType e_d = opt.e_d;
+    real_type U = opt.U;
+    real_type mu = opt.mu;
+    real_type e_d = opt.e_d;
     beta = opt.beta;
-    RealType t = opt.t; 
-    RealType tp = opt.tp; 
+    real_type t = opt.t; 
+    real_type tp = opt.tp; 
     size_t n_freq = opt.n_freq;
     size_t maxit = opt.n_iter;
-    RealType mix = opt.mix;
+    real_type mix = opt.mix;
     extraops = opt.extra_ops;
     size_t kpoints = opt.kpts;
 
-    KMesh kgrid(kpoints);
+    kmesh kgrid(kpoints);
     
-    FMatsubaraGrid gridF(-n_freq, n_freq, beta);
+    fmatsubara_grid gridF(-n_freq, n_freq, beta);
     GF Delta(gridF);
-    std::function<ComplexType(ComplexType)> f1, f2;
-    f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
+    std::function<complex_type(complex_type)> f1, f2;
+    f1 = [t](complex_type w) -> complex_type {return t*t/w;};
 
     try { 
         std::string fname = "Delta_full.dat";
-        GF Delta2(std::make_tuple(FMatsubaraGrid(__get_min_number(fname,beta), __get_min_number(fname,beta)+__get_n_lines(fname), beta)));
+        GF Delta2(std::make_tuple(fmatsubara_grid(__get_min_number(fname,beta), __get_min_number(fname,beta)+__get_n_lines(fname), beta)));
         Delta2.loadtxt(fname);
-        Delta.copyInterpolate(Delta2);
-        Delta._f = __fun_traits<decltype(Delta._f)>::constant(0.0);
+        Delta.copy_interpolate(Delta2);
+        Delta.tail_ = tools::fun_traits<decltype(Delta.tail_)>::constant(0.0);
         } 
 
     catch (std::exception &e) { Delta.fill(f1); };
@@ -143,7 +141,7 @@ int main(int argc, char *argv[])
     #ifdef LATTICE_bethe
     sc_type SC = BetheSC(Solver,t);
     #elif LATTICE_cubicinfd
-    sc_type SC = CubicInfDMFTSC(Solver,t,RealGrid(-6.0*t,6.0*t,1024));
+    sc_type SC = CubicInfDMFTSC(Solver,t,real_grid(-6.0*t,6.0*t,1024));
     #elif LATTICE_cubic1d
     sc_type SC = CubicDMFTSC<1>(Solver, kgrid, t);
     #elif LATTICE_cubic2d
@@ -160,7 +158,7 @@ int main(int argc, char *argv[])
     Solver.w_0 = opt.w_0;
     Solver.w_1 = opt.w_1;
 
-    RealType diff=1.0;
+    real_type diff=1.0;
     for (int i=0; i<maxit && diff>opt.cutoff &&!INTERRUPT; ++i) {
         INFO("Iteration " << i <<". Mixing = " << mix);
         update_weights = update_weights && diff/mix>1e-3;
@@ -172,16 +170,16 @@ int main(int argc, char *argv[])
         Solver.Delta = Delta_new;
         }
    
-    FMatsubaraGrid gridF_half(0, std::max(n_freq*3,size_t(100)), beta);
-    GF Delta_half(gridF_half); Delta_half.copyInterpolate(Delta);
-    GF gw_half(gridF_half); gw_half.copyInterpolate(Solver.gw);
-    GF sigma_half(gridF_half); sigma_half.copyInterpolate(Solver.Sigma);
+    fmatsubara_grid gridF_half(0, std::max(n_freq*3,size_t(100)), beta);
+    GF Delta_half(gridF_half); Delta_half.copy_interpolate(Delta);
+    GF gw_half(gridF_half); gw_half.copy_interpolate(Solver.gw);
+    GF sigma_half(gridF_half); sigma_half.copy_interpolate(Solver.Sigma);
     sigma_half.savetxt("Sigma.dat");
     gw_half.savetxt("Gw.dat");
     Delta_half.savetxt("Delta.dat");
     int __msize = std::max(n_freq*5,size_t(1024));
-    FMatsubaraGrid gridF_large(-__msize, __msize, beta);
-    GF Delta_large(gridF_large); Delta_large.copyInterpolate(Delta);
+    fmatsubara_grid gridF_large(-__msize, __msize, beta);
+    GF Delta_large(gridF_large); Delta_large.copy_interpolate(Delta);
     Delta_large.savetxt("Delta_full.dat");
 
     #ifdef _calc_extra_stats
@@ -196,15 +194,15 @@ void getExtraDMFTData(const sc_type& SC)
     std::bitset<10> flags(extraops);
 
     const auto &Solver = SC._S;
-    RealType T=1.0/Solver.beta;
-    RealType U = Solver.U;
+    real_type T=1.0/Solver.beta;
+    real_type U = Solver.U;
 
     if (flags[0]) {
         INFO("\nCalculating static cc, cf, ff susceptibilities at q=0, q=pi and r=0");
         size_t n_freq = std::max(int(beta*2), 512);
-        FMatsubaraGrid gridF(-n_freq, n_freq, beta);
+        fmatsubara_grid gridF(-n_freq, n_freq, beta);
         GF gw_interp(gridF);
-        gw_interp.copyInterpolate(Solver.gw);
+        gw_interp.copy_interpolate(Solver.gw);
         auto Bubbleq0 = SC.getBubble0(0.0);
         auto BubbleqPI = SC.getBubblePI(0.0); 
         std::vector<std::string> names = {"local", "pi", "zero"};
@@ -228,45 +226,44 @@ void getExtraDMFTData(const sc_type& SC)
             INFO2("Static cf susc " << names[i] <<" (exact) = " << chi_cf);
             INFO2("Static ff susc " << names[i] <<" (exact) = " << chi_ff);
 
-            //__num_format<RealType>(susc).savetxt("StaticChiCC_" + names[i] + ".dat");
-            __num_format<RealType>(chi_cc).savetxt("StaticChiCC_" + names[i] + ".dat");
-            __num_format<RealType>(chi_cc).savetxt("StaticChiCC_" + names[i] + "_skeleton.dat");
-            __num_format<RealType>(chi_cf).savetxt("StaticChiCF_" + names[i] + "_skeleton.dat");
-            __num_format<RealType>(chi_ff).savetxt("StaticChiFF_" + names[i] + "_skeleton.dat");
-            //__num_format<ComplexType>(bubbles[i].).savetxt("StaticChi0CC_" + names[i] + ".dat");
+            //num_io<real_type>(susc).savetxt("StaticChiCC_" + names[i] + ".dat");
+            num_io<real_type>(chi_cc).savetxt("StaticChiCC_" + names[i] + ".dat");
+            num_io<real_type>(chi_cc).savetxt("StaticChiCC_" + names[i] + "_skeleton.dat");
+            num_io<real_type>(chi_cf).savetxt("StaticChiCF_" + names[i] + "_skeleton.dat");
+            num_io<real_type>(chi_ff).savetxt("StaticChiFF_" + names[i] + "_skeleton.dat");
+            //num_io<complex_type>(bubbles[i].).savetxt("StaticChi0CC_" + names[i] + ".dat");
         };
     };
 
     if (flags[1]) {
         INFO ("Calculating static susceptibility along (pi,0)->(pi,2*pi) direction");
         size_t n_freq = 256; 
-        FMatsubaraGrid local_grid(-n_freq,n_freq,beta);
-        GridObject<ComplexType, FMatsubaraGrid> Lambda(local_grid);
-        Lambda.copyInterpolate(Solver.getLambda());
+        fmatsubara_grid local_grid(-n_freq,n_freq,beta);
+        grid_object<complex_type, fmatsubara_grid> Lambda(local_grid);
+        Lambda.copy_interpolate(Solver.getLambda());
         auto glat = SC.getGLat(local_grid); 
-        GridObject<RealType,KMesh> out_b(SC._kGrid), out_chi(SC._kGrid), out_dual_bubble(SC._kGrid), out_lattice_bubble(SC._kGrid);
-        std::array<KMesh::point, D> q;
-        q.fill(SC._kGrid.findClosest(PI));
-        for (auto q_pt : SC._kGrid.getPoints()) {
-            INFO2("q = " << RealType(q_pt));
+        grid_object<real_type,kmesh> out_b(SC._kGrid), out_chi(SC._kGrid), out_dual_bubble(SC._kGrid), out_lattice_bubble(SC._kGrid);
+        std::array<typename kmesh::point, D> q = tuple_tools::repeater<typename kmesh::point, D>::get_array(SC._kGrid.find_nearest(PI));
+        for (auto q_pt : SC._kGrid.points()) {
+            INFO2("q = " << real_type(q_pt));
             std::get<D-1>(q) = q_pt;
             auto Wq_args_static = std::tuple_cat(std::make_tuple(0.0),q);
 
             auto lattice_bubble = SC.getBubble(0.0,q);
-            //RealType susc_val = getStaticLatticeDMFTSkeletonSusceptibility(Solver, lattice_bubble, FMatsubaraGrid(-n_freq,n_freq,beta))[0];
-            RealType susc_val = getStaticLatticeDMFTSkeletonSusceptibility(Solver, lattice_bubble, Solver.w_grid)[0];
+            //real_type susc_val = getStaticLatticeDMFTSkeletonSusceptibility(Solver, lattice_bubble, fmatsubara_grid(-n_freq,n_freq,beta))[0];
+            real_type susc_val = getStaticLatticeDMFTSkeletonSusceptibility(Solver, lattice_bubble, Solver.w_grid)[0];
             out_chi[size_t(q_pt)]= susc_val;
             
             auto dual_bubble = lattice_bubble + T*Solver.gw*Solver.gw; 
             auto Bw1 = beta*Solver.w_0*Solver.w_1*Solver.U*Solver.U*Solver.getLambda()*Solver.getLambda()*dual_bubble;
             auto Bw = Bw1/(1.0+Bw1);
-            ComplexType B = Bw.sum();
+            complex_type B = Bw.sum();
             out_b[size_t(q_pt)]= std::real(B);
             
-            RealType dual_bubble_val = std::real(dual_bubble.sum());
+            real_type dual_bubble_val = std::real(dual_bubble.sum());
             out_dual_bubble[size_t(q_pt)]= dual_bubble_val;
 
-            RealType lattice_bubble_val =  std::real(Diagrams::getBubble(glat, Wq_args_static).sum());
+            real_type lattice_bubble_val =  std::real(Diagrams::getBubble(glat, Wq_args_static).sum());
             out_lattice_bubble[size_t(q_pt)] = lattice_bubble_val;
             };
         out_chi.savetxt("Susc_dir.dat");
@@ -284,18 +281,18 @@ void getExtraDMFTData(const sc_type& SC)
         dual_bubble_pi.savetxt("DualBubbleCC_pi.dat");
         Bw1.savetxt("BwNominator_pi.dat");
         Bw.savetxt("Bw_pi.dat");
-        ComplexType B = Bw.sum();
+        complex_type B = Bw.sum();
         INFO("B(pi) = " << B);
-        __num_format<ComplexType>(B).savetxt("B_pi.dat");
+        num_io<complex_type>(B).savetxt("B_pi.dat");
     }
 
     if (flags[3]) {
         INFO2("Saving G(w,k=pi)");
         GF glat_pi(Solver.w_grid);
         auto glat = SC.getGLat(Solver.w_grid); 
-        std::array<RealType, D> q;
+        std::array<real_type, D> q;
         q.fill(PI);
-        typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat(std::tuple_cat(std::make_tuple(w),q));};
+        typename GF::point_function_type f = [&](fmatsubara_grid::point w){return glat(std::tuple_cat(std::make_tuple(w),q));};
         glat_pi.fill(f);
         glat_pi.savetxt("glat_pi.dat");
     }
@@ -303,18 +300,19 @@ void getExtraDMFTData(const sc_type& SC)
     if (flags[4]) {
         INFO2("Saving Green's functions - doing FFT");
         auto glat_k = SC.getGLat(Solver.w_grid); 
-        typedef typename ArgBackGenerator<D,RealGrid,GridObject,ComplexType,FMatsubaraGrid>::type glat_r_type;
-        auto grid_r = RealGrid(0,SC._kGrid.getSize(),SC._kGrid.getSize(),false);
-        glat_r_type glat_r(std::tuple_cat(std::forward_as_tuple(Solver.w_grid),__repeater<RealGrid,D>::get_tuple(grid_r)));
-        for (auto w : Solver.w_grid.getPoints()) { 
+        typedef typename tools::ArgBackGenerator<D,enum_grid,grid_object,complex_type,fmatsubara_grid>::type glat_r_type;
+        auto grid_r = enum_grid(0,SC._kGrid.size(),false);
+        glat_r_type glat_r(std::tuple_cat(std::forward_as_tuple(Solver.w_grid),tuple_tools::repeater<enum_grid,D>::get_tuple(grid_r)));
+        for (auto w : Solver.w_grid.points()) { 
             glat_r[size_t(w)] = run_fft(glat_k[size_t(w)],FFTW_BACKWARD);
             }
 
         size_t distance = 4;
         GF glat_rp(Solver.w_grid);
         for (size_t i=0; i<distance; ++i) {
-            std::array<typename RealGrid::point, D> r_p; r_p.fill(grid_r[0]); r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
-            typename GF::PointFunctionType f = [&](FMatsubaraGrid::point w){return glat_r(std::tuple_cat(std::make_tuple(w),r_p));};
+        	std::array<typename enum_grid::point, D> r_p = tuple_tools::repeater<typename enum_grid::point, D>::get_array(grid_r[0]);
+            r_p[D-1]=grid_r[i]; // Makes (i,0...) point in real space
+            typename GF::point_function_type f = [&](fmatsubara_grid::point w){return glat_r(std::tuple_cat(std::make_tuple(w),r_p));};
             glat_rp.fill(f);
             std::stringstream fname_stream;
             fname_stream << "glat_r"; 
@@ -338,12 +336,12 @@ void getExtraDMFTData(const sc_type& SC)
             }
         INFO2("done.");
         size_t n_freq = std::max(int(beta*2), 1024);
-        auto stat_susc_bz = getStaticLatticeDMFTSkeletonSusceptibility(Solver, bubbles, FMatsubaraGrid(-n_freq,n_freq,beta));
-        std::map<BZPoint<D>, RealType> susc_map;
+        auto stat_susc_bz = getStaticLatticeDMFTSkeletonSusceptibility(Solver, bubbles, fmatsubara_grid(-n_freq,n_freq,beta));
+        std::map<BZPoint<D>, real_type> susc_map;
         for (size_t nq=0; nq<stat_susc_bz.size(); ++nq) susc_map[bzpoints[nq]] = std::real(stat_susc_bz[nq][0]);
         auto all_bz_points = CubicTraits<D>::getAllBZPoints(SC._kGrid);
         size_t nqpts = all_bz_points.size();
-        size_t dimsize = SC._kGrid.getSize();
+        size_t dimsize = SC._kGrid.size();
         std::ofstream out;
         out.open("StaticChiDMFTCC.dat");
         for (size_t nq=0; nq<nqpts; ++nq) {
@@ -352,7 +350,7 @@ void getExtraDMFTData(const sc_type& SC)
             out << all_bz_points[nq] << susc_map[sym_point] << std::endl;
             if ((nq+1)%dimsize==0) out << std::endl;
         }
-        //__num_format<ComplexType>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
+        //num_io<complex_type>(stat_susc_pi).savetxt("StaticChiDFCC_pi.dat");
         out.close();
     };
 
@@ -366,17 +364,17 @@ void getExtraDMFTData(const sc_type& SC)
 
 /*    if (extraops>=2) { 
     INFO("Dynamic susceptibility");
-    size_t n_b_freq = std::max(std::min(Solver.w_grid._w_max/2,int(2*beta)),10);
-    BMatsubaraGrid gridB(-n_b_freq, n_b_freq+1, beta);
-    GridObject<RealType,BMatsubaraGrid> chi0_q0_vals(gridB), chi0_qPI_vals(gridB);
-    GridObject<RealType,BMatsubaraGrid> chi_q0_vals(gridB), chi_qPI_vals(gridB), chi_q0_dmft_vals(gridB), chi_qPI_dmft_vals(gridB);
+    size_t n_b_freq = std::max(std::min(Solver.w_grid.w_max_/2,int(2*beta)),10);
+    bmatsubara_grid gridB(-n_b_freq, n_b_freq+1, beta);
+    grid_object<real_type,bmatsubara_grid> chi0_q0_vals(gridB), chi0_qPI_vals(gridB);
+    grid_object<real_type,bmatsubara_grid> chi_q0_vals(gridB), chi_qPI_vals(gridB), chi_q0_dmft_vals(gridB), chi_qPI_dmft_vals(gridB);
 
-    for (auto iW : gridB.getPoints()) {
+    for (auto iW : gridB.points()) {
         if (INTERRUPT) exit(0);
         INFO("iW = " << iW);
         size_t iWn = size_t(iW);
         GF Vertex4(gridF);
-        Vertex4.fill(typename GF::PointFunctionType([&](FMatsubaraGrid::point w){return Solver.getBVertex4(iW,w);}));
+        Vertex4.fill(typename GF::point_function_type([&](fmatsubara_grid::point w){return Solver.getBVertex4(iW,w);}));
         auto gw_bubble = Diagrams::getBubble(gw, iW);
         auto Chi0q0 = SC.getBubble0(iW);
         auto Chiq0 = Diagrams::getSusc<GF>(Chi0q0, Diagrams::BS(Chi0q0 - gw_bubble, Vertex4 , true));
@@ -386,10 +384,10 @@ void getExtraDMFTData(const sc_type& SC)
         chi0_q0_vals[iWn] = std::real(Chi0q0.sum());
         chi0_qPI_vals[iWn] = std::real(Chi0qPI.sum());
         chi_qPI_vals[iWn] = std::real(ChiqPI.sum());
-        auto chiq0_dmft = -T/ComplexType(iW)*(gw-gw.shift(iW)).sum();
+        auto chiq0_dmft = -T/complex_type(iW)*(gw-gw.shift(iW)).sum();
         chi_q0_dmft_vals[size_t(iW)] = std::real(chiq0_dmft); 
 
-        if (is_equal(ComplexType(iW),0.0)) { 
+        if (is_equal(complex_type(iW),0.0)) { 
             INFO("Static val = " << chi_q0_vals[iWn])
             chi_q0_dmft_vals[iWn] = chi_q0_vals[iWn];
             };
@@ -423,13 +421,14 @@ int __get_n_lines(const std::string& fname)
     return nlines;
 } 
 
-int __get_min_number(const std::string& fname, RealType beta)
+int __get_min_number(const std::string& fname, real_type beta)
 {
     std::ifstream f(fname.c_str());
-    __num_format<FMatsubaraGrid::point> tmp(FMatsubaraGrid::point(0,0));
+    complex_type x;
+    num_io<complex_type> tmp(x);
     f >> tmp;
     f.close();
-    ComplexType w_min = tmp._v;
+    complex_type w_min = tmp.value_;
     int w_min_index = FMatsubaraIndex(w_min,beta);
     return w_min_index;
 }

@@ -8,32 +8,32 @@
  */
 class FKOptionParserDF : public optparse {
 public:
-	FK::RealType beta = 10.0;
-	FK::RealType U    = 4.0 ;
-	FK::RealType t    = 1.0 ;
-	FK::RealType tp   = 0.0 ;
-	FK::RealType mu   = 2.0 ;
-	FK::RealType e_d  = 0.0 ;
-	FK::RealType w_0  = 0.5 ;
-	FK::RealType w_1  = 0.5 ;
+	FK::real_type beta = 10.0;
+	FK::real_type U    = 4.0 ;
+	FK::real_type t    = 1.0 ;
+	FK::real_type tp   = 0.0 ;
+	FK::real_type mu   = 2.0 ;
+	FK::real_type e_d  = 0.0 ;
+	FK::real_type w_0  = 0.5 ;
+	FK::real_type w_1  = 0.5 ;
     bool update_weights = true;
     bool read_weights   = false;
-	FK::RealType mix  = 1.0;
+	FK::real_type mix  = 1.0;
 	size_t n_freq = 96;
 	size_t kpts = 16;
 	size_t n_dual_freq = 12;
 	size_t NDMFTRuns = 1000;
 	size_t NDFRuns = 1;
-    FK::RealType DFCutoff = 1e-8;
+    FK::real_type DFCutoff = 1e-8;
 	size_t DFNumberOfSelfConsistentIterations = 200;
-    FK::RealType DFSCMixing = 0.8;
-    FK::RealType DFSCCutoff = 1e-7;
+    FK::real_type DFSCMixing = 0.8;
+    FK::real_type DFSCCutoff = 1e-7;
 	size_t DFNumberOfBSIterations = 1;
     bool DFEvaluateBSSelfConsistent = false;
     bool DFEvaluateBSOnlyN = false;
     bool DFEvaluateStaticDiagrams = true;
     bool DFEvaluateDynamicDiagrams = false;
-    FK::RealType DFBSMixing = 1.0;
+    FK::real_type DFBSMixing = 1.0;
     size_t extraops = 0;
     bool update_mixing = true;
     bool read_dual_sigma = false;

@@ -2,29 +2,34 @@
 #ifndef __FK_DFDIAGRAMS_H__
 #define __FK_DFDIAGRAMS_H__
 
-#include <KMesh.hpp>
-#include <GridObject.hpp>
+#include <gftools/kmesh.hpp>
+#include <gftools/grid_object.hpp>
 
 namespace FK { 
 
-using namespace GFTools;
+using namespace gftools;
 
 struct Diagrams
 {
-    typedef GridObject<ComplexType, FMatsubaraGrid> GLocalType;
+	//template <typename V> using MatrixType = typename container<V,2>::MatrixType;
+    typedef grid_object<complex_type, fmatsubara_grid> GLocalType;
     //template <size_t D> 
-    //using GKType = typename ArgBackGenerator<D,KMesh,GridObject,ComplexType,FMatsubaraGrid>::type;
+    //using GKType = typename tools::ArgBackGenerator<D,kmesh,grid_object,complex_type,fmatsubara_grid>::type;
     template <size_t D> 
-    using wkTupleType = decltype(std::tuple_cat(std::make_tuple(FMatsubaraGrid::point()), std::array<KMesh::point, D>()));
+    using wkTupleType = decltype(std::tuple_cat(std::make_tuple(std::declval<typename fmatsubara_grid::point>()),
+    							 std::declval<typename tuple_tools::repeater<typename kmesh::point, D>::tuple_type>()));
     template <size_t D> 
-    using WQTupleType = decltype(std::tuple_cat(std::make_tuple(BMatsubaraGrid::point()), std::array<KMesh::point, D>())); 
-    //const FMatsubaraGrid& _fGrid;
-    //const KMesh& _kGrid;
+    using WQTupleType = decltype(std::tuple_cat(std::make_tuple(std::declval<typename bmatsubara_grid::point>()),
+    							 std::declval<typename tuple_tools::repeater<typename kmesh::point, D>::tuple_type>()));
+    //const fmatsubara_grid& _fGrid;
+    //const kmesh& _kGrid;
     //const size_t _ksize;
     //const size_t _knorm;
 
-    //Diagrams(const FMatsubaraGrid& fGrid, const KMesh& kGrid);
+    //Diagrams(const fmatsubara_grid& fGrid, const kmesh& kGrid);
 
+    template <typename GKType>
+    static GKType getStaticBubbles(const GKType &GF);
     template <typename GKType>
     static GLocalType getBubble(const GKType &GF, const GKType &GF_shift);
     template <typename GKType, typename ... ArgTypes>
@@ -34,24 +39,32 @@ struct Diagrams
     template <typename ArgType>
     static GLocalType getBubble(const GLocalType& GF, ArgType arg);
 
-    template <typename ValueType, typename GridType>
-    static GridObject<ValueType,GridType> BS(
-            const GridObject<ValueType,GridType> &Chi0, 
-            const GridObject<ValueType,GridType> &IrrVertex4, 
-            bool forward, bool eval_SC = false, size_t n_iter = 100, RealType mix = 1.0);
-    template <typename ValueType, typename ... GridTypes>
-    static GridObject<ValueType,GridTypes...> BS(
-            const GridObject<ValueType,GridTypes...> &Chi0, 
-            const GridObject<ValueType,GridTypes...> &IrrVertex4, 
-            bool forward, bool eval_SC = false, size_t n_iter = 100, RealType mix = 1.0);
+    template <typename G>
+    using IsGridObject1 = typename std::enable_if<(G::N==1) && sizeof(typename G::value_type), G>::type;
 
-    template <typename ValueType>
-    static MatrixType<ValueType> BS(
-        const MatrixType<ValueType> &Chi0, 
-        const MatrixType<ValueType> &IrrVertex4, 
-        bool forward, bool eval_SC = false, size_t n_iter = 100, RealType mix= 1.0, bool evaluate_only_order_n = false);
+    template <typename G>
+    static IsGridObject1<G> BS(const G &Chi0, const G &IrrVertex4,
+            bool forward, bool eval_SC = false, size_t n_iter = 100, real_type mix = 1.0);
+
+    template <typename G>
+    using IsGridObject = typename std::enable_if<(G::N>1) && sizeof(typename G::value_type), G>::type;
+
+    template <typename G>
+    static IsGridObject<G> BS(
+            const G &Chi0,
+            const G &IrrVertex4,
+            bool forward, bool eval_SC = false, size_t n_iter = 100, real_type mix = 1.0);
+
+    template <typename MatrixType>
+    using IsMatrix = typename std::enable_if<std::is_convertible<decltype(std::declval<MatrixType>().rows()), int>::value, MatrixType>::type;
+
+    template <typename MatrixType>
+    static IsMatrix<MatrixType> BS(
+        const MatrixType &Chi0,
+        const MatrixType &IrrVertex4,
+        bool forward, bool eval_SC = false, size_t n_iter = 100, real_type mix= 1.0, bool evaluate_only_order_n = false);
 //    template <typename VertexType> 
-//    static VertexType BS(const VertexType &Chi0, const VertexType &IrrVertex4, bool eval_SC = false, size_t n_iter = 100, RealType mix = 1.0);
+//    static VertexType BS(const VertexType &Chi0, const VertexType &IrrVertex4, bool eval_SC = false, size_t n_iter = 100, real_type mix = 1.0);
 
     template <typename VertexType> 
     static VertexType getSusc(const VertexType &Chi0, const VertexType &FullVertex4);

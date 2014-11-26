@@ -4,8 +4,22 @@
 #include "Diagrams.h"
 #include <Eigen/LU>
 #include <Eigen/Dense>
+#include "FFT.hpp"
 
 namespace FK {
+
+template <typename GKType>
+inline GKType Diagrams::getStaticBubbles(const GKType &GF)
+{
+    GKType out(GF.grids());
+    const auto& fgrid = std::get<0>(GF.grids());
+    int knorm = GF[0].size();
+    for (fmatsubara_grid::point iw1 : fgrid.points())  {
+        auto g1 = run_fft(GF[iw1], FFTW_FORWARD);
+        out[iw1] = run_fft(g1*g1, FFTW_BACKWARD)/knorm;
+        };
+    return out / (-fgrid.beta());
+} 
 
 template <typename GKType, typename ... ArgTypes>
 inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const std::tuple<ArgTypes...>& args)
@@ -24,20 +38,20 @@ inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, ArgTy
 template <typename GKType>
 inline typename Diagrams::GLocalType Diagrams::getBubble(const GKType &GF, const GKType &GF_shift)
 {
-    const auto _fGrid = std::get<0>(GF.getGrids()); 
+    const auto _fGrid = std::get<0>(GF.grids()); 
     GLocalType out(_fGrid);
     auto GF_shifted=GF*GF_shift;
 
-    RealType knorm = 1;
-    for (auto val : GF._dims) knorm*=val; 
-    knorm/=GF._dims[0];
+    real_type knorm = 1;
+    for (auto val : GF.data().shape()) knorm*=val;
+    knorm/=GF.data().shape()[0];
 
-    for (auto iw: _fGrid.getPoints()) { 
+    for (auto iw: _fGrid.points()) { 
         size_t iwn = size_t(iw);
-        out[iwn] = GF_shifted[iwn].sum()/RealType(knorm); 
+        out[iwn] = GF_shifted[iwn].sum()/real_type(knorm); 
     }
 
-    RealType T = 1.0/(_fGrid._beta);
+    real_type T = 1.0/(_fGrid.beta());
     return (-T)*out;
 }
 
@@ -45,28 +59,28 @@ template <typename ArgType>
 inline typename Diagrams::GLocalType Diagrams::getBubble(const GLocalType &GF, ArgType arg)
 {
     GLocalType out = GF.shift(arg)*GF;
-    RealType T = 1.0/(std::get<0>(GF.getGrids())._beta);
+    real_type T = 1.0/(std::get<0>(GF.grids()).beta());
     return (-T)*out;
 }
 
-struct __logic_err : public std::logic_error { __logic_err (const std::string& what_arg):logic_error(what_arg){}; };
-template <typename ValueType>
-inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, const MatrixType<ValueType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix, bool evaluate_only_order_n)
+template <typename MatrixType>
+inline typename Diagrams::IsMatrix<MatrixType>
+Diagrams::BS(const MatrixType &Chi0, const MatrixType &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, real_type mix,  bool evaluate_only_order_n)
 {
     INFO_NONEWLINE("\tRunning" << ((!forward)?" inverse ":" ") << "matrix BS equation...");
     size_t size = IrrVertex4.rows(); 
 
-    MatrixType<ValueType> V4Chi;
+    MatrixType V4Chi;
     if (forward)
-        V4Chi = MatrixType<ValueType>::Identity(size,size) - IrrVertex4*Chi0;
+        V4Chi = MatrixType::Identity(size,size) - IrrVertex4*Chi0;
     else
-        V4Chi = MatrixType<ValueType>::Identity(size,size) + Chi0*IrrVertex4;
+        V4Chi = MatrixType::Identity(size,size) + Chi0*IrrVertex4;
     //auto ((IrrVertex4*Chi0).eigenvalues())
     auto D1 = V4Chi.determinant();
-    if (std::imag(D1)>1e-7) { ERROR("Determinant : " << D1); throw (__logic_err("Complex determinant in BS. Exiting.")); };
+    if (std::imag(D1)>1e-7) { ERROR("Determinant : " << D1); throw (std::logic_error("Complex determinant in BS. Exiting.")); };
     if (std::real(D1)<1e-2) INFO3("Determinant : " << D1);
 
-    if (!eval_SC && std::real(D1)>std::numeric_limits<RealType>::epsilon()) {
+    if (!eval_SC && std::real(D1)>std::numeric_limits<real_type>::epsilon()) {
         try {
             if (forward) {
                 V4Chi = V4Chi.colPivHouseholderQr().solve(IrrVertex4);
@@ -85,7 +99,7 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     auto V4_old = IrrVertex4;
     V4Chi=IrrVertex4*Chi0;
     INFO_NONEWLINE("\tEvaluating BS self-consistently. Making " << n_iter << " iterations.");
-    RealType diffBS = 1.0;
+    real_type diffBS = 1.0;
     for (size_t n=0; n<n_iter && diffBS > 1e-8 * double(!evaluate_only_order_n); ++n) { 
         INFO_NONEWLINE("\t\t" << n+1 << "/" << n_iter<< ". ")
         if (forward)
@@ -99,24 +113,26 @@ inline MatrixType<ValueType> Diagrams::BS(const MatrixType<ValueType> &Chi0, con
     return V4;
 }
 
-
-template <typename ValueType, typename GridType>
-inline GridObject<ValueType,GridType> Diagrams::BS (const GridObject<ValueType,GridType>& Chi0, const GridObject<ValueType,GridType> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
+template <typename G>
+inline Diagrams::IsGridObject1<G> Diagrams::BS(const G &Chi0, const G &IrrVertex4,
+            bool forward, bool eval_SC, size_t n_iter, real_type mix)
 {
+	typedef typename std::tuple_element<0, typename G::grid_tuple>::type GridType;
+	typedef typename G::value_type ValueType;
     INFO_NONEWLINE("\tRunning " << ((!forward)?"inverse":"") << " BS equation...");
-    const auto _fGrid = std::get<0>(IrrVertex4.getGrids());
-    GridObject<ValueType,GridType> Vertex4_out(IrrVertex4);
-    GridObject<RealType,GridType> EVCheck(_fGrid); 
-    std::function<RealType(typename GridType::point)> absEVf = [&](typename GridType::point w)->RealType{return std::abs(Chi0(w)*IrrVertex4(w)); };
+    const auto _fGrid = std::get<0>(IrrVertex4.grids());
+    grid_object<ValueType,GridType> Vertex4_out(IrrVertex4);
+    grid_object<real_type,GridType> EVCheck(_fGrid); 
+    std::function<real_type(typename GridType::point)> absEVf = [&](typename GridType::point w)->real_type{return std::abs(Chi0(w)*IrrVertex4(w)); };
     EVCheck.fill(absEVf);
-    RealType max_ev = *std::max_element(EVCheck.getData().begin(), EVCheck.getData().end());
+    real_type max_ev = *std::max_element(EVCheck.data().begin(), EVCheck.data().end());
     INFO_NONEWLINE("\tMaximum EV of Chi0*gamma = " << max_ev << " ."); // << "|" << max_ev_re << "|" << max_ev_im);
     if (std::abs(max_ev-1.0) < 1e-6 || eval_SC) {
-        GridObject<ValueType,GridType> Vertex4_old(IrrVertex4);
+        grid_object<ValueType,GridType> Vertex4_old(IrrVertex4);
         INFO2 ("Caught divergence, evaluating BS equation self_consistently. ");
-        RealType diffBS = 1.0;
+        real_type diffBS = 1.0;
         for (size_t n=0; n<n_iter && diffBS > 1e-8; ++n) { 
-            //INFO("BS iteration " << n << " for iW = " << ComplexType(iW) << ", (qx,qy) = (" << RealType(qx) << "," << RealType(qy) << ").");
+            //INFO("BS iteration " << n << " for iW = " << complex_type(iW) << ", (qx,qy) = (" << real_type(qx) << "," << real_type(qy) << ").");
             Vertex4_out = IrrVertex4 + IrrVertex4*Chi0*Vertex4_old;
             diffBS = Vertex4_out.diff(Vertex4_old);
             INFO("vertex diff = " << diffBS);
@@ -133,11 +149,12 @@ inline GridObject<ValueType,GridType> Diagrams::BS (const GridObject<ValueType,G
     return Vertex4_out;
 }
 
-template <typename ValueType, typename ... GridTypes>
-inline GridObject<ValueType,GridTypes...> Diagrams::BS (const GridObject<ValueType,GridTypes...>& Chi0, const GridObject<ValueType,GridTypes...> &IrrVertex4, bool forward, bool eval_SC, size_t n_iter, RealType mix)
+template <typename G>
+inline Diagrams::IsGridObject<G> Diagrams::BS(const G &Chi0, const G &IrrVertex4,
+            bool forward, bool eval_SC, size_t n_iter, real_type mix)
 {
     INFO_NONEWLINE("\tRunning" << ((!forward)?" inverse ":" ") << "BS equation...");
-    GridObject<ValueType,GridTypes...> Vertex4_out(IrrVertex4);
+    G Vertex4_out(IrrVertex4);
     if (!eval_SC) {
         try {
             Vertex4_out = IrrVertex4/(1.0 - (2*forward-1)*Chi0 * IrrVertex4);
@@ -148,8 +165,8 @@ inline GridObject<ValueType,GridTypes...> Diagrams::BS (const GridObject<ValueTy
                 ERROR("Couldn't invert the vertex");
             };
         };
-    GridObject<ValueType,GridTypes...> Vertex4_old(IrrVertex4);
-    RealType diffBS = 1.0;
+    G Vertex4_old(IrrVertex4);
+    real_type diffBS = 1.0;
     INFO_NONEWLINE("\tEvaluating BS self-consistently. ");
     for (size_t n=0; n<n_iter && diffBS > 1e-8; ++n) { 
         Vertex4_out = IrrVertex4 + IrrVertex4*Chi0*Vertex4_old*(2*forward-1);

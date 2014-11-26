@@ -8,10 +8,10 @@
 #include <array>
 
 using namespace FK;
-typedef GridObject<ComplexType,FMatsubaraGrid> GF;
+typedef grid_object<complex_type,fmatsubara_grid> GF;
 
 template <typename F1, typename F2>
-bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
+bool is_equal ( F1 x, F2 y, real_type tolerance = 1e-7)
 {
     return (std::abs(x-y)<tolerance);
 }
@@ -20,23 +20,23 @@ bool is_equal ( F1 x, F2 y, RealType tolerance = 1e-7)
 int main()
 {
     INFO("Hi! Doing Falicov-Kimball. ");
-    RealType U = 4.0;
-    RealType mu = 2.2;
-    RealType e_d = 0.1;
-    RealType beta = 10;
-    RealType t = 1.0; 
+    real_type U = 4.0;
+    real_type mu = 2.2;
+    real_type e_d = 0.1;
+    real_type beta = 10;
+    real_type t = 1.0; 
     size_t maxit = 1000;
-    RealType mix = 0.5;
+    real_type mix = 0.5;
 
     size_t n_freq = 256;
 //    Log.setDebugging(true);
-    FMatsubaraGrid grid(-n_freq, n_freq, beta);
+    fmatsubara_grid grid(-n_freq, n_freq, beta);
     GF Delta(grid);
-    std::function<ComplexType(ComplexType)> f1;
-    f1 = [t](ComplexType w) -> ComplexType {return t*t/w;};
+    std::function<complex_type(complex_type)> f1;
+    f1 = [t](complex_type w) -> complex_type {return t*t/w;};
     Delta.fill(f1);
     FKImpuritySolver Solver(U,mu,e_d,Delta);
-    RealType diff=1.0;
+    real_type diff=1.0;
     BetheSC SC(Solver, t);
 
     for (int i=0; i<maxit && diff>1e-8; ++i) {
@@ -48,13 +48,13 @@ int main()
         Solver.Delta = Delta_new*mix + (1.0-mix)*Solver.Delta;
         }
 
-    FMatsubaraGrid grid_half(0,n_freq*2,beta);
+    fmatsubara_grid grid_half(0,n_freq*2,beta);
     GF Delta_half(grid_half); 
-    Delta_half.copyInterpolate(Solver.Delta);
+    Delta_half.copy_interpolate(Solver.Delta);
     GF gw_half(grid_half); 
-    gw_half.copyInterpolate(Solver.gw);
+    gw_half.copy_interpolate(Solver.gw);
     GF sigma_half(grid_half); 
-    sigma_half.copyInterpolate(Solver.Sigma);
+    sigma_half.copy_interpolate(Solver.Sigma);
 
     sigma_half.savetxt("Sigma.dat");
     gw_half.savetxt("Gw.dat");

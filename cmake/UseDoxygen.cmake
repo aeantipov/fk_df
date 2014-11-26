@@ -51,6 +51,10 @@
 #  For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 #
 
+if (CMAKE_MAJOR_VERSION GREATER 3 OR CMAKE_MAJOR_VERSION EQUAL 3)
+    cmake_policy(SET CMP0045 OLD)
+endif()
+
 macro(usedoxygen_set_default name value type docstring)
 	if(NOT DEFINED "${name}")
 		set("${name}" "${value}" CACHE "${type}" "${docstring}")
