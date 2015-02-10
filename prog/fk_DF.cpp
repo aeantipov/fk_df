@@ -294,6 +294,7 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
     real_type beta = Solver.beta;
     real_type T=1.0/beta;
     SC.GLatLoc.savetxt("gloc.dat");
+    const auto &kgrid = SC._kGrid;
 
     std::bitset<10> flags(extraops);
 
@@ -415,7 +416,7 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
             glat_r[size_t(w)] = run_fft(glat_k[size_t(w)],FFTW_BACKWARD);
             }
 
-        size_t distance = 5;
+        size_t distance = std::min(5,int(kgrid.size()));
         GF glat_rp(Solver.w_grid);
         for (size_t i=0; i<distance; ++i) {
             std::array<typename enum_grid::point, D> r_p = tuple_tools::repeater<typename enum_grid::point, D>::get_array(grid_r[0]);
@@ -529,7 +530,6 @@ template <class SCType> void getExtraData(SCType& SC, const fmatsubara_grid& gri
         auto glatdmft = SC.getGLatDMFT(SC._fGrid);
 
         auto w = Solver.w_grid.find_nearest(I*PI/beta);
-        const auto &kgrid = SC._kGrid;
         auto rgrid = enum_grid(0,SC._kGrid.size(),false);
 
         typedef typename tools::ArgBackGenerator<D,kmesh        ,grid_object,complex_type>::type gd_k_type;
